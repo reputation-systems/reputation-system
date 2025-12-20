@@ -3,11 +3,11 @@
     import { connected } from '$lib/store';
     import { connectNautilus } from '$lib/connect';
     
-    import MasterGraphView from '$lib/components/graph/MasterGraphView.svelte';
-    import Submit from '$lib/components/views/Submit.svelte';
-    import Search from '$lib/components/views/Search.svelte';
-    import Settings from '$lib/components/views/Settings.svelte';
-    import ManageTypes from '$lib/components/views/ManageTypes.svelte';
+    import MasterGraphView from '$components/graph/MasterGraphView.svelte';
+    import Submit from '$components/views/Submit.svelte';
+    import Search from '$components/views/Search.svelte';
+    import Settings from '$components/views/Settings.svelte';
+    import ManageTypes from '$components/views/ManageTypes.svelte';
 
     let currentPage: 'intro' | 'graph' | 'create' | 'search' | 'types' | 'settings' = 'intro';
 </script>

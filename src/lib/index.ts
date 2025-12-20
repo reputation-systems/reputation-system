@@ -1,0 +1,2 @@
+export { generate_reputation_proof } from './generate_reputation_proof';
+export { fetchTypeNfts, updateReputationProofList, getAllRPBoxesFromProof, getReputationProofFromRPBox } from './unspent_proofs';

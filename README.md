@@ -9,7 +9,7 @@ The system enables the creation, management, and verification of reputation proo
 Its architecture is based on two interdependent ErgoScript contracts:
 
 1. **"Digital Public Good" Contract (Type NFT)**: Defines immutable standards for reputation types.
-2. **"Reputation Token" Contract**: Governs the boxes (UTXOs) that contain actual reputation proofs, ensuring uniqueness, state consistency, and owner control.
+2. **"Reputation Token" Contract**: Governs the boxes (UTXOs) that contain actual reputation proofs, ensuring state consistency and owner control.
 
 The design leverages Ergo’s **eUTXO model**, enabling complex validation and atomic updates of reputation collections, preventing inconsistent or fragmented states.
 
@@ -63,7 +63,6 @@ This contract governs a **reputation proof box**, representing part of a distrib
 
 * **Governance**: Defines creation, modification, and transfer rules for reputation proofs.
 * **Atomic Consistency**: Ensures all reputation boxes in a collection are validated together.
-* **Uniqueness**: Guarantees that for a given reputation type and object, only one proof exists.
 * **Owner Control**: Only the designated owner can authorize structural changes.
 
 #### **Register and Token Structure**
@@ -73,7 +72,7 @@ This contract governs a **reputation proof box**, representing part of a distrib
 | **Token(0)** | `(Coll[Byte], Long)` | `(repTokenId, amount)`: The reputation token held by this box.              |
 | **R4**       | `Coll[Byte]`         | `typeNftTokenId`: The Type NFT this reputation box adheres to.              |
 | **R5**       | `Coll[Byte]`         | `uniqueObjectData`: Data uniquely identifying the rated object.             |
-| **R6**       | `(Boolean, Long)`    | `(isLocked, totalSupply)`: Lock state + total supply of the reputation set. |
+| **R6**       | `Boolean`            | `isLocked`: Lock state of the reputation box.                               |
 | **R7**       | `Coll[Byte]`         | `blake2b256(propositionBytes)` of the **owner script**.                     |
 | **R8**       | `Boolean`            | `customFlag`: Optional application-specific flag.                           |
 | **R9**       | `Coll[Byte]`         | Reserved for future extensions.                                             |
@@ -105,7 +104,6 @@ Used for managing collections (e.g., issuing, updating, freezing reputation).
 
 * **Output Rules**:
 
-  * **Uniqueness**: Each `(R4, R5)` pair (type + object) must be unique across all outputs and inputs.
   * **Preservation**: `totalSupply` and `owner` must remain unchanged.
   * **Locking (`isLocked`)**:
 

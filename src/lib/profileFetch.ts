@@ -7,7 +7,7 @@ import {
 } from './envs';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
 import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './ReputationProof';
-import { proofs } from './store';
+import { proofs, reputation_proof } from './store';
 
 
 const LIMIT_PER_PAGE = 100;
@@ -122,7 +122,7 @@ async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]>
     };
 
     while (moreDataAvailable) {
-        const url = `${get(explorer_uri)}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+        const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
         const finalBody = {
             ergoTreeTemplateHash: ergo_tree_hash,
             registers: searchBody.registers,
@@ -173,7 +173,7 @@ async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]>
 // Fetch token emission amount
 async function fetchTokenEmissionAmount(tokenId: string): Promise<number | null> {
     try {
-        const response = await fetch(`${get(explorer_uri)}/api/v1/tokens/${tokenId}`);
+        const response = await fetch(`${explorer_uri}/api/v1/tokens/${tokenId}`);
         if (!response.ok) {
             console.error(`fetchTokenEmissionAmount: Error fetching token ${tokenId}: ${response.statusText}`);
             return null;
@@ -193,7 +193,7 @@ async function fetchAllBoxesByTokenId(tokenId: string): Promise<ApiBox[]> {
     let moreDataAvailable = true;
 
     while (moreDataAvailable) {
-        const url = `${get(explorer_uri)}/api/v1/boxes/unspent/byTokenId/${tokenId}?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+        const url = `${explorer_uri}/api/v1/boxes/unspent/byTokenId/${tokenId}?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
         try {
             const response = await fetch(url);
             if (!response.ok) {
@@ -278,7 +278,7 @@ export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
         }
 
         console.log(`Profile found: ${proof.token_id}, ${proof.number_of_boxes} boxes.`, proof);
-        proofs.set(proof);
+        reputation_proof.set(proof);
 
         return proof;
 

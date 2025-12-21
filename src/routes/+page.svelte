@@ -1,80 +1,130 @@
 <script lang="ts">
-    import '../app.css';
-    import { connected } from '$lib/store';
-    import { connectNautilus } from '$lib/connect';
-    
-    import MasterGraphView from '$components/graph/MasterGraphView.svelte';
-    import Submit from '$components/views/Submit.svelte';
-    import Search from '$components/views/Search.svelte';
-    import Settings from '$components/views/Settings.svelte';
-    import ManageTypes from '$components/views/ManageTypes.svelte';
+    import "../app.css";
+    import { connected } from "$lib/store";
+    import { connectNautilus } from "$lib/connect";
 
-    let currentPage: 'intro' | 'graph' | 'create' | 'search' | 'types' | 'settings' = 'intro';
+    import MasterGraphView from "$components/graph/MasterGraphView.svelte";
+    import Submit from "$components/views/Submit.svelte";
+    import Search from "$components/views/Search.svelte";
+    import Settings from "$components/views/Settings.svelte";
+    import ManageTypes from "$components/views/ManageTypes.svelte";
+    import Profile from "$components/views/Profile.svelte";
+
+    let currentPage:
+        | "intro"
+        | "graph"
+        | "create"
+        | "search"
+        | "types"
+        | "settings"
+        | "profile" = "intro";
 </script>
 
 <svelte:head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="preload" href="/frame_52.svg" as="image">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+        integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    />
+    <link rel="preload" href="/frame_52.svg" as="image" />
 </svelte:head>
 
 <main>
-    {#if $connected && currentPage !== 'intro'}
+    {#if $connected && currentPage !== "intro"}
         <div class="view-switcher">
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <span class="app-title" on:click={() => currentPage = 'intro'}>Sigma Reputation</span>
+            <span class="app-title" on:click={() => (currentPage = "intro")}
+                >Sigma Reputation</span
+            >
             <div class="nav-buttons">
-                <button on:click={() => currentPage = 'graph'} class:active={currentPage === 'graph'}>
+                <button
+                    on:click={() => (currentPage = "profile")}
+                    class:active={currentPage === "profile"}
+                >
+                    <i class="fas fa-user-circle"></i> Profile
+                </button>
+                <button
+                    on:click={() => (currentPage = "graph")}
+                    class:active={currentPage === "graph"}
+                >
                     <i class="fas fa-project-diagram"></i> Graph
                 </button>
-                <button on:click={() => currentPage = 'search'} class:active={currentPage === 'search'}>
+                <button
+                    on:click={() => (currentPage = "search")}
+                    class:active={currentPage === "search"}
+                >
                     <i class="fas fa-search"></i> Search
                 </button>
-                <button on:click={() => currentPage = 'create'} class:active={currentPage === 'create'}>
+                <button
+                    on:click={() => (currentPage = "create")}
+                    class:active={currentPage === "create"}
+                >
                     <i class="fas fa-plus-circle"></i> Submit
                 </button>
-                <button on:click={() => currentPage = 'types'} class:active={currentPage === 'types'}>
+                <button
+                    on:click={() => (currentPage = "types")}
+                    class:active={currentPage === "types"}
+                >
                     <i class="fas fa-tags"></i> Types
                 </button>
-                <button on:click={() => currentPage = 'settings'} class:active={currentPage === 'settings'}>
+                <button
+                    on:click={() => (currentPage = "settings")}
+                    class:active={currentPage === "settings"}
+                >
                     <i class="fas fa-cog"></i> Settings
                 </button>
             </div>
         </div>
     {/if}
 
-    {#if currentPage === 'intro'}
+    {#if currentPage === "intro"}
         <div class="welcome-container">
-            <a class="github-button" href="https://github.com/reputation-systems/sigma-reputation-panel" target="_blank" title="View on GitHub">
+            <a
+                class="github-button"
+                href="https://github.com/reputation-systems/sigma-reputation-panel"
+                target="_blank"
+                title="View on GitHub"
+            >
                 <i class="fab fa-github"></i>
             </a>
             <h1>Welcome to Sigma Reputation</h1>
-            
+
             {#if $connected}
-                <p>You are connected. Explore the graph or submit a new proof.</p>
-                <button on:click={() => currentPage = 'graph'}>Explore the Graph</button>
+                <p>
+                    You are connected. Explore the graph or submit a new proof.
+                </p>
+                <button on:click={() => (currentPage = "graph")}
+                    >Explore the Graph</button
+                >
             {:else}
-                <p>Connect your Nautilus wallet to explore and build the web of trust on Ergo.</p>
+                <p>
+                    Connect your Nautilus wallet to explore and build the web of
+                    trust on Ergo.
+                </p>
                 <button on:click={connectNautilus}>Connect Wallet</button>
             {/if}
         </div>
-
     {:else}
         <div class="view-content">
-            {#if currentPage === 'graph'}
+            {#if currentPage === "graph"}
                 <MasterGraphView />
-            {:else if currentPage === 'search'}
-                <Search on:searchGraph={() => currentPage = 'graph'} />
-            {:else if currentPage === 'create'}
+            {:else if currentPage === "search"}
+                <Search on:searchGraph={() => (currentPage = "graph")} />
+            {:else if currentPage === "create"}
                 <div class="wizard-wrapper">
                     <Submit />
                 </div>
-            {:else if currentPage === 'types'}
-                 <div class="wizard-wrapper">
+            {:else if currentPage === "types"}
+                <div class="wizard-wrapper">
                     <ManageTypes />
                 </div>
-            {:else if currentPage === 'settings'}
+            {:else if currentPage === "settings"}
                 <Settings />
+            {:else if currentPage === "profile"}
+                <Profile />
             {/if}
         </div>
     {/if}
@@ -86,19 +136,20 @@
         overflow-x: hidden;
         overflow-y: auto;
     }
-    
+
     :global(body) {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+            "Helvetica Neue", Arial, sans-serif;
     }
 
     main {
         background-color: #1a1a1a;
         color: #f0f0f0;
         min-height: 100vh;
-        overflow: visible; 
+        overflow: visible;
     }
-    
+
     .welcome-container {
         position: relative;
         display: flex;
@@ -109,17 +160,17 @@
         text-align: center;
         padding: 2rem;
         box-sizing: border-box;
-        overflow: hidden; 
+        overflow: hidden;
     }
 
     .welcome-container::before {
-        content: '';
+        content: "";
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-image: url('/frame_52.svg'); 
+        background-image: url("/frame_52.svg");
         background-repeat: no-repeat;
         background-position: right center;
         background-size: contain;
@@ -133,8 +184,14 @@
         z-index: 1;
     }
 
-    .welcome-container h1 { font-size: 3rem; color: #FBBF24; }
-    .welcome-container button { padding: 1rem 2rem; font-size: 1.2rem; }
+    .welcome-container h1 {
+        font-size: 3rem;
+        color: #fbbf24;
+    }
+    .welcome-container button {
+        padding: 1rem 2rem;
+        font-size: 1.2rem;
+    }
 
     .view-switcher {
         position: fixed;
@@ -155,7 +212,7 @@
     .app-title {
         font-size: 1.1rem;
         font-weight: bold;
-        color: #FBBF24;
+        color: #fbbf24;
         cursor: pointer;
     }
 
@@ -169,9 +226,11 @@
         font-size: 0.9rem;
         cursor: pointer;
         margin-left: 0.5rem;
-        transition: background-color 0.2s, color 0.2s;
+        transition:
+            background-color 0.2s,
+            color 0.2s;
     }
-    
+
     .nav-buttons button i {
         margin-right: 0.5rem;
     }
@@ -182,11 +241,10 @@
     }
 
     .nav-buttons button.active {
-        background-color: #FBBF24;
+        background-color: #fbbf24;
         color: #000;
     }
 
-  
     .github-button {
         position: fixed;
         top: 20px;
@@ -211,9 +269,9 @@
     }
 
     .view-content {
-        padding-top: 53px; 
+        padding-top: 53px;
     }
- 
+
     .wizard-wrapper {
         display: flex;
         justify-content: center;

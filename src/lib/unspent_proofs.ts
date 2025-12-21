@@ -4,8 +4,10 @@ import { get } from "svelte/store";
 import { connected, proofs, types } from "./store";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
-import { blake2b256 } from "@fleet-sdk/crypto";
+import { hexOrUtf8ToBytes } from "./utils";
 
+
+const LIMIT_PER_PAGE = 100;
 type RegisterValue = { renderedValue: string; serializedValue: string; };
 type ApiBox = {
     boxId: string; value: string | bigint; assets: { tokenId: string; amount: string | bigint }[]; ergoTree: string; creationHeight: number;
@@ -14,6 +16,90 @@ type ApiBox = {
     };
     index: number; transactionId: string;
 };
+
+/**
+ * Gets the timestamp of a block given its block ID.
+ */
+export async function getTimestampFromBlockId(blockId: string): Promise<number> {
+    const url = `${get(explorer_uri)}/api/v1/blocks/${blockId}`;
+
+    try {
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const json = await response.json();
+        const timestamp = json?.block?.header?.timestamp;
+        if (typeof timestamp !== "number") {
+            console.warn(`No timestamp found for block ${blockId}`);
+            return 0;
+        }
+
+        return timestamp < 1e11 ? timestamp * 1000 : timestamp;
+    } catch (error) {
+        console.error(`Error fetching timestamp for block ${blockId}:`, error);
+        return 0;
+    }
+}
+
+/**
+ * Generic search function for boxes with specific R4 and R5 values
+ */
+export async function searchBoxes(
+    r4TypeNftId: string,
+    r5Value: string
+): Promise<ApiBox[]> {
+    const boxes: ApiBox[] = [];
+
+    const searchBody = {
+        registers: {
+            "R4": serializedToRendered(SColl(SByte, hexToBytes(r4TypeNftId) ?? "").toHex()),
+            "R5": serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(r5Value) ?? "").toHex())
+        }
+    };
+
+    try {
+        let offset = 0;
+        let moreDataAvailable = true;
+
+        while (moreDataAvailable) {
+            const url = `${get(explorer_uri)}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+
+            const finalBody = {
+                "ergoTreeTemplateHash": ergo_tree_hash,
+                "registers": searchBody.registers,
+                "assets": []
+            };
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalBody)
+            });
+
+            if (!response.ok) {
+                console.error(`Error searching boxes: ${response.statusText}`);
+                moreDataAvailable = false;
+                continue;
+            }
+
+            const jsonData = await response.json();
+            if (!jsonData.items || jsonData.items.length === 0) {
+                moreDataAvailable = false;
+                continue;
+            }
+
+            boxes.push(...jsonData.items);
+            offset += LIMIT_PER_PAGE;
+        }
+
+        return boxes;
+    } catch (error) {
+        console.error('Error while searching boxes:', error);
+        return [];
+    }
+}
 
 export async function fetchTypeNfts() {
     try {

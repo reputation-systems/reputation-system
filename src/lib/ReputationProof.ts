@@ -5,6 +5,24 @@ import { stringToRendered } from "./utils";
 
 // --- CORE TYPES ---
 
+// Minimal definition of the Explorer API response for a box
+export interface ApiBox {
+    boxId: string;
+    value: string | number;
+    ergoTree: string;
+    assets: { tokenId: string; amount: string | number; }[];
+    creationHeight: number;
+    blockId: string;
+    additionalRegisters: {
+        [key: string]: {
+            serializedValue: string;
+            renderedValue?: string;
+        };
+    };
+    index: number;
+    transactionId: string;
+}
+
 export interface TypeNFT {
     tokenId: string;
     boxId: string;

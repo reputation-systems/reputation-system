@@ -156,3 +156,29 @@ export function stringToRendered(value: string): string {
 export function renderedToString(renderedValue: string): string | null {
     return hexToUtf8(renderedValue);
 }
+
+export function uint8ArrayToHex(array: Uint8Array): string {
+    return [...new Uint8Array(array)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+export function parseCollByteToHex(renderedValue: any): string | null {
+    if (renderedValue === null || renderedValue === undefined) return null;
+
+    if (Array.isArray(renderedValue) && renderedValue.every(item => typeof item === 'number' && item >= 0 && item <= 255)) {
+        try {
+            return uint8ArrayToHex(new Uint8Array(renderedValue));
+        } catch (e) {
+            console.error("parseCollByteToHex: Error convirtiendo array de bytes a hex:", renderedValue, e);
+            return null;
+        }
+    }
+    if (typeof renderedValue === 'string') {
+        const cleanedHex = renderedValue.startsWith('0x') ? renderedValue.substring(2) : renderedValue;
+        if (/^[0-9a-fA-F]*$/.test(cleanedHex) && cleanedHex.length % 2 === 0) {
+            return cleanedHex;
+        }
+    }
+    return null;
+}

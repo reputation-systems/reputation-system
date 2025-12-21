@@ -12,7 +12,7 @@ import {
 } from '@fleet-sdk/core';
 import { type RPBox } from '$lib/ReputationProof';
 import { ergo_tree_address, explorer_uri } from './envs';
-import { hexToBytes } from './utils';
+import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
 
 /**
@@ -122,7 +122,7 @@ export async function generate_reputation_proof(
 
     const new_registers = {
         R4: SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex(),
-        R5: SColl(SByte, hexToBytes(object_pointer) ?? "").toHex(),
+        R5: SColl(SByte, hexOrUtf8ToBytes(object_pointer) ?? "").toHex(),
         R6: SBool(is_locked).toHex(),
         R7: SColl(SByte, propositionBytes).toHex(),
         R8: SBool(polarization).toHex(),

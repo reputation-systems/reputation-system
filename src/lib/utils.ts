@@ -46,6 +46,20 @@ export function hexToBytes(hexString: string | undefined | null): Uint8Array | n
     }
 }
 
+export function hexOrUtf8ToBytes(value: string | null | undefined): Uint8Array {
+    if (!value) {
+        return new Uint8Array();
+    }
+
+    const hexBytes = hexToBytes(value);
+    if (hexBytes) {
+        return hexBytes;
+    }
+
+    // fallback: utf-8
+    return new TextEncoder().encode(value);
+}
+
 /**
  * Generates a PK proposition (R7 register format) from a wallet address.
  * @param wallet_pk The base58 encoded wallet address.

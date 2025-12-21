@@ -7,11 +7,13 @@ import {
     type Amount,
     ErgoAddress,
     SColl,
-    SByte
+    SByte,
+    SBool
 } from '@fleet-sdk/core';
 import { type RPBox } from '$lib/ReputationProof';
 import { ergo_tree_address, explorer_uri } from './envs';
-import { booleanToSerializer, SString, hexToBytes } from './utils';
+import { hexToBytes } from './utils';
+import { stringToBytes } from '@scure/base';
 
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
@@ -47,6 +49,8 @@ export async function generate_reputation_proof(
         is_locked,
         input_proof
     });
+
+    console.log("Ergo Tree Address:", ergo_tree_address);
 
     const creatorAddressString = await ergo.get_change_address();
     if (!creatorAddressString) {
@@ -114,14 +118,21 @@ export async function generate_reputation_proof(
         throw new Error(`Could not get proposition bytes from address ${creatorAddressString}.`);
     }
 
-    new_proof_output.setAdditionalRegisters({
+    const raw_content = typeof (content) === "object" ? JSON.stringify(content) : content ?? "";
+
+    const new_registers = {
         R4: SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex(),
         R5: SColl(SByte, hexToBytes(object_pointer) ?? "").toHex(),
-        R6: booleanToSerializer(is_locked),
+        R6: SBool(is_locked).toHex(),
         R7: SColl(SByte, propositionBytes).toHex(),
-        R8: booleanToSerializer(polarization),
-        R9: SString(typeof(content) === "object" ? JSON.stringify(content): content ?? "")
-    });
+        R8: SBool(polarization).toHex(),
+        R9: SColl(SByte, stringToBytes("utf8", raw_content)).toHex(),
+    };
+
+    console.log("New registers:", new_registers)
+
+    new_proof_output.setAdditionalRegisters(new_registers);
+
 
     outputs.push(new_proof_output);
 

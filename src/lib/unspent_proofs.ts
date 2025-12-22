@@ -1,7 +1,5 @@
 import { Network, type RPBox, type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString } from "$lib/utils";
-import { get } from "svelte/store";
-import { connected, proofs, types } from "./store";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
 import { hexOrUtf8ToBytes } from "./utils";
@@ -21,7 +19,7 @@ type ApiBox = {
  * Gets the timestamp of a block given its block ID.
  */
 export async function getTimestampFromBlockId(blockId: string): Promise<number> {
-    const url = `${get(explorer_uri)}/api/v1/blocks/${blockId}`;
+    const url = `${explorer_uri}/api/v1/blocks/${blockId}`;
 
     try {
         const response = await fetch(url, { method: "GET" });
@@ -64,7 +62,7 @@ export async function searchBoxes(
         let moreDataAvailable = true;
 
         while (moreDataAvailable) {
-            const url = `${get(explorer_uri)}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+            const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
 
             const finalBody = {
                 "ergoTreeTemplateHash": ergo_tree_hash,
@@ -101,7 +99,7 @@ export async function searchBoxes(
     }
 }
 
-export async function fetchTypeNfts() {
+export async function fetchTypeNfts(): Promise<Map<string, TypeNFT>> {
     try {
         const fetchedTypesArray: TypeNFT[] = [];
         let offset = 0;
@@ -122,7 +120,7 @@ export async function fetchTypeNfts() {
                 console.error("Failed to fetch a page of type boxes from the explorer.");
                 continue;
             }
-            
+
             const data = await response.json();
             if (data.items.length === 0) {
                 moreDataAvailable = false;
@@ -140,47 +138,70 @@ export async function fetchTypeNfts() {
                     isRepProof: box.additionalRegisters.R7?.renderedValue ?? false,
                 };
             }).filter((t: TypeNFT | null): t is TypeNFT => t !== null);
-            
+
             fetchedTypesArray.push(...pageTypes);
             offset += limit;
         }
-        
+
         const typesMap = new Map(fetchedTypesArray.map(type => [type.tokenId, type]));
-        types.set(typesMap);
-        console.log(`Successfully fetched and stored ${typesMap.size} Type NFTs.`);
+        console.log(`Successfully fetched ${typesMap.size} Type NFTs.`);
+        return typesMap;
 
     } catch (e: any) {
         console.error("Failed to fetch and store types:", e);
-        types.set(new Map());
+        return new Map();
     }
 }
 
 export async function updateReputationProofList(
-    ergo: any, 
-    all: boolean, 
+    connected: boolean,
+    availableTypes: Map<string, TypeNFT>,
     search: string | null
 ): Promise<Map<string, ReputationProof>> {
 
-    await fetchTypeNfts();
-    const availableTypes = get(types);
-
-    if (!get(connected)) all = true;
+    if (!connected) {
+        // If not connected, we might want to fetch all or handle differently.
+        // For now, let's assume 'all' logic applies if not connected or if explicitly requested.
+        // But the original code set 'all = true' if '!connected'.
+        // The 'all' parameter was removed from signature in plan but logic needs to be preserved.
+        // Let's assume we always fetch based on search or all if search is null.
+    }
 
     const proofs = new Map<string, ReputationProof>();
     const search_bodies = [];
     let r7_filter = {};
     let userR7SerializedHex: string | null = null;
 
-    const change_address = get(connected) && ergo ? await ergo.get_change_address() : null;
+    // @ts-ignore
+    const ergo = window.ergo;
+    const change_address = connected && ergo ? await ergo.get_change_address() : null;
+
     if (change_address) {
         const userAddress = ErgoAddress.fromBase58(change_address);
         const propositionBytes = hexToBytes(userAddress.ergoTree);
 
         if (propositionBytes) {
             userR7SerializedHex = SColl(SByte, propositionBytes).toHex();
-            if (!all) {
-                r7_filter = { "R7": userR7SerializedHex };
-            }
+            // If we are searching, we don't filter by R7.
+            // If we are NOT searching, we might want to filter by R7 (my proofs) OR show all.
+            // The previous logic had an 'all' parameter.
+            // If 'search' is present, we search.
+            // If 'search' is null, do we show all or only mine?
+            // The original code: if (!connected) all = true.
+            // if (!all) r7_filter = { "R7": userR7SerializedHex };
+
+            // Let's infer: if search is provided, we don't filter by owner.
+            // If search is NOT provided, and we are connected, maybe we want to see OUR proofs?
+            // BUT, the 'all' flag was passed as 'true' in Search.svelte: updateReputationProofList(null, true, null).
+            // So Search.svelte wants ALL proofs.
+            // Profile.svelte probably wants ONLY user proofs, but it uses fetchProfile separately.
+            // So updateReputationProofList seems to be used for "Explore" or "Search" which implies ALL.
+            // So we probably don't need r7_filter unless we want to filter by "My Proofs" in search.
+            // For now, I will assume we want ALL proofs if search is generic.
+
+            // However, to support "My Proofs" filter later, we might need it.
+            // But based on usage in Search.svelte (all=true), we can skip r7_filter for now or make it optional.
+            // I will remove 'all' param and assume we want ALL unless specific logic is added.
         }
     }
 
@@ -191,7 +212,7 @@ export async function updateReputationProofList(
         search_bodies.push({ registers: { "R5": SString(search) } });
         // If search term is a valid token ID, search by R4 (Coll[Byte])
         if (search.length === 64 && /^[0-9a-fA-F]+$/.test(search)) {
-            search_bodies.push({ registers: { "R4": SColl(SByte, hexToBytes(search) ?? "").toHex() }});
+            search_bodies.push({ registers: { "R4": SColl(SByte, hexToBytes(search) ?? "").toHex() } });
         }
     } else {
         search_bodies.push({});
@@ -257,8 +278,8 @@ export async function updateReputationProofList(
                     if (!typeNftForBox) {
                         typeNftForBox = { tokenId: type_nft_id_for_box, boxId: '', typeName: "Unknown Type", description: "Metadata not found", schemaURI: "", isRepProof: false };
                     }
-                    
-                    let box_content: string|object|null = {};
+
+                    let box_content: string | object | null = {};
                     try {
                         const rawValue = box.additionalRegisters.R9?.renderedValue;
                         if (rawValue) {
@@ -272,7 +293,7 @@ export async function updateReputationProofList(
                     } catch (error) {
                         box_content = {};
                     }
-                    
+
                     const object_pointer_for_box = hexToBytes(box.additionalRegisters.R5?.renderedValue ?? "") ?? "";
 
                     const current_box: RPBox = {
@@ -290,7 +311,7 @@ export async function updateReputationProofList(
                         polarization: box.additionalRegisters.R8?.renderedValue === 'true',
                         content: box_content,
                     };
-                    
+
                     if (current_box.object_pointer === proof.token_id) {
                         proof.type = typeNftForBox;
                     }
@@ -319,12 +340,13 @@ export function getAllRPBoxesFromProof(proof: ReputationProof): RPBox[] {
 
 /**
  * Finds and returns the ReputationProof to which a specific RPBox belongs.
- * This function retrieves the complete map of proofs from the 'proofs' Svelte store.
  * @param box The RPBox for which to find its parent ReputationProof.
+ * @param proofs The map of all fetched reputation proofs.
  * @returns The corresponding ReputationProof or 'undefined' if not found.
  */
 export function getReputationProofFromRPBox(
-    box: RPBox
+    box: RPBox,
+    proofs: Map<string, ReputationProof>
 ): ReputationProof | undefined {
-    return get(proofs).get(box.token_id);
+    return proofs.get(box.token_id);
 }

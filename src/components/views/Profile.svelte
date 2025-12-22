@@ -1,10 +1,13 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { connected, reputation_proof } from "$lib/store";
-    import { fetchProfile } from "$lib/profileFetch";
+    import { createEventDispatcher } from "svelte";
     import { generate_reputation_proof } from "$lib/generate_reputation_proof";
     import { PROFILE_TYPE_NFT_ID } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
+
+    export let reputationProof: ReputationProof | null;
+    export let connected: boolean;
+
+    const dispatch = createEventDispatcher();
 
     let isLoading = false;
     let errorMessage = "";
@@ -19,31 +22,72 @@
     let newBoxContent = "";
     let newBoxPolarization = true;
 
-    onMount(async () => {
-        await refreshProfile();
-    });
-
-    async function refreshProfile() {
-        isLoading = true;
-        try {
-            // @ts-ignore
-            await fetchProfile(window.ergo);
-        } catch (e: any) {
-            errorMessage = `Error fetching profile: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
+    function refreshProfile() {
+        dispatch("refresh");
     }
 
-    $: mainBox = $reputation_proof?.current_boxes.find(
-        (b) => b.object_pointer === $reputation_proof?.token_id,
+    // --- Derived State ---
+    $: mainBox = reputationProof?.current_boxes.find(
+        (b) => b.object_pointer === reputationProof?.token_id,
     );
-    $: totalErg =
-        $reputation_proof?.current_boxes.reduce(
+
+    // --- Sacrificed Assets Logic ---
+    let burnedERG = "0";
+    let burnedTokens: { tokenId: string; amount: number; name?: string }[] = [];
+
+    $: if (reputationProof) {
+        // Calculate total burned ERG (sum of all box values)
+        const totalNanoErg = reputationProof.current_boxes.reduce(
             (acc, b) => acc + BigInt(b.box.value),
             BigInt(0),
-        ) ?? BigInt(0);
+        );
+        burnedERG = (Number(totalNanoErg) / 1000000000).toFixed(4);
 
+        // Aggregate burned tokens (excluding the reputation token itself)
+        const tokenMap = new Map<string, number>();
+        reputationProof.current_boxes.forEach((box) => {
+            box.box.assets.forEach((asset) => {
+                if (asset.tokenId !== reputationProof?.token_id) {
+                    const current = tokenMap.get(asset.tokenId) || 0;
+                    tokenMap.set(asset.tokenId, current + Number(asset.amount));
+                }
+            });
+        });
+
+        burnedTokens = Array.from(tokenMap.entries()).map(
+            ([tokenId, amount]) => ({
+                tokenId,
+                amount,
+                name: tokenId.substring(0, 8) + "...", // Placeholder for name
+            }),
+        );
+    }
+
+    // --- Filtering Logic ---
+    const ALL_TYPES = "All";
+    let selectedType: string = ALL_TYPES;
+    let uniqueTypes: string[] = [];
+
+    $: if (reputationProof) {
+        const types = new Set<string>();
+        reputationProof.current_boxes.forEach((box) => {
+            if (box.type && box.type.typeName) {
+                types.add(box.type.typeName);
+            } else {
+                types.add("Unknown");
+            }
+        });
+        uniqueTypes = Array.from(types).sort();
+    }
+
+    $: filteredBoxes =
+        reputationProof?.current_boxes.filter((box) => {
+            if (selectedType === ALL_TYPES) return true;
+            const typeName = box.type?.typeName || "Unknown";
+            return typeName === selectedType;
+        }) ?? [];
+
+    // --- Actions ---
     async function handleCreateProfile() {
         isLoading = true;
         errorMessage = "";
@@ -67,44 +111,14 @@
         }
     }
 
-    async function handleAddBox() {
-        if (!$reputation_proof || !mainBox) return;
-
-        isLoading = true;
-        errorMessage = "";
-        try {
-            // To add a box, we spend from the main box.
-            // The main box will be split: one part stays as main box, another part becomes the new box.
-            const txId = await generate_reputation_proof(
-                newBoxAmount,
-                $reputation_proof.total_amount,
-
-                PROFILE_TYPE_NFT_ID,
-                newBoxPointer,
-                newBoxPolarization,
-                newBoxContent,
-                false,
-                mainBox,
-            );
-            if (txId) {
-                successMessage = `Add box transaction submitted: ${txId}`;
-                showAddBox = false;
-            }
-        } catch (e: any) {
-            errorMessage = `Error adding box: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
-    }
-
     async function handleUpdateBox(box: RPBox) {
+        if (!reputationProof) return;
         isLoading = true;
         errorMessage = "";
         try {
             const txId = await generate_reputation_proof(
                 box.token_amount,
-                $reputation_proof!.total_amount,
-
+                reputationProof.total_amount,
                 PROFILE_TYPE_NFT_ID,
                 box.object_pointer,
                 box.polarization,
@@ -124,19 +138,14 @@
     }
 
     async function handleDeleteBox(box: RPBox) {
-        if (!$reputation_proof || !mainBox) return;
+        if (!reputationProof || !mainBox) return;
 
         isLoading = true;
         errorMessage = "";
         try {
-            // To delete a box, we merge it back into the main box.
-            // input_proof = mainBox
-            // extra_inputs = [box]
-            // token_amount = mainBox.amount + box.amount
             const txId = await generate_reputation_proof(
                 mainBox.token_amount + box.token_amount,
-                $reputation_proof.total_amount,
-
+                reputationProof.total_amount,
                 PROFILE_TYPE_NFT_ID,
                 mainBox.object_pointer,
                 mainBox.polarization,
@@ -154,47 +163,107 @@
             isLoading = false;
         }
     }
-
-    function formatErg(nanoErg: bigint): string {
-        return (Number(nanoErg) / 1000000000).toFixed(4);
-    }
 </script>
 
 <div class="profile-container">
-    <h1 class="title">User Profile</h1>
+    <div class="hero-section">
+        <h2 class="project-title">Reputation Profile</h2>
+        {#if reputationProof}
+            <p class="subtitle">
+                Manage your reputation and view your sacrifices.
+            </p>
+        {:else}
+            <p class="subtitle">
+                Connect and create your profile to start building reputation.
+            </p>
+        {/if}
+    </div>
 
-    {#if !$connected}
-        <div class="info-card">
+    {#if !connected}
+        <div class="info-card center-text">
             <p>Please connect your wallet to view or create your profile.</p>
         </div>
-    {:else if isLoading && !$reputation_proof}
+    {:else if isLoading && !reputationProof}
         <div class="loading-spinner">Loading profile...</div>
-    {:else if !$reputation_proof}
+    {:else if !reputationProof}
         <div class="no-profile">
-            <p>You don't have a reputation profile yet.</p>
-            <button
-                class="primary-button"
-                on:click={handleCreateProfile}
-                disabled={isLoading}
-            >
-                Create Profile
-            </button>
+            <div class="info-card center-text">
+                <h3>No Profile Found</h3>
+                <p>You don't have a reputation profile yet.</p>
+                <button
+                    class="primary-button"
+                    on:click={handleCreateProfile}
+                    disabled={isLoading}
+                >
+                    Create Profile
+                </button>
+            </div>
         </div>
     {:else}
-        <div class="profile-header">
-            <div class="profile-info">
-                <p>
-                    <strong>Token ID:</strong>
-                    <span class="mono">{$reputation_proof.token_id}</span>
-                </p>
+        <!-- Sacrificed Assets Section -->
+        <section class="sacrificed-assets">
+            <div class="section-title-row">
+                <div class="icon-circle orange">
+                    <i class="fas fa-fire"></i>
+                </div>
+                <h3>Sacrificed Assets</h3>
+            </div>
 
-                <p>
-                    <strong>Total Responsibility (ERG):</strong>
-                    <span class="highlight">{formatErg(totalErg)} ERG</span>
-                </p>
+            <div class="assets-grid">
+                <!-- ERG Card -->
+                <div class="asset-card orange-gradient">
+                    <div class="liquid-fire-container">
+                        <div class="wave-box"></div>
+                        <div class="wave-box"></div>
+                        <div class="wave-box"></div>
+                    </div>
+                    <div class="card-content">
+                        <div class="badge-row">
+                            <span class="badge orange">Burned</span>
+                        </div>
+                        <div class="asset-info">
+                            <p class="asset-label">Native Currency</p>
+                            <p class="asset-amount">
+                                {burnedERG} <span class="unit">ERG</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Token Cards -->
+                {#each burnedTokens as token}
+                    <div class="asset-card dark-card">
+                        <div class="liquid-fire-container">
+                            <div class="wave-box"></div>
+                            <div class="wave-box"></div>
+                            <div class="wave-box"></div>
+                        </div>
+                        <div class="card-content">
+                            <div class="badge-row">
+                                <span class="badge orange">Burned</span>
+                            </div>
+                            <div class="asset-info">
+                                <p class="asset-label" title={token.tokenId}>
+                                    {token.name}
+                                </p>
+                                <p class="asset-amount">{token.amount}</p>
+                            </div>
+                        </div>
+                    </div>
+                {/each}
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <!-- Technical Details -->
+        <div class="technical-details">
+            <div class="token-id-display">
+                <span class="label">Profile Token ID</span>
+                <div class="value mono">{reputationProof.token_id}</div>
             </div>
             <button
-                class="secondary-button"
+                class="secondary-button refresh-btn"
                 on:click={refreshProfile}
                 disabled={isLoading}
             >
@@ -209,104 +278,77 @@
             <div class="feedback error">{errorMessage}</div>
         {/if}
 
-        <div class="boxes-section">
-            <div class="section-header">
-                <h2>Profile Boxes</h2>
-                <button
-                    class="add-button"
-                    on:click={() => (showAddBox = !showAddBox)}
-                >
-                    <i class="fas fa-plus"></i> Add Box
-                </button>
+        <!-- Boxes Section -->
+        <section class="boxes-section">
+            <div class="section-title-row">
+                <h3>Reputation Boxes</h3>
             </div>
 
-            {#if showAddBox}
-                <div class="form-card">
-                    <h3>Add New Box</h3>
-                    <div class="form-group">
-                        <label>Amount</label>
-                        <input
-                            type="number"
-                            bind:value={newBoxAmount}
-                            min="1"
-                            max={mainBox?.token_amount ?? 1}
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Object Pointer (Token ID or URL)</label>
-                        <input
-                            type="text"
-                            bind:value={newBoxPointer}
-                            placeholder="0000... or https://..."
-                        />
-                    </div>
-                    <div class="form-group">
-                        <label>Content (JSON or String)</label>
-                        <textarea bind:value={newBoxContent}></textarea>
-                    </div>
-                    <div class="form-group checkbox">
-                        <label>
-                            <input
-                                type="checkbox"
-                                bind:checked={newBoxPolarization}
-                            />
-                            Positive Polarization
-                        </label>
-                    </div>
-                    <div class="form-actions">
-                        <button
-                            class="cancel-button"
-                            on:click={() => (showAddBox = false)}>Cancel</button
-                        >
-                        <button
-                            class="primary-button"
-                            on:click={handleAddBox}
-                            disabled={isLoading}>Submit</button
-                        >
-                    </div>
-                </div>
-            {/if}
+            <!-- Filter Menu -->
+            <div class="filter-menu">
+                <button
+                    class="filter-badge"
+                    class:active={selectedType === ALL_TYPES}
+                    on:click={() => (selectedType = ALL_TYPES)}
+                >
+                    All
+                </button>
+                {#each uniqueTypes as type}
+                    <button
+                        class="filter-badge"
+                        class:active={selectedType === type}
+                        on:click={() => (selectedType = type)}
+                    >
+                        {type}
+                    </button>
+                {/each}
+            </div>
 
-            <div class="boxes-list">
-                {#each $reputation_proof.current_boxes as box}
+            <div class="boxes-grid">
+                {#each filteredBoxes as box (box.box_id)}
                     <div
                         class="box-card"
-                        class:main={box.object_pointer ===
-                            $reputation_proof.token_id}
+                        class:positive={box.polarization}
+                        class:negative={!box.polarization}
                     >
-                        <div class="box-details">
-                            <div class="box-row">
-                                <span class="label">Pointer:</span>
-                                <span class="value mono"
-                                    >{box.object_pointer ===
-                                    $reputation_proof.token_id
-                                        ? "SELF (Main Box)"
-                                        : box.object_pointer}</span
-                                >
-                            </div>
-                            <div class="box-row">
-                                <span class="label">Amount:</span>
-                                <span class="value"
-                                    >{box.token_amount} tokens</span
-                                >
-                            </div>
-                            <div class="box-row">
-                                <span class="label">ERG:</span>
-                                <span class="value"
-                                    >{formatErg(BigInt(box.box.value))} ERG</span
-                                >
-                            </div>
-                            {#if box.content}
-                                <div class="box-row">
-                                    <span class="label">Content:</span>
-                                    <span class="value"
-                                        >{typeof box.content === "object"
-                                            ? JSON.stringify(box.content)
-                                            : box.content}</span
-                                    >
-                                </div>
-                            {/if}
+                        <div class="box-header">
+                            <span class="box-type"
+                                >{box.type?.typeName || "Unknown"}</span
+                            >
+                            <span class="polarization-icon">
+                                {#if box.polarization}
+                                    <i class="fas fa-check-circle"></i>
+                                {:else}
+                                    <i class="fas fa-times-circle"></i>
+                                {/if}
+                            </span>
                         </div>
+
+                        <div class="box-body">
+                            <div class="info-row">
+                                <span class="label">Pointer:</span>
+                                <span class="value mono small">
+                                    {box.object_pointer ===
+                                    reputationProof.token_id
+                                        ? "SELF"
+                                        : box.object_pointer.substring(0, 12) +
+                                          "..."}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Content:</span>
+                                <span class="value content-text">
+                                    {typeof box.content === "object"
+                                        ? JSON.stringify(box.content)
+                                        : box.content || "No content"}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="label">Amount:</span>
+                                <span class="value">{box.token_amount}</span>
+                            </div>
+                        </div>
+
                         <div class="box-actions">
                             <button
                                 class="icon-button"
@@ -315,10 +357,10 @@
                             >
                                 <i class="fas fa-edit"></i>
                             </button>
-                            {#if box.object_pointer !== $reputation_proof.token_id}
+                            {#if box.object_pointer !== reputationProof.token_id}
                                 <button
                                     class="icon-button delete"
-                                    title="Delete (Merge to Main)"
+                                    title="Delete"
                                     on:click={() => handleDeleteBox(box)}
                                 >
                                     <i class="fas fa-trash"></i>
@@ -326,9 +368,8 @@
                             {/if}
                         </div>
                     </div>
-
                     {#if showUpdateBox === box}
-                        <div class="form-card edit">
+                        <div class="form-card edit-overlay">
                             <h3>Update Box</h3>
                             <div class="form-group">
                                 <label>Content</label>
@@ -350,200 +391,518 @@
                     {/if}
                 {/each}
             </div>
-        </div>
+            {#if filteredBoxes.length === 0}
+                <p class="no-results">No boxes found for this type.</p>
+            {/if}
+        </section>
     {/if}
 </div>
 
 <style>
+    /* --- Base Layout --- */
     .profile-container {
-        max-width: 1000px;
+        max-width: 1200px;
         margin: 0 auto;
-        padding: 2rem;
+        padding: 2rem 1rem 4rem;
         color: #f0f0f0;
+        font-family: "Inter", sans-serif;
     }
-    .title {
-        color: #fbbf24;
+
+    /* --- Hero Section --- */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .project-title {
         font-size: 2.5rem;
-        margin-bottom: 2rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, #f97316, #dc2626);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: inline-block;
     }
-    .mono {
-        font-family: "Courier New", Courier, monospace;
-        word-break: break-all;
+
+    .subtitle {
+        font-size: 1.125rem;
+        color: #a1a1aa;
+        max-width: 42rem;
+        margin: 0 auto;
     }
-    .highlight {
-        color: #fbbf24;
-        font-weight: bold;
-    }
-    .profile-header {
+
+    /* --- Sacrificed Assets --- */
+    .section-title-row {
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        background: #2a2a2a;
-        padding: 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #444;
-        margin-bottom: 2rem;
-    }
-    .profile-info p {
-        margin: 0.5rem 0;
-    }
-    .boxes-section {
-        margin-top: 3rem;
-    }
-    .section-header {
-        display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 0.75rem;
         margin-bottom: 1.5rem;
     }
-    .boxes-list {
+
+    .icon-circle {
+        padding: 0.5rem;
+        border-radius: 9999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-circle.orange {
+        background-color: rgba(
+            255,
+            237,
+            213,
+            0.1
+        ); /* orange-100 equivalent with opacity */
+        color: #ea580c; /* orange-600 */
+    }
+
+    .sacrificed-assets h3,
+    .boxes-section h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin: 0;
+    }
+
+    .assets-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+        .assets-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    @media (min-width: 1024px) {
+        .assets-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .asset-card {
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .asset-card.orange-gradient {
+        background: linear-gradient(
+            to bottom right,
+            rgba(255, 247, 237, 0.05),
+            rgba(254, 242, 242, 0.05)
+        );
+        border: 1px solid rgba(253, 186, 116, 0.2);
+    }
+
+    .asset-card.dark-card {
+        background-color: #1e1e1e; /* bg-card */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: border-color 0.2s;
+    }
+    .asset-card.dark-card:hover {
+        border-color: rgba(253, 186, 116, 0.5);
+    }
+
+    .card-content {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .badge-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1.5rem;
+    }
+
+    .badge {
+        font-size: 0.625rem;
+        font-weight: 700;
+        padding: 0.125rem 0.5rem;
+        border-radius: 9999px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .badge.orange {
+        background-color: rgba(255, 237, 213, 0.1);
+        color: #fdba74;
+        border: 1px solid rgba(154, 52, 18, 0.3);
+    }
+
+    .asset-info {
+        margin-top: auto;
+    }
+
+    .asset-label {
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        margin-bottom: 0.25rem;
+    }
+
+    .asset-amount {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        line-height: 1;
+    }
+
+    .unit {
+        font-size: 1.125rem;
+        font-weight: 400;
+        color: #64748b;
+    }
+
+    /* --- Liquid Fire Animation --- */
+    .liquid-fire-container {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 6rem;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .wave-box {
+        position: absolute;
+        width: 300%;
+        height: 300%;
+        left: -100%;
+        bottom: -285%;
+        background-color: rgba(239, 68, 68, 0.05);
+        border-radius: 45%;
+        animation: rotate 12s linear infinite;
+    }
+
+    .wave-box:nth-child(2) {
+        bottom: -290%;
+        background-color: rgba(239, 68, 68, 0.08);
+        border-radius: 40% 45% 40% 45% / 40% 40% 45% 45%;
+        animation: rotate 18s linear infinite reverse;
+    }
+
+    .wave-box:nth-child(3) {
+        bottom: -295%;
+        background-color: rgba(239, 68, 68, 0.05);
+        border-radius: 42% 38% 45% 40% / 40% 45% 40% 38%;
+        animation: rotate 25s linear infinite;
+    }
+
+    @keyframes rotate {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* --- Divider --- */
+    .divider {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 2rem 0;
+    }
+
+    /* --- Technical Details --- */
+    .technical-details {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 2rem;
+        gap: 1rem;
+    }
+
+    .token-id-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .token-id-display .label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #a1a1aa;
+        margin-bottom: 0.25rem;
+    }
+
+    .token-id-display .value {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: #e2e8f0;
+    }
+
+    .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+            monospace;
+        word-break: break-all;
+    }
+
+    /* --- Filter Menu --- */
+    .filter-menu {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .filter-badge {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #a1a1aa;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-badge:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
+    }
+
+    .filter-badge.active {
+        background: #fbbf24;
+        color: #1a1a1a;
+        border-color: #fbbf24;
+        font-weight: 600;
+    }
+
+    /* --- Boxes Grid --- */
+    .boxes-grid {
         display: grid;
         grid-template-columns: 1fr;
         gap: 1rem;
     }
+
     .box-card {
-        background: #222;
-        border: 1px solid #333;
-        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left-width: 4px;
+        border-radius: 0.5rem;
         padding: 1rem;
+        transition: all 0.2s;
+    }
+
+    .box-card:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .box-card.positive {
+        border-left-color: #22c55e; /* green-500 */
+    }
+
+    .box-card.negative {
+        border-left-color: #ef4444; /* red-500 */
+    }
+
+    .box-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: border-color 0.2s;
+        margin-bottom: 0.75rem;
     }
-    .box-card.main {
-        border-color: #fbbf24;
-        background: #2a261a;
+
+    .box-type {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.125rem 0.5rem;
+        border-radius: 0.25rem;
     }
-    .box-card:hover {
-        border-color: #555;
+
+    .polarization-icon {
+        font-size: 1.25rem;
     }
-    .box-details {
-        flex: 1;
+
+    .positive .polarization-icon {
+        color: #22c55e;
     }
-    .box-row {
-        margin: 0.25rem 0;
+    .negative .polarization-icon {
+        color: #ef4444;
+    }
+
+    .box-body {
+        font-size: 0.875rem;
+        color: #cbd5e1;
+    }
+
+    .info-row {
+        margin-bottom: 0.5rem;
         display: flex;
         gap: 0.5rem;
     }
-    .label {
-        color: #888;
-        font-size: 0.9rem;
-        min-width: 80px;
+
+    .info-row .label {
+        color: #94a3b8;
+        min-width: 60px;
     }
-    .value {
-        color: #ddd;
+
+    .info-row .value {
+        color: #f1f5f9;
+        word-break: break-all;
     }
+
+    .small {
+        font-size: 0.75rem;
+    }
+
+    .content-text {
+        font-style: italic;
+        color: #a1a1aa;
+    }
+
     .box-actions {
         display: flex;
+        justify-content: flex-end;
         gap: 0.5rem;
+        margin-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 0.75rem;
     }
+
     .icon-button {
-        background: #333;
+        background: transparent;
         border: none;
-        color: #ccc;
-        width: 36px;
-        height: 36px;
-        border-radius: 6px;
+        color: #94a3b8;
         cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
+        padding: 0.25rem;
+        transition: color 0.2s;
     }
+
     .icon-button:hover {
-        background: #444;
         color: #fff;
     }
     .icon-button.delete:hover {
-        background: #522;
-        color: #f88;
+        color: #ef4444;
     }
+
+    /* --- Forms & Buttons --- */
     .primary-button {
         background: #fbbf24;
         color: #1a1a1a;
         border: none;
         padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        font-weight: bold;
+        border-radius: 0.375rem;
+        font-weight: 600;
         cursor: pointer;
+        transition: background 0.2s;
     }
+    .primary-button:hover {
+        background: #f59e0b;
+    }
+    .primary-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     .secondary-button {
-        background: #444;
+        background: rgba(255, 255, 255, 0.1);
         color: #fff;
         border: none;
         padding: 0.5rem 1rem;
-        border-radius: 6px;
+        border-radius: 0.375rem;
         cursor: pointer;
+        transition: background 0.2s;
     }
-    .add-button {
-        background: #28a745;
-        color: white;
-        border: none;
+    .secondary-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .cancel-button {
+        background: transparent;
+        border: 1px solid #4b5563;
+        color: #9ca3af;
         padding: 0.5rem 1rem;
-        border-radius: 6px;
+        border-radius: 0.375rem;
         cursor: pointer;
     }
-    .form-card {
-        background: #2a2a2a;
-        border: 1px solid #444;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+    .cancel-button:hover {
+        border-color: #d1d5db;
+        color: #d1d5db;
     }
+
+    .form-card {
+        background: #262626;
+        border: 1px solid #404040;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+    }
+
     .form-group {
         margin-bottom: 1rem;
     }
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #aaa;
+        color: #d4d4d8;
+        font-size: 0.875rem;
     }
-    .form-group input,
     .form-group textarea {
         width: 100%;
-        padding: 0.75rem;
-        background: #1a1a1a;
-        border: 1px solid #444;
-        border-radius: 6px;
+        background: #171717;
+        border: 1px solid #404040;
         color: #fff;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        min-height: 100px;
     }
-    .form-group.checkbox label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        cursor: pointer;
-    }
-    .form-group.checkbox input {
-        width: auto;
-    }
+
     .form-actions {
         display: flex;
         justify-content: flex-end;
-        gap: 1rem;
-        margin-top: 1.5rem;
+        gap: 0.75rem;
     }
-    .cancel-button {
-        background: transparent;
-        border: 1px solid #444;
-        color: #aaa;
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        cursor: pointer;
-    }
+
     .feedback {
         padding: 1rem;
-        border-radius: 6px;
+        border-radius: 0.375rem;
         margin-bottom: 1.5rem;
+        text-align: center;
     }
-    .success {
-        background: rgba(40, 167, 69, 0.2);
-        border: 1px solid #28a745;
-        color: #28a745;
+    .feedback.success {
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.2);
     }
-    .error {
-        background: rgba(220, 53, 69, 0.2);
-        border: 1px solid #dc3545;
-        color: #dc3545;
+    .feedback.error {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .center-text {
+        text-align: center;
+    }
+    .info-card {
+        background: #262626;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        border: 1px solid #404040;
+    }
+    .no-results {
+        text-align: center;
+        color: #71717a;
+        margin-top: 2rem;
+        font-style: italic;
     }
 </style>

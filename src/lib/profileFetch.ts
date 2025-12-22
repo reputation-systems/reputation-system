@@ -1,4 +1,3 @@
-import { get } from 'svelte/store';
 import { parseCollByteToHex, hexToBytes, hexToUtf8, serializedToRendered } from './utils';
 import {
     PROFILE_TYPE_NFT_ID,
@@ -6,8 +5,7 @@ import {
     ergo_tree_hash
 } from './envs';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
-import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './ReputationProof';
-import { proofs, reputation_proof } from './store';
+import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox, Network } from './ReputationProof';
 
 
 const LIMIT_PER_PAGE = 100;
@@ -77,7 +75,9 @@ function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
 }
 
 // Helper to get serialized R7
-async function getSerializedR7(ergo: any): Promise<{ changeAddress: string; r7SerializedHex: string } | null> {
+async function getSerializedR7(): Promise<{ changeAddress: string; r7SerializedHex: string } | null> {
+    // @ts-ignore
+    const ergo = window.ergo;
     if (!ergo) {
         console.error("getSerializedR7: 'ergo' object is not available.");
         return null;
@@ -114,7 +114,7 @@ async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]>
     let offset = 0;
     let moreDataAvailable = true;
 
-    const searchBody: SearchBody = {
+    const searchBody = {
         registers: {
             R7: serializedToRendered(r7SerializedHex),
             R4: PROFILE_TYPE_NFT_ID
@@ -217,13 +217,11 @@ async function fetchAllBoxesByTokenId(tokenId: string): Promise<ApiBox[]> {
 /**
  * Fetches the full ReputationProof object for the connected user,
  * by searching all boxes where R7 matches their wallet address.
- * @param ergo The connected wallet object (e.g., dApp Connector)
  */
-export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
+export async function fetchProfile(): Promise<ReputationProof | null> {
     try {
-        const r7Data = await getSerializedR7(ergo);
+        const r7Data = await getSerializedR7();
         if (!r7Data) {
-            proofs.set(null);
             return null;
         }
         const { changeAddress, r7SerializedHex } = r7Data;
@@ -232,7 +230,6 @@ export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
         const allUserBoxes = await fetchProfileUserBoxes(r7SerializedHex);
         if (allUserBoxes.length === 0) {
             console.log('No profile boxes found for this user.');
-            proofs.set(null);
             return null;
         }
 
@@ -241,7 +238,6 @@ export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
 
         const emissionAmount = await fetchTokenEmissionAmount(profileTokenId);
         if (emissionAmount === null) {
-            proofs.set(null);
             console.warn("fetchTokenEmissionAmount returned null.")
             return null;
         }
@@ -266,7 +262,7 @@ export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
             can_be_spend: true,
             current_boxes: [],
             number_of_boxes: 0,
-            network: "ergo"
+            network: Network.ErgoMainnet
         };
 
         for (const box of allProfileBoxes) {
@@ -278,13 +274,11 @@ export async function fetchProfile(ergo: any): Promise<ReputationProof | null> {
         }
 
         console.log(`Profile found: ${proof.token_id}, ${proof.number_of_boxes} boxes.`, proof);
-        reputation_proof.set(proof);
 
         return proof;
 
     } catch (error) {
         console.error('Error fetching profile:', error);
-        proofs.set(null);
         return null;
     }
 }

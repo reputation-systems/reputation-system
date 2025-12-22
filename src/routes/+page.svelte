@@ -1,7 +1,22 @@
 <script lang="ts">
     import "../app.css";
-    import { connected } from "$lib/store";
+    import { onMount } from "svelte";
+    import {
+        connected,
+        reputation_proof,
+        proofs,
+        types,
+        address,
+        network,
+        fetch_all,
+        compute_deep_level,
+    } from "$lib/store";
     import { connectNautilus } from "$lib/connect";
+    import { fetchProfile } from "$lib/profileFetch";
+    import {
+        updateReputationProofList,
+        fetchTypeNfts,
+    } from "$lib/unspent_proofs";
 
     import MasterGraphView from "$components/graph/MasterGraphView.svelte";
     import Submit from "$components/views/Submit.svelte";
@@ -18,6 +33,41 @@
         | "types"
         | "settings"
         | "profile" = "intro";
+
+    onMount(async () => {
+        await loadTypes();
+    });
+
+    $: if ($connected) {
+        loadProfile();
+        loadProofs();
+    }
+
+    async function loadTypes() {
+        const typesMap = await fetchTypeNfts();
+        types.set(typesMap);
+    }
+
+    async function loadProfile() {
+        const profile = await fetchProfile();
+        reputation_proof.set(profile);
+    }
+
+    async function loadProofs() {
+        // updateReputationProofList returns Map<string, ReputationProof>
+        // We pass $connected and $types (value of store)
+        const proofsMap = await updateReputationProofList(
+            $connected,
+            $types,
+            null,
+        );
+        proofs.set(proofsMap);
+    }
+
+    function handleProfileRefresh() {
+        loadProfile();
+        loadProofs(); // Also refresh proofs as they might have changed
+    }
 </script>
 
 <svelte:head>
@@ -112,19 +162,36 @@
             {#if currentPage === "graph"}
                 <MasterGraphView />
             {:else if currentPage === "search"}
-                <Search on:searchGraph={() => (currentPage = "graph")} />
+                <Search
+                    types={$types}
+                    connected={$connected}
+                    on:searchGraph={() => (currentPage = "graph")}
+                />
             {:else if currentPage === "create"}
                 <div class="wizard-wrapper">
-                    <Submit />
+                    <Submit
+                        proofs={$proofs}
+                        connected={$connected}
+                        types={$types}
+                    />
                 </div>
             {:else if currentPage === "types"}
                 <div class="wizard-wrapper">
-                    <ManageTypes />
+                    <ManageTypes types={$types} on:refresh={loadTypes} />
                 </div>
             {:else if currentPage === "settings"}
-                <Settings />
+                <Settings
+                    address={$address}
+                    network={$network}
+                    bind:fetchAll={$fetch_all}
+                    bind:computeDeepLevel={$compute_deep_level}
+                />
             {:else if currentPage === "profile"}
-                <Profile />
+                <Profile
+                    reputationProof={$reputation_proof}
+                    connected={$connected}
+                    on:refresh={handleProfileRefresh}
+                />
             {/if}
         </div>
     {/if}

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { generate_reputation_proof } from "$lib/generate_reputation_proof";
-    import { PROFILE_TYPE_NFT_ID } from "$lib/envs";
+    import { PROFILE_TOTAL_SUPPLY, PROFILE_TYPE_NFT_ID } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
 
     export let reputationProof: ReputationProof | null;
@@ -106,11 +106,11 @@
         try {
             const txId = await generate_reputation_proof(
                 1,
-                1,
+                PROFILE_TOTAL_SUPPLY,
                 PROFILE_TYPE_NFT_ID,
                 undefined, // Will point to self
                 true,
-                "My Profile",
+                "Anonymous",
                 false,
             );
             if (txId) {

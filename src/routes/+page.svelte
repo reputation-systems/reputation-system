@@ -149,11 +149,9 @@
             <h1>Welcome to Sigma Reputation</h1>
 
             {#if $connected}
-                <p>
-                    You are connected. Explore the graph or submit a new proof.
-                </p>
-                <button on:click={() => (currentPage = "graph")}
-                    >Explore the Graph</button
+                <p>You are connected.</p>
+                <button on:click={() => (currentPage = "profile")}
+                    >Explore</button
                 >
             {:else}
                 <p>

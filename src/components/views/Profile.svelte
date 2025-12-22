@@ -5,6 +5,7 @@
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
 
     export let reputationProof: ReputationProof | null;
+    export let userProfiles: ReputationProof[] = [];
     export let connected: boolean;
 
     const dispatch = createEventDispatcher();
@@ -24,6 +25,17 @@
 
     function refreshProfile() {
         dispatch("refresh");
+    }
+
+    let isSwitcherExpanded = false;
+
+    function toggleSwitcher() {
+        isSwitcherExpanded = !isSwitcherExpanded;
+    }
+
+    function switchProfile(profile: ReputationProof) {
+        dispatch("switchProfile", profile);
+        isSwitcherExpanded = false;
     }
 
     // --- Derived State ---
@@ -171,6 +183,12 @@
         {#if reputationProof}
             <p class="subtitle">
                 Manage your reputation and view your sacrifices.
+                <span
+                    class="terminology-tip"
+                    title="Every Reputation Profile is technically a Reputation Proof. A Profile is a Proof used for identity."
+                >
+                    <i class="fas fa-info-circle"></i>
+                </span>
             </p>
         {:else}
             <p class="subtitle">
@@ -183,56 +201,118 @@
         <div class="info-card center-text">
             <p>Please connect your wallet to view or create your profile.</p>
         </div>
-    {:else if isLoading && !reputationProof}
-        <div class="loading-spinner">Loading profile...</div>
-    {:else if !reputationProof}
-        <div class="no-profile">
-            <div class="info-card center-text">
-                <h3>No Profile Found</h3>
-                <p>You don't have a reputation profile yet.</p>
+    {:else}
+        <!-- Compactable Profile Switcher -->
+        <div class="profile-switcher-v2" class:expanded={isSwitcherExpanded}>
+            <div class="switcher-main-row">
+                <div class="current-profile-info" on:click={toggleSwitcher}>
+                    <div class="profile-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="profile-meta">
+                        <span class="profile-type-badge"
+                            >{reputationProof?.type?.typeName ||
+                                "Reputation Proof"}</span
+                        >
+                        <span class="profile-id-main"
+                            >{reputationProof?.token_id.substring(
+                                0,
+                                12,
+                            )}...</span
+                        >
+                    </div>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </div>
+
                 <button
-                    class="primary-button"
+                    class="create-profile-btn-v2"
                     on:click={handleCreateProfile}
                     disabled={isLoading}
+                    title="Create New Reputation Proof"
                 >
-                    Create Profile
+                    <i class="fas fa-plus"></i>
                 </button>
             </div>
+
+            {#if isSwitcherExpanded}
+                <div class="profiles-dropdown">
+                    <div class="dropdown-header">Select a Profile / Proof</div>
+                    <div class="dropdown-list">
+                        {#each userProfiles as profile}
+                            <button
+                                class="dropdown-item"
+                                class:active={reputationProof?.token_id ===
+                                    profile.token_id}
+                                on:click={() => switchProfile(profile)}
+                            >
+                                <div class="item-icon">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <div class="item-content">
+                                    <div class="item-top">
+                                        <span class="item-type"
+                                            >{profile.type?.typeName ||
+                                                "Proof"}</span
+                                        >
+                                        <span class="item-id"
+                                            >{profile.token_id.substring(
+                                                0,
+                                                8,
+                                            )}...</span
+                                        >
+                                    </div>
+                                    <div class="item-bottom">
+                                        <span class="item-erg">
+                                            {(
+                                                profile.current_boxes.reduce(
+                                                    (acc, b) =>
+                                                        acc +
+                                                        BigInt(b.box.value),
+                                                    BigInt(0),
+                                                ) / BigInt(1000000000)
+                                            ).toString()} ERG Burned
+                                        </span>
+                                    </div>
+                                </div>
+                                {#if reputationProof?.token_id === profile.token_id}
+                                    <i class="fas fa-check check-icon"></i>
+                                {/if}
+                            </button>
+                        {/each}
+                    </div>
+                </div>
+            {/if}
         </div>
-    {:else}
-        <!-- Sacrificed Assets Section -->
-        <section class="sacrificed-assets">
-            <div class="section-title-row">
-                <div class="icon-circle orange">
-                    <i class="fas fa-fire"></i>
+
+        {#if isLoading && !reputationProof}
+            <div class="loading-spinner">Loading profile...</div>
+        {:else if !reputationProof}
+            <div class="no-profile">
+                <div class="info-card center-text">
+                    <h3>No Profile Found</h3>
+                    <p>You don't have a reputation profile yet.</p>
+                    <button
+                        class="primary-button"
+                        on:click={handleCreateProfile}
+                        disabled={isLoading}
+                    >
+                        Create Profile
+                    </button>
                 </div>
-                <h3>Sacrificed Assets</h3>
             </div>
-
-            <div class="assets-grid">
-                <!-- ERG Card -->
-                <div class="asset-card orange-gradient">
-                    <div class="liquid-fire-container">
-                        <div class="wave-box"></div>
-                        <div class="wave-box"></div>
-                        <div class="wave-box"></div>
+        {:else}
+            <!-- Sacrificed Assets Section -->
+            <section class="sacrificed-assets">
+                <div class="section-title-row">
+                    <div class="icon-circle orange">
+                        <i class="fas fa-fire"></i>
                     </div>
-                    <div class="card-content">
-                        <div class="badge-row">
-                            <span class="badge orange">Burned</span>
-                        </div>
-                        <div class="asset-info">
-                            <p class="asset-label">Native Currency</p>
-                            <p class="asset-amount">
-                                {burnedERG} <span class="unit">ERG</span>
-                            </p>
-                        </div>
-                    </div>
+                    <h3>Sacrificed Assets</h3>
                 </div>
 
-                <!-- Token Cards -->
-                {#each burnedTokens as token}
-                    <div class="asset-card dark-card">
+                <div class="assets-grid">
+                    <!-- ERG Card -->
+                    <div class="asset-card orange-gradient">
                         <div class="liquid-fire-container">
                             <div class="wave-box"></div>
                             <div class="wave-box"></div>
@@ -243,158 +323,187 @@
                                 <span class="badge orange">Burned</span>
                             </div>
                             <div class="asset-info">
-                                <p class="asset-label" title={token.tokenId}>
-                                    {token.name}
+                                <p class="asset-label">Native Currency</p>
+                                <p class="asset-amount">
+                                    {burnedERG} <span class="unit">ERG</span>
                                 </p>
-                                <p class="asset-amount">{token.amount}</p>
                             </div>
                         </div>
                     </div>
-                {/each}
-            </div>
-        </section>
 
-        <div class="divider"></div>
+                    <!-- Token Cards -->
+                    {#each burnedTokens as token}
+                        <div class="asset-card dark-card">
+                            <div class="liquid-fire-container">
+                                <div class="wave-box"></div>
+                                <div class="wave-box"></div>
+                                <div class="wave-box"></div>
+                            </div>
+                            <div class="card-content">
+                                <div class="badge-row">
+                                    <span class="badge orange">Burned</span>
+                                </div>
+                                <div class="asset-info">
+                                    <p
+                                        class="asset-label"
+                                        title={token.tokenId}
+                                    >
+                                        {token.name}
+                                    </p>
+                                    <p class="asset-amount">{token.amount}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {/each}
+                </div>
+            </section>
 
-        <!-- Technical Details -->
-        <div class="technical-details">
-            <div class="token-id-display">
-                <span class="label">Profile Token ID</span>
-                <div class="value mono">{reputationProof.token_id}</div>
-            </div>
-            <button
-                class="secondary-button refresh-btn"
-                on:click={refreshProfile}
-                disabled={isLoading}
-            >
-                <i class="fas fa-sync"></i> Refresh
-            </button>
-        </div>
+            <div class="divider"></div>
 
-        {#if successMessage}
-            <div class="feedback success">{successMessage}</div>
-        {/if}
-        {#if errorMessage}
-            <div class="feedback error">{errorMessage}</div>
-        {/if}
-
-        <!-- Boxes Section -->
-        <section class="boxes-section">
-            <div class="section-title-row">
-                <h3>Reputation Boxes</h3>
-            </div>
-
-            <!-- Filter Menu -->
-            <div class="filter-menu">
+            <!-- Technical Details -->
+            <div class="technical-details">
+                <div class="token-id-display">
+                    <span class="label">Profile Token ID</span>
+                    <div class="value mono">{reputationProof.token_id}</div>
+                </div>
                 <button
-                    class="filter-badge"
-                    class:active={selectedType === ALL_TYPES}
-                    on:click={() => (selectedType = ALL_TYPES)}
+                    class="secondary-button refresh-btn"
+                    on:click={refreshProfile}
+                    disabled={isLoading}
                 >
-                    All
+                    <i class="fas fa-sync"></i> Refresh
                 </button>
-                {#each uniqueTypes as type}
+            </div>
+
+            {#if successMessage}
+                <div class="feedback success">{successMessage}</div>
+            {/if}
+            {#if errorMessage}
+                <div class="feedback error">{errorMessage}</div>
+            {/if}
+
+            <!-- Boxes Section -->
+            <section class="boxes-section">
+                <div class="section-title-row">
+                    <h3>Reputation Boxes</h3>
+                </div>
+
+                <!-- Filter Menu -->
+                <div class="filter-menu">
                     <button
                         class="filter-badge"
-                        class:active={selectedType === type}
-                        on:click={() => (selectedType = type)}
+                        class:active={selectedType === ALL_TYPES}
+                        on:click={() => (selectedType = ALL_TYPES)}
                     >
-                        {type}
+                        All
                     </button>
-                {/each}
-            </div>
+                    {#each uniqueTypes as type}
+                        <button
+                            class="filter-badge"
+                            class:active={selectedType === type}
+                            on:click={() => (selectedType = type)}
+                        >
+                            {type}
+                        </button>
+                    {/each}
+                </div>
 
-            <div class="boxes-grid">
-                {#each filteredBoxes as box (box.box_id)}
-                    <div
-                        class="box-card"
-                        class:positive={box.polarization}
-                        class:negative={!box.polarization}
-                    >
-                        <div class="box-header">
-                            <span class="box-type"
-                                >{box.type?.typeName || "Unknown"}</span
-                            >
-                            <span class="polarization-icon">
-                                {#if box.polarization}
-                                    <i class="fas fa-check-circle"></i>
-                                {:else}
-                                    <i class="fas fa-times-circle"></i>
-                                {/if}
-                            </span>
-                        </div>
-
-                        <div class="box-body">
-                            <div class="info-row">
-                                <span class="label">Pointer:</span>
-                                <span class="value mono small">
-                                    {box.object_pointer ===
-                                    reputationProof.token_id
-                                        ? "SELF"
-                                        : box.object_pointer.substring(0, 12) +
-                                          "..."}
-                                </span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Content:</span>
-                                <span class="value content-text">
-                                    {typeof box.content === "object"
-                                        ? JSON.stringify(box.content)
-                                        : box.content || "No content"}
-                                </span>
-                            </div>
-                            <div class="info-row">
-                                <span class="label">Amount:</span>
-                                <span class="value">{box.token_amount}</span>
-                            </div>
-                        </div>
-
-                        <div class="box-actions">
-                            <button
-                                class="icon-button"
-                                title="Update"
-                                on:click={() => (showUpdateBox = box)}
-                            >
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            {#if box.object_pointer !== reputationProof.token_id}
-                                <button
-                                    class="icon-button delete"
-                                    title="Delete"
-                                    on:click={() => handleDeleteBox(box)}
+                <div class="boxes-grid">
+                    {#each filteredBoxes as box (box.box_id)}
+                        <div
+                            class="box-card"
+                            class:positive={box.polarization}
+                            class:negative={!box.polarization}
+                        >
+                            <div class="box-header">
+                                <span class="box-type"
+                                    >{box.type?.typeName || "Unknown"}</span
                                 >
-                                    <i class="fas fa-trash"></i>
+                                <span class="polarization-icon">
+                                    {#if box.polarization}
+                                        <i class="fas fa-check-circle"></i>
+                                    {:else}
+                                        <i class="fas fa-times-circle"></i>
+                                    {/if}
+                                </span>
+                            </div>
+
+                            <div class="box-body">
+                                <div class="info-row">
+                                    <span class="label">Pointer:</span>
+                                    <span class="value mono small">
+                                        {box.object_pointer ===
+                                        reputationProof.token_id
+                                            ? "SELF"
+                                            : box.object_pointer.substring(
+                                                  0,
+                                                  12,
+                                              ) + "..."}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">Content:</span>
+                                    <span class="value content-text">
+                                        {typeof box.content === "object"
+                                            ? JSON.stringify(box.content)
+                                            : box.content || "No content"}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="label">Amount:</span>
+                                    <span class="value">{box.token_amount}</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="box-actions">
+                                <button
+                                    class="icon-button"
+                                    title="Update"
+                                    on:click={() => (showUpdateBox = box)}
+                                >
+                                    <i class="fas fa-edit"></i>
                                 </button>
-                            {/if}
-                        </div>
-                    </div>
-                    {#if showUpdateBox === box}
-                        <div class="form-card edit-overlay">
-                            <h3>Update Box</h3>
-                            <div class="form-group">
-                                <label>Content</label>
-                                <textarea bind:value={box.content}></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button
-                                    class="cancel-button"
-                                    on:click={() => (showUpdateBox = null)}
-                                    >Cancel</button
-                                >
-                                <button
-                                    class="primary-button"
-                                    on:click={() => handleUpdateBox(box)}
-                                    disabled={isLoading}>Update</button
-                                >
+                                {#if box.object_pointer !== reputationProof.token_id}
+                                    <button
+                                        class="icon-button delete"
+                                        title="Delete"
+                                        on:click={() => handleDeleteBox(box)}
+                                    >
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                {/if}
                             </div>
                         </div>
-                    {/if}
-                {/each}
-            </div>
-            {#if filteredBoxes.length === 0}
-                <p class="no-results">No boxes found for this type.</p>
-            {/if}
-        </section>
+                        {#if showUpdateBox === box}
+                            <div class="form-card edit-overlay">
+                                <h3>Update Box</h3>
+                                <div class="form-group">
+                                    <label>Content</label>
+                                    <textarea bind:value={box.content}
+                                    ></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button
+                                        class="cancel-button"
+                                        on:click={() => (showUpdateBox = null)}
+                                        >Cancel</button
+                                    >
+                                    <button
+                                        class="primary-button"
+                                        on:click={() => handleUpdateBox(box)}
+                                        disabled={isLoading}>Update</button
+                                    >
+                                </div>
+                            </div>
+                        {/if}
+                    {/each}
+                </div>
+                {#if filteredBoxes.length === 0}
+                    <p class="no-results">No boxes found for this type.</p>
+                {/if}
+            </section>
+        {/if}
     {/if}
 </div>
 
@@ -406,6 +515,218 @@
         padding: 2rem 1rem 4rem;
         color: #f0f0f0;
         font-family: "Inter", sans-serif;
+    }
+
+    /* --- Refined Profile Switcher --- */
+    .profile-switcher-v2 {
+        margin-bottom: 2.5rem;
+        position: relative;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 1.25rem;
+        backdrop-filter: blur(12px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .profile-switcher-v2.expanded {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(251, 191, 36, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .switcher-main-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        gap: 1rem;
+    }
+
+    .current-profile-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+        transition: background 0.2s;
+    }
+
+    .current-profile-info:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .profile-avatar {
+        width: 2.5rem;
+        height: 2.5rem;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+    }
+
+    .profile-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+
+    .profile-type-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #fbbf24;
+    }
+
+    .profile-id-main {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #f1f5f9;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+            monospace;
+    }
+
+    .chevron-icon {
+        color: #64748b;
+        font-size: 0.875rem;
+        transition: transform 0.3s;
+    }
+
+    .expanded .chevron-icon {
+        transform: rotate(180deg);
+    }
+
+    .create-profile-btn-v2 {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .create-profile-btn-v2:hover {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: #fbbf24;
+        color: #fbbf24;
+    }
+
+    /* --- Dropdown --- */
+    .profiles-dropdown {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .dropdown-header {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+        padding-left: 0.5rem;
+    }
+
+    .dropdown-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: transparent;
+        border: 1px solid transparent;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        text-align: left;
+    }
+
+    .dropdown-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .dropdown-item.active {
+        background: rgba(251, 191, 36, 0.05);
+        border-color: rgba(251, 191, 36, 0.2);
+    }
+
+    .item-icon {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+    }
+
+    .active .item-icon {
+        background: rgba(251, 191, 36, 0.1);
+        color: #fbbf24;
+    }
+
+    .item-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .item-top {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .item-type {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #e2e8f0;
+    }
+
+    .item-id {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-family: ui-monospace, monospace;
+    }
+
+    .item-erg {
+        font-size: 0.75rem;
+        color: #94a3b8;
+    }
+
+    .check-icon {
+        color: #fbbf24;
+        font-size: 0.875rem;
+    }
+
+    .terminology-tip {
+        margin-left: 0.5rem;
+        color: #64748b;
+        cursor: help;
+        font-size: 0.875rem;
+    }
+
+    .terminology-tip:hover {
+        color: #fbbf24;
     }
 
     /* --- Hero Section --- */

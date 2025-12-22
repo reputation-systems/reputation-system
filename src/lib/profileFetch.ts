@@ -37,10 +37,12 @@ function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
         const rawValue = box.additionalRegisters.R9?.renderedValue;
         if (rawValue) {
             const potentialString = hexToUtf8(rawValue);
-            try {
-                boxContent = JSON.parse(potentialString);
-            } catch {
-                boxContent = potentialString;
+            if (potentialString) {
+                try {
+                    boxContent = JSON.parse(potentialString);
+                } catch {
+                    boxContent = potentialString;
+                }
             }
         }
     } catch (e) {
@@ -52,8 +54,8 @@ function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
     return {
         box: {
             boxId: box.boxId,
-            value: box.value,
-            assets: box.assets,
+            value: box.value as any,
+            assets: box.assets as any,
             ergoTree: box.ergoTree,
             creationHeight: box.creationHeight,
             additionalRegisters: Object.entries(box.additionalRegisters).reduce(
@@ -116,8 +118,7 @@ async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]>
 
     const searchBody = {
         registers: {
-            R7: serializedToRendered(r7SerializedHex),
-            R4: PROFILE_TYPE_NFT_ID
+            R7: serializedToRendered(r7SerializedHex)
         }
     };
 
@@ -150,7 +151,7 @@ async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]>
 
             const filteredBoxes = jsonData.items
                 .filter((box: ApiBox) =>
-                    parseCollByteToHex(box.additionalRegisters.R4.renderedValue) === PROFILE_TYPE_NFT_ID &&
+                    box.additionalRegisters.R4 &&
                     parseCollByteToHex(box.additionalRegisters.R5.renderedValue) === box.assets[0].tokenId &&
                     box.additionalRegisters.R6.renderedValue === 'false'
                 )
@@ -215,70 +216,100 @@ async function fetchAllBoxesByTokenId(tokenId: string): Promise<ApiBox[]> {
 }
 
 /**
- * Fetches the full ReputationProof object for the connected user,
+ * Fetches all ReputationProof objects for the connected user,
  * by searching all boxes where R7 matches their wallet address.
+ * Profiles are ordered by total ERG burned.
  */
-export async function fetchProfile(): Promise<ReputationProof | null> {
+export async function fetchAllProfiles(): Promise<ReputationProof[]> {
     try {
         const r7Data = await getSerializedR7();
         if (!r7Data) {
-            return null;
+            return [];
         }
         const { changeAddress, r7SerializedHex } = r7Data;
-        console.log(`Fetching profile for R7: ${r7SerializedHex}`);
+        console.log(`Fetching all profiles for R7: ${r7SerializedHex}`);
 
         const allUserBoxes = await fetchProfileUserBoxes(r7SerializedHex);
         if (allUserBoxes.length === 0) {
             console.log('No profile boxes found for this user.');
-            return null;
+            return [];
         }
 
-        const first_box = allUserBoxes[0];
-        const profileTokenId = first_box.assets[0].tokenId;
-
-        const emissionAmount = await fetchTokenEmissionAmount(profileTokenId);
-        if (emissionAmount === null) {
-            console.warn("fetchTokenEmissionAmount returned null.")
-            return null;
-        }
-
-        // Fetch ALL boxes for this profile token to have the complete proof
-        const allProfileBoxes = await fetchAllBoxesByTokenId(profileTokenId);
-
-        const proof: ReputationProof = {
-            token_id: profileTokenId,
-            type: {
-                tokenId: PROFILE_TYPE_NFT_ID,
-                boxId: '',
-                typeName: 'Profile',
-                description: 'User profile reputation proof',
-                schemaURI: '',
-                isRepProof: true
-            },
-            data: {},
-            total_amount: emissionAmount,
-            owner_address: changeAddress,
-            owner_serialized: r7SerializedHex,
-            can_be_spend: true,
-            current_boxes: [],
-            number_of_boxes: 0,
-            network: Network.ErgoMainnet
-        };
-
-        for (const box of allProfileBoxes) {
-            const rpbox = convertToRPBox(box, profileTokenId);
-            if (rpbox) {
-                proof.current_boxes.push(rpbox);
-                proof.number_of_boxes += 1;
+        // Group boxes by token ID (each token ID represents a profile)
+        const boxesByTokenId = new Map<string, ApiBox[]>();
+        for (const box of allUserBoxes) {
+            const tokenId = box.assets[0].tokenId;
+            if (!boxesByTokenId.has(tokenId)) {
+                boxesByTokenId.set(tokenId, []);
             }
+            boxesByTokenId.get(tokenId)!.push(box);
         }
 
-        console.log(`Profile found: ${proof.token_id}, ${proof.number_of_boxes} boxes.`, proof);
+        const profiles: ReputationProof[] = [];
 
-        return proof;
+        for (const [tokenId, userBoxes] of boxesByTokenId.entries()) {
+            const emissionAmount = await fetchTokenEmissionAmount(tokenId);
+            if (emissionAmount === null) continue;
+
+            const firstBox = userBoxes[0];
+            const typeNftId = parseCollByteToHex(firstBox.additionalRegisters.R4.renderedValue) ?? '';
+
+            // Fetch ALL boxes for this profile token to have the complete proof
+            const allProfileBoxes = await fetchAllBoxesByTokenId(tokenId);
+
+            const proof: ReputationProof = {
+                token_id: tokenId,
+                type: {
+                    tokenId: typeNftId,
+                    boxId: '',
+                    typeName: typeNftId === PROFILE_TYPE_NFT_ID ? 'Profile' : 'Reputation Proof',
+                    description: typeNftId === PROFILE_TYPE_NFT_ID ? 'User profile reputation proof' : 'Reputation proof',
+                    schemaURI: '',
+                    isRepProof: true
+                },
+                data: {},
+                total_amount: emissionAmount,
+                owner_address: changeAddress,
+                owner_serialized: r7SerializedHex,
+                can_be_spend: true,
+                current_boxes: [],
+                number_of_boxes: 0,
+                network: Network.ErgoMainnet
+            };
+
+            for (const box of allProfileBoxes) {
+                const rpbox = convertToRPBox(box, tokenId);
+                if (rpbox) {
+                    proof.current_boxes.push(rpbox);
+                    proof.number_of_boxes += 1;
+                }
+            }
+            profiles.push(proof);
+        }
+
+        // Sort profiles by total ERG burned (sum of all box values)
+        profiles.sort((a, b) => {
+            const totalA = a.current_boxes.reduce((acc, box) => acc + BigInt(box.box.value), BigInt(0));
+            const totalB = b.current_boxes.reduce((acc, box) => acc + BigInt(box.box.value), BigInt(0));
+            if (totalA > totalB) return -1;
+            if (totalA < totalB) return 1;
+            return 0;
+        });
+
+        console.log(`Found ${profiles.length} profiles.`, profiles);
+        return profiles;
 
     } catch (error) {
-        console.error('Error fetching profile:', error);
-        return null;
+        console.error('Error fetching profiles:', error);
+        return [];
     }
+}
+
+/**
+ * Fetches the primary ReputationProof object for the connected user.
+ * Returns the first profile from fetchAllProfiles() for compatibility.
+ */
+export async function fetchProfile(): Promise<ReputationProof | null> {
+    const profiles = await fetchAllProfiles();
+    return profiles.length > 0 ? profiles[0] : null;
 }

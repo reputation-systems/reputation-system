@@ -1,9 +1,12 @@
 <script lang="ts">
     import "../app.css";
     import { onMount } from "svelte";
+    import { fetchProfile, fetchAllProfiles } from "$lib/profileFetch";
+    import { connectNautilus } from "$lib/connect";
     import {
         connected,
         reputation_proof,
+        user_profiles,
         proofs,
         types,
         address,
@@ -11,8 +14,6 @@
         fetch_all,
         compute_deep_level,
     } from "$lib/store";
-    import { connectNautilus } from "$lib/connect";
-    import { fetchProfile } from "$lib/profileFetch";
     import {
         updateReputationProofList,
         fetchTypeNfts,
@@ -49,8 +50,13 @@
     }
 
     async function loadProfile() {
-        const profile = await fetchProfile();
-        reputation_proof.set(profile);
+        const allProfiles = await fetchAllProfiles();
+        user_profiles.set(allProfiles);
+        if (allProfiles.length > 0) {
+            reputation_proof.set(allProfiles[0]);
+        } else {
+            reputation_proof.set(null);
+        }
     }
 
     async function loadProofs() {
@@ -189,8 +195,10 @@
             {:else if currentPage === "profile"}
                 <Profile
                     reputationProof={$reputation_proof}
+                    userProfiles={$user_profiles}
                     connected={$connected}
                     on:refresh={handleProfileRefresh}
+                    on:switchProfile={(e) => reputation_proof.set(e.detail)}
                 />
             {/if}
         </div>

@@ -134,7 +134,15 @@
 
 <div class="types-container">
     <div class="form-box" class:collapsed={isFormCollapsed}>
-        <h2 class="form-title">Create a New Type</h2>
+        <h2 class="form-title">
+            Create a New Type
+            <div
+                class="info-tooltip"
+                title="A Type NFT is a unique, immutable standard on the blockchain. It defines the rules and meaning for reputation boxes that reference it."
+            >
+                <i class="fas fa-question-circle"></i>
+            </div>
+        </h2>
         <p class="form-description">
             Define a new, immutable type standard for the ecosystem. This will
             mint a unique NFT.
@@ -162,6 +170,12 @@
                     placeholder="Schema URI (optional, e.g., https://...)"
                     disabled={isCreating}
                 />
+                <div
+                    class="info-tooltip"
+                    title="The Schema URI links to a machine-readable definition (like JSON-LD or IPFS) of the data structure expected in boxes of this type."
+                >
+                    <i class="fas fa-question-circle"></i>
+                </div>
             </div>
 
             <div class="checkbox-container">
@@ -173,8 +187,14 @@
                     disabled={isCreating}
                 />
                 <label for="is-reputation-proof"
-                    >Is this type for a Reputation Proof?</label
-                >
+                    >Is this type for a Reputation Proof?
+                    <div
+                        class="info-tooltip"
+                        title="If checked, this type can be used to create reputation boxes (opinions/claims). If unchecked, it's a general-purpose standard NFT."
+                    >
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                </label>
             </div>
 
             <button class="form-button" type="submit" disabled={isCreating}>
@@ -261,6 +281,20 @@
         margin-top: 1rem;
         font-family: monospace;
         word-break: break-all;
+    }
+    .info-tooltip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fbbf24;
+        font-size: 0.9rem;
+        cursor: help;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+        transition: transform 0.2s ease;
+    }
+    .info-tooltip:hover {
+        transform: scale(1.2);
     }
     .types-container {
         display: flex;

@@ -457,6 +457,12 @@
                         <i class="fas fa-fire"></i>
                     </div>
                     <h3>Sacrificed Assets</h3>
+                    <div
+                        class="info-tooltip"
+                        title="Sacrificed assets (burned ERG and tokens) demonstrate your commitment and responsibility. By locking value into your reputation boxes, you provide a tangible backing for your decentralized identity. These assets are permanent and can never be withdrawn (except for storage rent/demurrage)."
+                    >
+                        <i class="fas fa-question-circle"></i>
+                    </div>
                 </div>
 
                 <div class="assets-grid">
@@ -535,6 +541,12 @@
             <section class="boxes-section">
                 <div class="section-title-row">
                     <h3>Reputation Boxes</h3>
+                    <div
+                        class="info-tooltip"
+                        title="Reputation is modular. Each box represents a specific piece of information, an opinion, or a claim, linked to a specific Type standard."
+                    >
+                        <i class="fas fa-question-circle"></i>
+                    </div>
                 </div>
 
                 <!-- Filter Menu -->
@@ -571,7 +583,7 @@
                                 </button>
                                 <div
                                     class="info-tooltip"
-                                    title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation. While ERG can be in any box, SELF boxes are specifically used to store your reputation tokens. When you delete other boxes, their tokens are merged into your selected Main SELF box."
+                                    title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation and serve as containers for your reputation tokens, allowing you to issue new reputation boxes by distributing tokens from them. When you delete other boxes, their tokens are merged into your selected Main SELF box."
                                 >
                                     <i class="fas fa-question-circle"></i>
                                 </div>
@@ -621,9 +633,6 @@
                                 <span class="box-type"
                                     >{box.type?.typeName || "Unknown"}</span
                                 >
-                                {#if mainBox?.box_id === box.box_id}
-                                    <span class="main-badge">Main</span>
-                                {/if}
                                 <span class="polarization-icon">
                                     {#if box.polarization}
                                         <i class="fas fa-check-circle"></i>
@@ -663,7 +672,10 @@
 
                             <div class="box-actions">
                                 {#if mainBox?.box_id === box.box_id}
-                                    <span class="main-action-label">
+                                    <span
+                                        class="main-action-label"
+                                        title="The Main Box is your primary container for reputation tokens. When you delete other boxes, their tokens are merged here."
+                                    >
                                         <i class="fas fa-star"></i> Main
                                     </span>
                                 {/if}

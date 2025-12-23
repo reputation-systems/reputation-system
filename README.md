@@ -85,7 +85,27 @@ Allows anyone to prevent box destruction by storage rent.
 
 ---
 
-## 4. Conclusion
+---
+
+## 5. Didactic Reasoning: How it Works
+
+To understand the system, it's helpful to look at it through these core concepts:
+
+### 5.1. The Reputation Profile (Identity)
+A **Reputation Profile** is not just an account; it is a **Reputation Proof** that points to itself. This self-reference creates a unique identity on the blockchain. Your profile is the anchor for all your other reputation assertions. **SELF boxes** within a profile serve as the primary containers of reputation tokens, allowing you to issue new reputation boxes by distributing tokens from them.
+
+### 5.2. Sacrificed Assets (Commitment)
+Why do we "burn" or "sacrifice" ERG and tokens? In a decentralized world, trust must be backed by something tangible. By locking assets into reputation boxes, you are demonstrating **skin in the game**. The more assets you sacrifice, the more "weight" or "responsibility" your profile carries, as it shows you are willing to commit resources to back your claims. **These assets are permanent and can never be withdrawn**, ensuring that the commitment remains as long as the reputation exists (they can only be reduced by the blockchain's storage rent/demurrage mechanism).
+
+### 5.3. Reputation Boxes (Atomic Proofs)
+Reputation is not a single number; it's a collection of **Reputation Boxes**. Each box represents a specific piece of information or an opinion, linked to a **Type**. This modularity allows for a rich, multi-faceted reputation that can be updated, expanded, or even partially deleted (returning the tokens to your main profile).
+
+### 5.4. Types (The Standards)
+**Types** are the "Digital Public Goods" of the system. They define the rules and the meaning of a reputation box. Because they are unique NFTs, they provide an immutable standard that everyone can agree on. For example, a "Judge" type or a "Web URL" type ensures that everyone interpreting the data knows exactly what it represents.
+
+---
+
+## 6. Conclusion
 
 This system introduces a **formally verifiable framework** for decentralized reputation. By utilizing an organic, segment-based reference model in `R4`, it distinguishes between general reputation tokens and specific opinions across multiple chains without requiring protocol forks or complex versioning.
 

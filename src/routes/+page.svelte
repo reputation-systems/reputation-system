@@ -44,6 +44,52 @@
         "Owner-controlled reputation boxes with state consistency.",
     ];
 
+    const implementingApps = [
+        {
+            name: "Forum",
+            description:
+                "Decentralized Forum application built on the Ergo blockchain. Allows users to create profiles, post discussions, and flag spam on-chain.",
+            icon: "fa-comments",
+            color: "#8b5cf6",
+            url: "https://reputation-systems.github.io/forum-application/",
+        },
+        {
+            name: "Source",
+            description:
+                "Hash-based file discovery application. A decentralized directory mapping file hashes to download sources like URLs, IPFS, and Magnet links.",
+            icon: "fa-file-code",
+            color: "#10b981",
+            url: "https://reputation-systems.github.io/source-application/",
+        },
+        {
+            name: "Bene",
+            description:
+                "Proof-of-Funding fundraising platform. Uses smart contracts to ensure projects only access funds if they meet predefined goals.",
+            icon: "fa-hand-holding-heart",
+            color: "orange",
+            url: "https://ergo.bene.stability.nexus/",
+            image: "https://raw.githubusercontent.com/StabilityNexus/BenefactionPlatform-Ergo/main/static/favicon.png",
+        },
+        {
+            name: "Game of Prompts",
+            description:
+                "Competitive platform where creators design game-services and players create solver-services to maximize scores on Ergo.",
+            icon: "fa-robot",
+            color: "#2B2C28",
+            url: "https://game-of-prompts.github.io/",
+            image: "https://avatars.githubusercontent.com/u/212117344?s=400&u=a83e1bcbe71929ecbfeed4c1ad0d4ec4b6647927&v=4",
+        },
+        {
+            name: "Bounty",
+            description:
+                "Decentralized bounty platform built on the Ergo blockchain. Allows users to create profiles, post bounties, and claim rewards on-chain.",
+            icon: "fa-bolt",
+            color: "orange",
+            url: "https://ergo.bounty.stability.nexus/",
+            image: "https://raw.githubusercontent.com/StabilityNexus/Bountiful-BountyPlatform-Ergo/refs/heads/main/static/favicon.png",
+        },
+    ];
+
     let randomPhrase = "";
     let loadingProfiles = false;
 
@@ -205,6 +251,33 @@
                 </p>
                 <button on:click={connectNautilus}>Connect Wallet</button>
             {/if}
+
+            <div class="apps-carousel-container">
+                <p class="carousel-title">Powered by Sigma Reputation</p>
+                <div class="apps-carousel-track">
+                    {#each [...implementingApps, ...implementingApps] as app}
+                        <a
+                            href={app.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="app-card"
+                            style="--app-color: {app.color}"
+                        >
+                            <div class="app-icon">
+                                {#if app.image}
+                                    <img src={app.image} alt={app.name} />
+                                {:else}
+                                    <i class="fas {app.icon}"></i>
+                                {/if}
+                            </div>
+                            <div class="app-info">
+                                <h3>{app.name}</h3>
+                                <p>{app.description}</p>
+                            </div>
+                        </a>
+                    {/each}
+                </div>
+            </div>
         </div>
     {:else}
         <div class="view-content">
@@ -500,5 +573,125 @@
         width: 100%;
         box-sizing: border-box;
         padding: 2rem;
+    }
+
+    /* Carousel Styles */
+    .apps-carousel-container {
+        margin-top: 4rem;
+        width: 100%;
+        max-width: 100vw;
+        overflow: hidden;
+        position: relative;
+        padding: 2rem 0;
+    }
+
+    .carousel-title {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 2rem;
+        font-weight: 600;
+    }
+
+    .apps-carousel-track {
+        display: flex;
+        gap: 2rem;
+        width: max-content;
+        animation: scroll 30s linear infinite;
+        padding: 0 2rem;
+    }
+
+    .apps-carousel-track:hover {
+        animation-play-state: paused;
+    }
+
+    .app-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        min-width: 380px;
+        max-width: 450px;
+        backdrop-filter: blur(10px);
+        transition:
+            transform 0.3s ease,
+            border-color 0.3s ease,
+            background-color 0.3s ease;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .app-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--app-color);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .app-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--app-color);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+        box-shadow: 0 8px 16px -4px var(--app-color);
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .app-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .app-info {
+        text-align: left;
+    }
+
+    .app-info h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #f0f0f0;
+        margin-bottom: 0.4rem;
+    }
+
+    .app-info p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(calc(-50% - 1rem));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .app-card {
+            min-width: 280px;
+            padding: 1rem;
+            gap: 1rem;
+        }
+        .app-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.4rem;
+        }
+        .app-info h3 {
+            font-size: 1.1rem;
+        }
     }
 </style>

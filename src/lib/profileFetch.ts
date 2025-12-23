@@ -11,8 +11,8 @@ import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox, Network } 
 const LIMIT_PER_PAGE = 100;
 
 // Convert ApiBox to RPBox
-function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
-    if (!box.assets?.length || box.assets[0].tokenId !== profileTokenId) {
+function convertToRPBox(box: ApiBox, token_id: string, availableTypes: Map<string, TypeNFT>): RPBox | null {
+    if (!box.assets?.length || box.assets[0].tokenId !== token_id) {
         console.warn(`convertToRPBox: Box ${box.boxId} has different token ID. Skipping.`);
         return null;
     }
@@ -23,10 +23,10 @@ function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
     }
 
     const typeNftId = parseCollByteToHex(box.additionalRegisters.R4.renderedValue) ?? '';
-    const typeNft: TypeNFT = {
+    const typeNft: TypeNFT = availableTypes.get(typeNftId) ?? {
         tokenId: typeNftId,
         boxId: '',
-        typeName: typeNftId === PROFILE_TYPE_NFT_ID ? 'Profile' : 'Unknown Type',
+        typeName: 'Unknown Type',
         description: '...',
         schemaURI: '',
         isRepProof: false,
@@ -67,7 +67,7 @@ function convertToRPBox(box: ApiBox, profileTokenId: string): RPBox | null {
         },
         box_id: box.boxId,
         type: typeNft,
-        token_id: profileTokenId,
+        token_id: token_id,
         token_amount: Number(box.assets[0].amount),
         object_pointer: objectPointer,
         is_locked: box.additionalRegisters.R6.renderedValue === 'true',
@@ -111,64 +111,90 @@ async function getSerializedR7(): Promise<{ changeAddress: string; r7SerializedH
 }
 
 // Fetch all user boxes with pagination
-async function fetchProfileUserBoxes(r7SerializedHex: string): Promise<ApiBox[]> {
+async function fetchProfileUserBoxes(
+    r7SerializedHex: string,
+    is_self_defined: boolean | null = null,
+    types: string[] = []
+): Promise<ApiBox[]> {
     const allBoxes: ApiBox[] = [];
-    let offset = 0;
-    let moreDataAvailable = true;
-
-    const searchBody = {
-        registers: {
-            R7: serializedToRendered(r7SerializedHex)
-        }
+    const searchRegisters: any = {
+        R7: serializedToRendered(r7SerializedHex)
     };
 
-    while (moreDataAvailable) {
-        const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
-        const finalBody = {
-            ergoTreeTemplateHash: ergo_tree_hash,
-            registers: searchBody.registers,
-            assets: [],
-        };
+    const typesToSearch = types.length > 0 ? types : [null];
 
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(finalBody),
-            });
+    for (const typeNftId of typesToSearch) {
+        let offset = 0;
+        let moreDataAvailable = true;
+        const currentSearchRegisters = { ...searchRegisters };
+        if (typeNftId) {
+            currentSearchRegisters.R4 = typeNftId;
+        }
 
-            if (!response.ok) {
-                console.error(`fetchAllUserBoxes: Error fetching boxes: ${response.statusText}`);
+        while (moreDataAvailable) {
+            const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+            const finalBody = {
+                ergoTreeTemplateHash: ergo_tree_hash,
+                registers: currentSearchRegisters,
+                assets: [],
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(finalBody),
+                });
+
+                if (!response.ok) {
+                    console.error(`fetchProfileUserBoxes: Error fetching boxes: ${response.statusText}`);
+                    moreDataAvailable = false;
+                    continue;
+                }
+
+                const jsonData = await response.json();
+                if (!jsonData.items || jsonData.items.length === 0) {
+                    moreDataAvailable = false;
+                    continue;
+                }
+
+                const filteredBoxes = jsonData.items
+                    .filter((box: ApiBox) => {
+                        if (!box.additionalRegisters.R4 || !box.additionalRegisters.R5 || !box.assets?.length) return false;
+
+                        const boxTypeNftId = parseCollByteToHex(box.additionalRegisters.R4.renderedValue);
+                        const boxObjectPointer = parseCollByteToHex(box.additionalRegisters.R5.renderedValue);
+                        const tokenId = box.assets[0].tokenId;
+
+                        // Basic validity check (R5 must be tokenId for self-defined, or something else for others)
+                        // But wait, the original logic was:
+                        // parseCollByteToHex(box.additionalRegisters.R5.renderedValue) === box.assets[0].tokenId &&
+                        // box.additionalRegisters.R6.renderedValue === 'false'
+
+                        if (box.additionalRegisters.R6.renderedValue !== 'false') return false;
+
+                        if (is_self_defined === true && boxObjectPointer !== tokenId) return false;
+                        if (is_self_defined === false && boxObjectPointer === tokenId) return false;
+
+                        if (types.length > 0 && !types.includes(boxTypeNftId ?? '')) return false;
+
+                        return true;
+                    })
+                    .sort((a: ApiBox, b: ApiBox) => b.creationHeight - a.creationHeight);
+
+                allBoxes.push(...filteredBoxes as ApiBox[]);
+                offset += LIMIT_PER_PAGE;
+            } catch (e) {
+                console.error("fetchProfileUserBoxes: Error during fetch", e);
                 moreDataAvailable = false;
-                continue;
             }
-
-            const jsonData = await response.json();
-            if (!jsonData.items || jsonData.items.length === 0) {
-                moreDataAvailable = false;
-                continue;
-            }
-
-            const filteredBoxes = jsonData.items
-                .filter((box: ApiBox) =>
-                    box.additionalRegisters.R4 &&
-                    parseCollByteToHex(box.additionalRegisters.R5.renderedValue) === box.assets[0].tokenId &&
-                    box.additionalRegisters.R6.renderedValue === 'false'
-                )
-                .sort((a: ApiBox, b: ApiBox) => b.creationHeight - a.creationHeight);
-
-            allBoxes.push(...filteredBoxes as ApiBox[]);
-            offset += LIMIT_PER_PAGE;
-        } catch (e) {
-            console.error("fetchAllUserBoxes: Error during fetch", e);
-            moreDataAvailable = false;
         }
     }
 
-    console.log(allBoxes.map(box => box.additionalRegisters.R5.renderedValue))
-    console.log(allBoxes.map(box => box.boxId))
+    // Remove duplicates if any (could happen if searching multiple types and a box matches multiple, though unlikely with R4)
+    const uniqueBoxes = Array.from(new Map(allBoxes.map(box => [box.boxId, box])).values());
 
-    return allBoxes;
+    return uniqueBoxes;
 }
 
 // Fetch token emission amount
@@ -220,16 +246,20 @@ async function fetchAllBoxesByTokenId(tokenId: string): Promise<ApiBox[]> {
  * by searching all boxes where R7 matches their wallet address.
  * Profiles are ordered by total ERG burned.
  */
-export async function fetchAllProfiles(): Promise<ReputationProof[]> {
+export async function fetchAllProfiles(
+    is_self_defined: boolean | null = null,
+    types: string[] = [],
+    availableTypes: Map<string, TypeNFT>,
+): Promise<ReputationProof[]> {
     try {
         const r7Data = await getSerializedR7();
         if (!r7Data) {
             return [];
         }
         const { changeAddress, r7SerializedHex } = r7Data;
-        console.log(`Fetching all profiles for R7: ${r7SerializedHex}`);
+        console.log(`Fetching all profiles for R7: ${r7SerializedHex}, is_self_defined: ${is_self_defined}, types: ${types}`);
 
-        const allUserBoxes = await fetchProfileUserBoxes(r7SerializedHex);
+        const allUserBoxes = await fetchProfileUserBoxes(r7SerializedHex, is_self_defined, types);
         if (allUserBoxes.length === 0) {
             console.log('No profile boxes found for this user.');
             return [];
@@ -259,14 +289,7 @@ export async function fetchAllProfiles(): Promise<ReputationProof[]> {
 
             const proof: ReputationProof = {
                 token_id: tokenId,
-                type: {
-                    tokenId: typeNftId,
-                    boxId: '',
-                    typeName: typeNftId === PROFILE_TYPE_NFT_ID ? 'Profile' : 'Reputation Proof',
-                    description: typeNftId === PROFILE_TYPE_NFT_ID ? 'User profile reputation proof' : 'Reputation proof',
-                    schemaURI: '',
-                    isRepProof: true
-                },
+                type: availableTypes.get(typeNftId)!,
                 data: {},
                 total_amount: emissionAmount,
                 owner_address: changeAddress,
@@ -278,7 +301,7 @@ export async function fetchAllProfiles(): Promise<ReputationProof[]> {
             };
 
             for (const box of allProfileBoxes) {
-                const rpbox = convertToRPBox(box, tokenId);
+                const rpbox = convertToRPBox(box, tokenId, availableTypes);
                 if (rpbox) {
                     proof.current_boxes.push(rpbox);
                     proof.number_of_boxes += 1;
@@ -303,13 +326,4 @@ export async function fetchAllProfiles(): Promise<ReputationProof[]> {
         console.error('Error fetching profiles:', error);
         return [];
     }
-}
-
-/**
- * Fetches the primary ReputationProof object for the connected user.
- * Returns the first profile from fetchAllProfiles() for compatibility.
- */
-export async function fetchProfile(): Promise<ReputationProof | null> {
-    const profiles = await fetchAllProfiles();
-    return profiles.length > 0 ? profiles[0] : null;
 }

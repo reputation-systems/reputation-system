@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import { onMount } from "svelte";
-    import { fetchProfile, fetchAllProfiles } from "$lib/profileFetch";
+    import { fetchAllProfiles } from "$lib/profileFetch";
     import { connectNautilus } from "$lib/connect";
     import {
         connected,
@@ -50,7 +50,7 @@
     }
 
     async function loadProfile() {
-        const allProfiles = await fetchAllProfiles();
+        const allProfiles = await fetchAllProfiles(true, [], $types);
         user_profiles.set(allProfiles);
         if (allProfiles.length > 0) {
             reputation_proof.set(allProfiles[0]);

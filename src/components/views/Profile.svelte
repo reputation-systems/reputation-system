@@ -108,6 +108,27 @@
         isSwitcherExpanded = false;
     }
 
+    // --- Click Outside Action ---
+    function clickOutside(node: HTMLElement, callback: () => void) {
+        const handleClick = (event: MouseEvent) => {
+            if (
+                node &&
+                !node.contains(event.target as Node) &&
+                !event.defaultPrevented
+            ) {
+                callback();
+            }
+        };
+
+        document.addEventListener("click", handleClick, true);
+
+        return {
+            destroy() {
+                document.removeEventListener("click", handleClick, true);
+            },
+        };
+    }
+
     // --- Derived State ---
     let selectedMainBoxId: string | null = null;
 
@@ -143,7 +164,37 @@
 
     // --- Sacrificed Assets Logic ---
     let burnedERG = "0";
-    let burnedTokens: { tokenId: string; amount: number; name?: string }[] = [];
+    let burnedTokens: {
+        tokenId: string;
+        amount: number;
+        name?: string;
+        decimals?: number;
+    }[] = [];
+    let tokenMetadataCache = new Map<
+        string,
+        { name: string; decimals?: number }
+    >();
+
+    async function fetchTokenMetadata(tokenId: string) {
+        if (tokenMetadataCache.has(tokenId)) return;
+        try {
+            const response = await fetch(
+                `https://api.ergoplatform.com/api/v1/tokens/${tokenId}`,
+            );
+            if (response.ok) {
+                const data = await response.json();
+                if (data.name) {
+                    tokenMetadataCache.set(tokenId, {
+                        name: data.name,
+                        decimals: data.decimals,
+                    });
+                    tokenMetadataCache = tokenMetadataCache; // Trigger reactivity
+                }
+            }
+        } catch (e) {
+            console.error(`Error fetching metadata for ${tokenId}:`, e);
+        }
+    }
 
     $: if (reputationProof) {
         // Calculate total burned ERG (sum of all box values)
@@ -165,11 +216,16 @@
         });
 
         burnedTokens = Array.from(tokenMap.entries()).map(
-            ([tokenId, amount]) => ({
-                tokenId,
-                amount,
-                name: tokenId.substring(0, 8) + "...", // Placeholder for name
-            }),
+            ([tokenId, amount]) => {
+                const metadata = tokenMetadataCache.get(tokenId);
+                if (!metadata) fetchTokenMetadata(tokenId);
+                return {
+                    tokenId,
+                    amount,
+                    name: metadata?.name || tokenId.substring(0, 8) + "...",
+                    decimals: metadata?.decimals || 0,
+                };
+            },
         );
     }
 
@@ -303,6 +359,123 @@
         } else {
             lockedFilter = value;
         }
+    }
+
+    // --- Sacrifice Assets ---
+    let showSacrificeForm = false;
+    let sacrificeERG = 0;
+    let sacrificeTokens: {
+        tokenId: string;
+        amount: number;
+        name?: string;
+        maxAmount: number;
+    }[] = [];
+    let walletTokens: { tokenId: string; amount: number; name?: string }[] = [];
+    let showTokenSelector = false;
+
+    async function fetchWalletTokens() {
+        try {
+            // @ts-ignore
+            const utxos = await ergo.get_utxos();
+            const tokenMap = new Map<
+                string,
+                { tokenId: string; amount: number }
+            >();
+            for (const utxo of utxos) {
+                for (const asset of utxo.assets) {
+                    const current = tokenMap.get(asset.tokenId) || {
+                        tokenId: asset.tokenId,
+                        amount: 0,
+                    };
+                    tokenMap.set(asset.tokenId, {
+                        tokenId: asset.tokenId,
+                        amount: current.amount + Number(asset.amount),
+                    });
+                }
+            }
+            walletTokens = Array.from(tokenMap.values()).map((t) => {
+                const metadata = tokenMetadataCache.get(t.tokenId);
+                if (!metadata) fetchTokenMetadata(t.tokenId);
+                return {
+                    ...t,
+                    name: metadata?.name || t.tokenId.substring(0, 8) + "...",
+                };
+            });
+        } catch (e) {
+            console.error("Error fetching wallet tokens:", e);
+        }
+    }
+
+    function addTokenToSacrifice(token: {
+        tokenId: string;
+        amount: number;
+        name?: string;
+        decimals?: number;
+    }) {
+        if (sacrificeTokens.some((t) => t.tokenId === token.tokenId)) return;
+        sacrificeTokens = [
+            ...sacrificeTokens,
+            {
+                tokenId: token.tokenId,
+                amount: 0,
+                name: token.name,
+                maxAmount: token.amount,
+                decimals: token.decimals || 0,
+            },
+        ];
+        showTokenSelector = false;
+    }
+
+    function removeTokenFromSacrifice(tokenId: string) {
+        sacrificeTokens = sacrificeTokens.filter((t) => t.tokenId !== tokenId);
+    }
+
+    async function handleSacrifice() {
+        if (!reputationProof || !mainBox) return;
+        isLoading = true;
+        errorMessage = "";
+
+        // ERG has 9 decimals
+        const extra_erg = BigInt(Math.round(sacrificeERG * 1000000000));
+        const extra_tokens = sacrificeTokens
+            .filter((t) => t.amount > 0)
+            .map((t) => ({
+                tokenId: t.tokenId,
+                // Tokens can have decimals too, but for now we use raw amount if not specified
+                amount: BigInt(
+                    Math.round(t.amount * Math.pow(10, t.decimals || 0)),
+                ),
+            }));
+
+        try {
+            const txId = await generate_reputation_proof(
+                mainBox.token_amount,
+                reputationProof.total_amount,
+                mainBox.type.tokenId,
+                mainBox.object_pointer,
+                mainBox.polarization,
+                mainBox.content,
+                mainBox.is_locked,
+                mainBox,
+                [],
+                extra_erg,
+                extra_tokens,
+            );
+            if (txId) {
+                successMessage = `Sacrifice transaction submitted: ${txId}`;
+                showSacrificeForm = false;
+                sacrificeERG = 0;
+                sacrificeTokens = [];
+            }
+        } catch (e: any) {
+            errorMessage = `Error sacrificing assets: ${e.message}`;
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    $: if (showSacrificeForm) {
+        fetchWalletTokens();
     }
 </script>
 
@@ -463,7 +636,135 @@
                     >
                         <i class="fas fa-question-circle"></i>
                     </div>
+                    <button
+                        class="sacrifice-toggle-btn"
+                        on:click={() =>
+                            (showSacrificeForm = !showSacrificeForm)}
+                    >
+                        <i class="fas fa-plus"></i> Sacrifice More
+                    </button>
                 </div>
+
+                {#if showSacrificeForm}
+                    <div class="sacrifice-form info-card">
+                        <h4>Sacrifice Assets</h4>
+                        <p class="small-text">
+                            Add ERG or tokens to your main reputation box. This
+                            action is irreversible and demonstrates your
+                            commitment.
+                        </p>
+
+                        <div class="form-group">
+                            <label for="sacrifice-erg">Extra ERG</label>
+                            <input
+                                id="sacrifice-erg"
+                                type="number"
+                                step="0.000000001"
+                                bind:value={sacrificeERG}
+                                placeholder="0.000000000"
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tokens to Sacrifice</label>
+                            <div class="selected-tokens-list">
+                                {#each sacrificeTokens as token}
+                                    <div class="selected-token-item">
+                                        <div class="token-info-mini">
+                                            <span
+                                                class="token-name"
+                                                title={token.tokenId}
+                                                >{token.name}</span
+                                            >
+                                            <span class="token-max"
+                                                >(Max: {token.maxAmount})</span
+                                            >
+                                        </div>
+                                        <input
+                                            type="number"
+                                            bind:value={token.amount}
+                                            max={token.maxAmount}
+                                            placeholder="Amount"
+                                        />
+                                        <button
+                                            class="remove-token-btn"
+                                            on:click={() =>
+                                                removeTokenFromSacrifice(
+                                                    token.tokenId,
+                                                )}
+                                        >
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                {/each}
+                            </div>
+
+                            <div
+                                class="token-selector-container"
+                                use:clickOutside={() =>
+                                    (showTokenSelector = false)}
+                            >
+                                <button
+                                    class="add-token-trigger"
+                                    on:click|stopPropagation={() =>
+                                        (showTokenSelector =
+                                            !showTokenSelector)}
+                                >
+                                    <i class="fas fa-plus-circle"></i> Add Token
+                                    from Wallet
+                                </button>
+
+                                {#if showTokenSelector}
+                                    <div class="token-dropdown">
+                                        {#if walletTokens.length === 0}
+                                            <p class="dropdown-empty">
+                                                No tokens found in wallet.
+                                            </p>
+                                        {:else}
+                                            {#each walletTokens as token}
+                                                <button
+                                                    class="dropdown-option"
+                                                    on:click={() =>
+                                                        addTokenToSacrifice(
+                                                            token,
+                                                        )}
+                                                    disabled={sacrificeTokens.some(
+                                                        (t) =>
+                                                            t.tokenId ===
+                                                            token.tokenId,
+                                                    )}
+                                                >
+                                                    <span class="opt-name"
+                                                        >{token.name}</span
+                                                    >
+                                                    <span class="opt-amount"
+                                                        >{token.amount}</span
+                                                    >
+                                                </button>
+                                            {/each}
+                                        {/if}
+                                    </div>
+                                {/if}
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button
+                                class="primary-button"
+                                on:click={handleSacrifice}
+                                disabled={isLoading}
+                            >
+                                Confirm Sacrifice
+                            </button>
+                            <button
+                                class="secondary-button"
+                                on:click={() => (showSacrificeForm = false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                {/if}
 
                 <div class="assets-grid">
                     <!-- ERG Card -->
@@ -1098,6 +1399,7 @@
         align-items: center;
         gap: 0.75rem;
         margin-bottom: 1.5rem;
+        width: 100%;
     }
 
     .icon-circle {
@@ -1761,5 +2063,196 @@
     textarea.mono {
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
             monospace;
+    }
+
+    /* --- Sacrifice Form --- */
+    .sacrifice-toggle-btn {
+        background: rgba(251, 191, 36, 0.1);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-left: auto;
+    }
+
+    .sacrifice-toggle-btn:hover {
+        background: rgba(251, 191, 36, 0.2);
+        border-color: #fbbf24;
+    }
+
+    .sacrifice-form {
+        margin-bottom: 2rem;
+        animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .sacrifice-form h4 {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+        color: #fbbf24;
+    }
+
+    .small-text {
+        font-size: 0.875rem;
+        color: #94a3b8;
+        margin-bottom: 1.5rem;
+    }
+
+    .sacrifice-form .form-group input {
+        width: 100%;
+        background: #171717;
+        border: 1px solid #404040;
+        color: #fff;
+        padding: 0.6rem;
+        border-radius: 0.375rem;
+        font-family: inherit;
+    }
+
+    .sacrifice-form .form-group input:focus {
+        outline: none;
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
+    }
+
+    /* --- Multi-Token Sacrifice --- */
+    .selected-tokens-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .selected-token-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .token-info-mini {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .token-info-mini .token-name {
+        font-weight: 600;
+        color: #f1f5f9;
+        font-size: 0.875rem;
+    }
+
+    .token-info-mini .token-max {
+        font-size: 0.7rem;
+        color: #64748b;
+    }
+
+    .selected-token-item input {
+        width: 100px !important;
+        padding: 0.4rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    .remove-token-btn {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .remove-token-btn:hover {
+        color: #ef4444;
+    }
+
+    .token-selector-container {
+        position: relative;
+    }
+
+    .add-token-trigger {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        color: #94a3b8;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .add-token-trigger:hover {
+        background: rgba(251, 191, 36, 0.05);
+        border-color: #fbbf24;
+        color: #fbbf24;
+    }
+
+    .token-dropdown {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        width: 100%;
+        background: #262626;
+        border: 1px solid #404040;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 0.5rem;
+    }
+
+    .dropdown-option {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0.6rem 0.75rem;
+        background: transparent;
+        border: none;
+        color: #e2e8f0;
+        cursor: pointer;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        transition: background 0.2s;
+    }
+
+    .dropdown-option:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .dropdown-option:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    .opt-amount {
+        color: #64748b;
+        font-family: ui-monospace, monospace;
+    }
+
+    .dropdown-empty {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.875rem;
+        padding: 1rem;
     }
 </style>

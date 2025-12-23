@@ -36,12 +36,15 @@
         | "profile" = "intro";
 
     const educationalPhrases = [
-        "Immutable standards for reputation types.",
-        "Atomic and transparent reputation proofs on Ergo.",
-        "Community-verifiable digital assets.",
-        "Hierarchical references for flexible reputation scope.",
-        "Sustainable reputation through public ERG top-ups.",
-        "Owner-controlled reputation boxes with state consistency.",
+        "Reputation is the foundation of trust in a decentralized world; build yours through verifiable commitment.",
+        "Don't rely on a single profile; a robust reputation is built across multiple facets and verified types.",
+        "Increase your reputation by sacrificing assets to demonstrate you have real skin in the game.",
+        "Create automated services or robots that perform tasks and earn their own verifiable reputation on-chain.",
+        "Your profile is a self-referencing proof that anchors all your digital assertions and trust relationships.",
+        "Sacrificed assets are permanent commitments that give weight and responsibility to your reputation claims.",
+        "Reputation boxes are modular; you can expand your trust network one atomic and transparent proof at a time.",
+        "Types are public standards that ensure everyone understands the meaning and rules of your reputation data.",
+        "A multi-faceted reputation is more resilient than a single score; diversify your proofs to build deeper trust.",
     ];
 
     const implementingApps = [

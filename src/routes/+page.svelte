@@ -35,8 +35,24 @@
         | "settings"
         | "profile" = "intro";
 
+    const educationalPhrases = [
+        "Immutable standards for reputation types.",
+        "Atomic and transparent reputation proofs on Ergo.",
+        "Community-verifiable digital assets.",
+        "Hierarchical references for flexible reputation scope.",
+        "Sustainable reputation through public ERG top-ups.",
+        "Owner-controlled reputation boxes with state consistency.",
+    ];
+
+    let randomPhrase = "";
+    let loadingProfiles = false;
+
     onMount(async () => {
         await loadTypes();
+        randomPhrase =
+            educationalPhrases[
+                Math.floor(Math.random() * educationalPhrases.length)
+            ];
     });
 
     $: if ($connected) {
@@ -50,12 +66,17 @@
     }
 
     async function loadProfile() {
-        const allProfiles = await fetchAllProfiles(true, [], $types);
-        user_profiles.set(allProfiles);
-        if (allProfiles.length > 0) {
-            reputation_proof.set(allProfiles[0]);
-        } else {
-            reputation_proof.set(null);
+        loadingProfiles = true;
+        try {
+            const allProfiles = await fetchAllProfiles(true, [], $types);
+            user_profiles.set(allProfiles);
+            if (allProfiles.length > 0) {
+                reputation_proof.set(allProfiles[0]);
+            } else {
+                reputation_proof.set(null);
+            }
+        } finally {
+            loadingProfiles = false;
         }
     }
 
@@ -165,7 +186,15 @@
             <h1>Welcome to Sigma Reputation</h1>
 
             {#if $connected}
-                <p>You are connected.</p>
+                <div class="educational-phrase">
+                    <p class="phrase-label">Did you know?</p>
+                    <p class="phrase-text">{randomPhrase}</p>
+                </div>
+                {#if loadingProfiles}
+                    <div class="loading-status">
+                        <i class="fas fa-spinner fa-spin"></i> Preloading your reputation...
+                    </div>
+                {/if}
                 <button on:click={() => (currentPage = "profile")}
                     >Explore</button
                 >
@@ -280,6 +309,42 @@
     .welcome-container button {
         padding: 1rem 2rem;
         font-size: 1.2rem;
+        margin-top: 2rem;
+    }
+
+    .educational-phrase {
+        background: rgba(251, 191, 36, 0.1);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 2rem 0;
+        max-width: 500px;
+        backdrop-filter: blur(5px);
+    }
+
+    .phrase-label {
+        color: #fbbf24;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.05em;
+    }
+
+    .phrase-text {
+        font-size: 1.1rem;
+        line-height: 1.4;
+        color: #f0f0f0;
+        margin: 0;
+    }
+
+    .loading-status {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
     }
 
     .view-switcher {

@@ -275,14 +275,15 @@ export async function fetchAllProfiles(
             boxesByTokenId.get(tokenId)!.push(box);
         }
 
-        const profiles: ReputationProof[] = [];
 
-        for (const [tokenId, userBoxes] of boxesByTokenId.entries()) {
-            const emissionAmount = await fetchTokenEmissionAmount(tokenId);
-            if (emissionAmount === null) continue;
 
-            // Fetch ALL boxes for this profile token to have the complete proof
-            const allProfileBoxes = await fetchAllBoxesByTokenId(tokenId);
+        const profilePromises = Array.from(boxesByTokenId.entries()).map(async ([tokenId, userBoxes]) => {
+            const [emissionAmount, allProfileBoxes] = await Promise.all([
+                fetchTokenEmissionAmount(tokenId),
+                fetchAllBoxesByTokenId(tokenId)
+            ]);
+
+            if (emissionAmount === null) return null;
 
             const proof: ReputationProof = {
                 token_id: tokenId,
@@ -324,8 +325,11 @@ export async function fetchAllProfiles(
                 if (fallbackType) proof.types.push(fallbackType);
             }
 
-            profiles.push(proof);
-        }
+            return proof;
+        });
+
+        const results = await Promise.all(profilePromises);
+        const profiles = results.filter(p => p !== null) as ReputationProof[];
 
         // Sort profiles by total ERG burned (sum of all box values)
         profiles.sort((a, b) => {

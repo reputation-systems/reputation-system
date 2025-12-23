@@ -31,3 +31,6 @@ const reputationProofHash = hex.encode(sha256(reputationProofErgoTree.template))
 export const ergo_tree_address = reputationProofAddress;
 export const ergo_tree_hash = reputationProofHash;
 export const ergo_tree = reputationProofErgoTree.toHex();
+// Profile Type NFT
+export const PROFILE_TYPE_NFT_ID = "1820fd428a0b92d61ce3f86cd98240fdeeee8a392900f0b19a2e017d66f79926";
+export const PROFILE_TOTAL_SUPPLY = 99999999;

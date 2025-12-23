@@ -45,6 +45,17 @@ export function hexToBytes(hexString) {
         return null;
     }
 }
+export function hexOrUtf8ToBytes(value) {
+    if (!value) {
+        return new Uint8Array();
+    }
+    const hexBytes = hexToBytes(value);
+    if (hexBytes) {
+        return hexBytes;
+    }
+    // fallback: utf-8
+    return new TextEncoder().encode(value);
+}
 /**
  * Generates a PK proposition (R7 register format) from a wallet address.
  * @param wallet_pk The base58 encoded wallet address.
@@ -135,4 +146,29 @@ export function stringToRendered(value) {
  */
 export function renderedToString(renderedValue) {
     return hexToUtf8(renderedValue);
+}
+export function uint8ArrayToHex(array) {
+    return [...new Uint8Array(array)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+}
+export function parseCollByteToHex(renderedValue) {
+    if (renderedValue === null || renderedValue === undefined)
+        return null;
+    if (Array.isArray(renderedValue) && renderedValue.every(item => typeof item === 'number' && item >= 0 && item <= 255)) {
+        try {
+            return uint8ArrayToHex(new Uint8Array(renderedValue));
+        }
+        catch (e) {
+            console.error("parseCollByteToHex: Error convirtiendo array de bytes a hex:", renderedValue, e);
+            return null;
+        }
+    }
+    if (typeof renderedValue === 'string') {
+        const cleanedHex = renderedValue.startsWith('0x') ? renderedValue.substring(2) : renderedValue;
+        if (/^[0-9a-fA-F]*$/.test(cleanedHex) && cleanedHex.length % 2 === 0) {
+            return cleanedHex;
+        }
+    }
+    return null;
 }

@@ -18,8 +18,8 @@ type ApiBox = {
 /**
  * Gets the timestamp of a block given its block ID.
  */
-export async function getTimestampFromBlockId(blockId: string): Promise<number> {
-    const url = `${explorer_uri}/api/v1/blocks/${blockId}`;
+export async function getTimestampFromBlockId(blockId: string, explorerUri: string = explorer_uri): Promise<number> {
+    const url = `${explorerUri}/api/v1/blocks/${blockId}`;
 
     try {
         const response = await fetch(url, { method: "GET" });
@@ -46,7 +46,8 @@ export async function getTimestampFromBlockId(blockId: string): Promise<number> 
  */
 export async function searchBoxes(
     r4TypeNftId: string,
-    r5Value: string
+    r5Value: string,
+    explorerUri: string = explorer_uri
 ): Promise<ApiBox[]> {
     const boxes: ApiBox[] = [];
 
@@ -62,7 +63,7 @@ export async function searchBoxes(
         let moreDataAvailable = true;
 
         while (moreDataAvailable) {
-            const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
 
             const finalBody = {
                 "ergoTreeTemplateHash": ergo_tree_hash,
@@ -99,7 +100,7 @@ export async function searchBoxes(
     }
 }
 
-export async function fetchTypeNfts(): Promise<Map<string, TypeNFT>> {
+export async function fetchTypeNfts(explorerUri: string = explorer_uri): Promise<Map<string, TypeNFT>> {
     try {
         const fetchedTypesArray: TypeNFT[] = [];
         let offset = 0;
@@ -107,7 +108,7 @@ export async function fetchTypeNfts(): Promise<Map<string, TypeNFT>> {
         let moreDataAvailable = true;
 
         while (moreDataAvailable) {
-            const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
+            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
             const body = { "ergoTreeTemplateHash": digital_public_good_contract_hash };
             const response = await fetch(url, {
                 method: 'POST',
@@ -156,7 +157,8 @@ export async function fetchTypeNfts(): Promise<Map<string, TypeNFT>> {
 export async function updateReputationProofList(
     connected: boolean,
     availableTypes: Map<string, TypeNFT>,
-    search: string | null
+    search: string | null,
+    explorerUri: string = explorer_uri
 ): Promise<Map<string, ReputationProof>> {
 
     if (!connected) {
@@ -222,7 +224,7 @@ export async function updateReputationProofList(
         for (const body_part of search_bodies) {
             let offset = 0, limit = 100, moreDataAvailable = true;
             while (moreDataAvailable) {
-                const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
+                const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
                 const final_body = { "ergoTreeTemplateHash": ergo_tree_hash, "registers": { ...(body_part.registers || {}), ...r7_filter }, "assets": body_part.assets || [] };
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(final_body) });
 
@@ -250,7 +252,7 @@ export async function updateReputationProofList(
                     }
 
                     if (!proof) {
-                        const tokenResponse = await fetch(`${explorer_uri}/api/v1/tokens/${rep_token_id}`);
+                        const tokenResponse = await fetch(`${explorerUri}/api/v1/tokens/${rep_token_id}`);
                         if (!tokenResponse.ok) {
                             console.error(`Error al obtener la cantidad emitida del token ${rep_token_id}`);
                             continue;

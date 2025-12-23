@@ -153,7 +153,8 @@ const txId = await generate_reputation_proof(
     input_proof,     // RPBox - Existing box to spend from (optional)
     extra_inputs,    // RPBox[] - Additional boxes to merge (optional)
     extra_erg,       // bigint - Extra ERG to sacrifice (optional)
-    extra_tokens     // {tokenId, amount}[] - Extra tokens (optional)
+    extra_tokens,    // {tokenId, amount}[] - Extra tokens (optional)
+    explorerUri      // string - Explorer URI (optional)
 );
 ```
 
@@ -163,7 +164,7 @@ const txId = await generate_reputation_proof(
 
 ### Profile Fetching
 
-#### `fetchAllProfiles(is_self_defined?, types?, availableTypes)`
+#### `fetchAllProfiles(is_self_defined?, types?, availableTypes, explorerUri?)`
 
 Fetches all ReputationProof objects for the connected user.
 
@@ -173,7 +174,8 @@ import { fetchAllProfiles } from 'reputation-system';
 const profiles = await fetchAllProfiles(
     null,           // is_self_defined: boolean | null - Filter by self-defined
     [],             // types: string[] - Filter by type NFT IDs
-    availableTypes  // Map<string, TypeNFT> - Available types map
+    availableTypes, // Map<string, TypeNFT> - Available types map
+    explorerUri     // string - Explorer URI (optional)
 );
 ```
 
@@ -183,14 +185,14 @@ const profiles = await fetchAllProfiles(
 
 ### Type NFTs
 
-#### `fetchTypeNfts()`
+#### `fetchTypeNfts(explorerUri?)`
 
 Fetches all available Type NFTs from the blockchain.
 
 ```typescript
 import { fetchTypeNfts } from 'reputation-system';
 
-const types: Map<string, TypeNFT> = await fetchTypeNfts();
+const types: Map<string, TypeNFT> = await fetchTypeNfts(explorerUri);
 ```
 
 **Returns:** `Promise<Map<string, TypeNFT>>`
@@ -199,7 +201,7 @@ const types: Map<string, TypeNFT> = await fetchTypeNfts();
 
 ### Reputation List
 
-#### `updateReputationProofList(connected, availableTypes, search)`
+#### `updateReputationProofList(connected, availableTypes, search, explorerUri?)`
 
 Updates and returns the complete list of all reputation proofs.
 
@@ -209,7 +211,8 @@ import { updateReputationProofList } from 'reputation-system';
 const proofs = await updateReputationProofList(
     connected,       // boolean - Is wallet connected
     availableTypes,  // Map<string, TypeNFT> - Available types
-    search           // string | null - Search query
+    search,          // string | null - Search query
+    explorerUri      // string - Explorer URI (optional)
 );
 ```
 
@@ -219,7 +222,7 @@ const proofs = await updateReputationProofList(
 
 ### Search & Query
 
-#### `searchBoxes(r4TypeNftId, r5Value)`
+#### `searchBoxes(r4TypeNftId, r5Value, explorerUri?)`
 
 Search for boxes with specific R4 and R5 register values.
 
@@ -228,7 +231,8 @@ import { searchBoxes } from 'reputation-system';
 
 const boxes = await searchBoxes(
     r4TypeNftId,  // string - Type NFT ID for R4
-    r5Value       // string - Object pointer for R5
+    r5Value,      // string - Object pointer for R5
+    explorerUri   // string - Explorer URI (optional)
 );
 ```
 
@@ -258,14 +262,14 @@ import { getReputationProofFromRPBox } from 'reputation-system';
 const proof = getReputationProofFromRPBox(box, proofsMap);
 ```
 
-#### `getTimestampFromBlockId(blockId)`
+#### `getTimestampFromBlockId(blockId, explorerUri?)`
 
 Gets the timestamp of a block.
 
 ```typescript
 import { getTimestampFromBlockId } from 'reputation-system';
 
-const timestamp: number = await getTimestampFromBlockId(blockId);
+const timestamp: number = await getTimestampFromBlockId(blockId, explorerUri);
 ```
 
 ---

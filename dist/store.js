@@ -1,6 +1,8 @@
 import { writable } from 'svelte/store';
 // Main store for holding fetched reputation proofs, keyed by token ID.
 export const proofs = writable(new Map());
+export const reputation_proof = writable(null);
+export const user_profiles = writable([]);
 // UI state stores
 export const advance_mode = writable(false);
 export const fetch_all = writable(true);

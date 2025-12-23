@@ -7,20 +7,13 @@ export function token_rendered(proof) {
     return stringToRendered(proof.token_id);
 }
 ;
-export var Network;
-(function (Network) {
-    Network["ErgoTestnet"] = "ergo-testnet";
-    Network["ErgoMainnet"] = "ergo";
-    Network["BitcoinTestnet"] = "btc-testnet";
-    Network["BitcoinMainnet"] = "btc";
-})(Network || (Network = {}));
 // --- REPUTATION COMPUTATION LOGIC ---
 export function compute(proof, target_object_pointer) {
     const all_proofs = get(proofs);
     return internal_compute(all_proofs, proof, target_object_pointer, get(compute_deep_level));
 }
 function internal_compute(all_proofs, proof, target_object_pointer, deep_level) {
-    console.log(`Compute (deep_level: ${deep_level}) on proof: ${proof.type.typeName} (${proof.token_id})`);
+    console.log(`Compute (deep_level: ${deep_level}) on proof: ${proof.types.map(t => t.typeName).join(', ')} (${proof.token_id})`);
     return proof.current_boxes.reduce((total, box) => {
         if (proof.total_amount === 0)
             return total; // Avoid division by zero
@@ -31,7 +24,7 @@ function internal_compute(all_proofs, proof, target_object_pointer, deep_level) 
     }, 0);
 }
 function computeBoxReputation(all_proofs, parent_proof, box, target_object_pointer, deep_level) {
-    if (parent_proof.type.typeName.includes("Proof-by-Token")) {
+    if (parent_proof.types.some(t => t.typeName.includes("Proof-by-Token"))) {
         const pointed_token_id = box.object_pointer;
         if (pointed_token_id === parent_proof.token_id)
             return 0.00;

@@ -30,6 +30,7 @@ declare const ergo: any;
  * @param extra_inputs Additional RPBoxes to merge into the new proof.
  * @param extra_erg Optional extra ERG to add to the proof (sacrificed).
  * @param extra_tokens Optional extra tokens to add to the proof (sacrificed).
+ * @param explorerUri Optional explorer URI to use for fetching the Type NFT box.
  * @returns A promise that resolves to the transaction ID string, or null on failure.
  */
 export async function generate_reputation_proof(
@@ -43,7 +44,8 @@ export async function generate_reputation_proof(
     input_proof?: RPBox,
     extra_inputs?: RPBox[],
     extra_erg: Amount = 0n,
-    extra_tokens: { tokenId: string, amount: Amount }[] = []
+    extra_tokens: { tokenId: string, amount: Amount }[] = [],
+    explorerUri: string = explorer_uri
 ): Promise<string | null> {
 
 
@@ -69,7 +71,7 @@ export async function generate_reputation_proof(
     const creatorP2PKAddress = ErgoAddress.fromBase58(creatorAddressString);
 
     // Fetch the Type NFT box to be used in dataInputs. This is required by the contract.
-    const typeNftBoxResponse = await fetch(`${explorer_uri}/api/v1/boxes/byTokenId/${type_nft_id}`);
+    const typeNftBoxResponse = await fetch(`${explorerUri}/api/v1/boxes/byTokenId/${type_nft_id}`);
     if (!typeNftBoxResponse.ok) {
         alert("Could not fetch the Type NFT box. Aborting transaction.");
         return null;

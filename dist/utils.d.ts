@@ -5,6 +5,7 @@
  */
 export declare function hexToUtf8(hexString: string): string | null;
 export declare function hexToBytes(hexString: string | undefined | null): Uint8Array | null;
+export declare function hexOrUtf8ToBytes(value: string | null | undefined): Uint8Array;
 /**
  * Generates a PK proposition (R7 register format) from a wallet address.
  * @param wallet_pk The base58 encoded wallet address.
@@ -57,3 +58,5 @@ export declare function stringToRendered(value: string): string;
  * @returns A UTF-8 string or null on error.
  */
 export declare function renderedToString(renderedValue: string): string | null;
+export declare function uint8ArrayToHex(array: Uint8Array): string;
+export declare function parseCollByteToHex(renderedValue: any): string | null;

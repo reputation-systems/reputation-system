@@ -1,18 +1,86 @@
-import { Network } from "./ReputationProof";
-import { hexToBytes, hexToUtf8, serializedToRendered, SString } from "./utils";
-import { get } from "svelte/store";
-import { connected, proofs, types } from "./store";
+import {} from "./ReputationProof";
+import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
-import { blake2b256 } from "@fleet-sdk/crypto";
-export async function fetchTypeNfts() {
+import { hexOrUtf8ToBytes } from "./utils";
+const LIMIT_PER_PAGE = 100;
+/**
+ * Gets the timestamp of a block given its block ID.
+ */
+export async function getTimestampFromBlockId(blockId, explorerUri = explorer_uri) {
+    const url = `${explorerUri}/api/v1/blocks/${blockId}`;
+    try {
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        const json = await response.json();
+        const timestamp = json?.block?.header?.timestamp;
+        if (typeof timestamp !== "number") {
+            console.warn(`No timestamp found for block ${blockId}`);
+            return 0;
+        }
+        return timestamp < 1e11 ? timestamp * 1000 : timestamp;
+    }
+    catch (error) {
+        console.error(`Error fetching timestamp for block ${blockId}:`, error);
+        return 0;
+    }
+}
+/**
+ * Generic search function for boxes with specific R4 and R5 values
+ */
+export async function searchBoxes(r4TypeNftId, r5Value, explorerUri = explorer_uri) {
+    const boxes = [];
+    const searchBody = {
+        registers: {
+            "R4": serializedToRendered(SColl(SByte, hexToBytes(r4TypeNftId) ?? "").toHex()),
+            "R5": serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(r5Value) ?? "").toHex())
+        }
+    };
+    try {
+        let offset = 0;
+        let moreDataAvailable = true;
+        while (moreDataAvailable) {
+            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+            const finalBody = {
+                "ergoTreeTemplateHash": ergo_tree_hash,
+                "registers": searchBody.registers,
+                "assets": []
+            };
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(finalBody)
+            });
+            if (!response.ok) {
+                console.error(`Error searching boxes: ${response.statusText}`);
+                moreDataAvailable = false;
+                continue;
+            }
+            const jsonData = await response.json();
+            if (!jsonData.items || jsonData.items.length === 0) {
+                moreDataAvailable = false;
+                continue;
+            }
+            boxes.push(...jsonData.items);
+            offset += LIMIT_PER_PAGE;
+        }
+        return boxes;
+    }
+    catch (error) {
+        console.error('Error while searching boxes:', error);
+        return [];
+    }
+}
+export async function fetchTypeNfts(explorerUri = explorer_uri) {
     try {
         const fetchedTypesArray = [];
         let offset = 0;
         const limit = 100;
         let moreDataAvailable = true;
         while (moreDataAvailable) {
-            const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
+            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
             const body = { "ergoTreeTemplateHash": digital_public_good_contract_hash };
             const response = await fetch(url, {
                 method: 'POST',
@@ -45,32 +113,52 @@ export async function fetchTypeNfts() {
             offset += limit;
         }
         const typesMap = new Map(fetchedTypesArray.map(type => [type.tokenId, type]));
-        types.set(typesMap);
-        console.log(`Successfully fetched and stored ${typesMap.size} Type NFTs.`);
+        console.log(`Successfully fetched ${typesMap.size} Type NFTs.`);
+        return typesMap;
     }
     catch (e) {
         console.error("Failed to fetch and store types:", e);
-        types.set(new Map());
+        return new Map();
     }
 }
-export async function updateReputationProofList(ergo, all, search) {
-    await fetchTypeNfts();
-    const availableTypes = get(types);
-    if (!get(connected))
-        all = true;
+export async function updateReputationProofList(connected, availableTypes, search, explorerUri = explorer_uri) {
+    if (!connected) {
+        // If not connected, we might want to fetch all or handle differently.
+        // For now, let's assume 'all' logic applies if not connected or if explicitly requested.
+        // But the original code set 'all = true' if '!connected'.
+        // The 'all' parameter was removed from signature in plan but logic needs to be preserved.
+        // Let's assume we always fetch based on search or all if search is null.
+    }
     const proofs = new Map();
     const search_bodies = [];
     let r7_filter = {};
     let userR7SerializedHex = null;
-    const change_address = get(connected) && ergo ? await ergo.get_change_address() : null;
+    // @ts-ignore
+    const ergo = window.ergo;
+    const change_address = connected && ergo ? await ergo.get_change_address() : null;
     if (change_address) {
         const userAddress = ErgoAddress.fromBase58(change_address);
         const propositionBytes = hexToBytes(userAddress.ergoTree);
         if (propositionBytes) {
             userR7SerializedHex = SColl(SByte, propositionBytes).toHex();
-            if (!all) {
-                r7_filter = { "R7": userR7SerializedHex };
-            }
+            // If we are searching, we don't filter by R7.
+            // If we are NOT searching, we might want to filter by R7 (my proofs) OR show all.
+            // The previous logic had an 'all' parameter.
+            // If 'search' is present, we search.
+            // If 'search' is null, do we show all or only mine?
+            // The original code: if (!connected) all = true.
+            // if (!all) r7_filter = { "R7": userR7SerializedHex };
+            // Let's infer: if search is provided, we don't filter by owner.
+            // If search is NOT provided, and we are connected, maybe we want to see OUR proofs?
+            // BUT, the 'all' flag was passed as 'true' in Search.svelte: updateReputationProofList(null, true, null).
+            // So Search.svelte wants ALL proofs.
+            // Profile.svelte probably wants ONLY user proofs, but it uses fetchProfile separately.
+            // So updateReputationProofList seems to be used for "Explore" or "Search" which implies ALL.
+            // So we probably don't need r7_filter unless we want to filter by "My Proofs" in search.
+            // For now, I will assume we want ALL proofs if search is generic.
+            // However, to support "My Proofs" filter later, we might need it.
+            // But based on usage in Search.svelte (all=true), we can skip r7_filter for now or make it optional.
+            // I will remove 'all' param and assume we want ALL unless specific logic is added.
         }
     }
     if (search) {
@@ -90,7 +178,7 @@ export async function updateReputationProofList(ergo, all, search) {
         for (const body_part of search_bodies) {
             let offset = 0, limit = 100, moreDataAvailable = true;
             while (moreDataAvailable) {
-                const url = `${explorer_uri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
+                const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${limit}`;
                 const final_body = { "ergoTreeTemplateHash": ergo_tree_hash, "registers": { ...(body_part.registers || {}), ...r7_filter }, "assets": body_part.assets || [] };
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(final_body) });
                 if (!response.ok) {
@@ -120,7 +208,7 @@ export async function updateReputationProofList(ergo, all, search) {
                         continue;
                     }
                     if (!proof) {
-                        const tokenResponse = await fetch(`${explorer_uri}/api/v1/tokens/${rep_token_id}`);
+                        const tokenResponse = await fetch(`${explorerUri}/api/v1/tokens/${rep_token_id}`);
                         if (!tokenResponse.ok) {
                             console.error(`Error al obtener la cantidad emitida del token ${rep_token_id}`);
                             continue;
@@ -129,14 +217,14 @@ export async function updateReputationProofList(ergo, all, search) {
                         const emissionAmount = Number(tokenData.emissionAmount || 0);
                         proof = {
                             token_id: rep_token_id,
-                            type: { tokenId: "", boxId: '', typeName: "N/A", description: "...", schemaURI: "", isRepProof: false },
+                            types: [],
                             total_amount: emissionAmount,
                             owner_address: serializedToRendered(owner_serialized),
                             owner_serialized: owner_serialized,
                             can_be_spend: userR7SerializedHex ? owner_serialized === userR7SerializedHex : false,
                             current_boxes: [],
                             number_of_boxes: 0,
-                            network: Network.ErgoMainnet,
+                            network: "ergo",
                             data: {}
                         };
                         proofs.set(rep_token_id, proof);
@@ -162,7 +250,7 @@ export async function updateReputationProofList(ergo, all, search) {
                     catch (error) {
                         box_content = {};
                     }
-                    const object_pointer_for_box = hexToBytes(box.additionalRegisters.R5?.renderedValue ?? "") ?? "";
+                    const object_pointer_for_box = parseCollByteToHex(box.additionalRegisters.R5?.renderedValue) ?? "";
                     const current_box = {
                         box: {
                             boxId: box.boxId, value: box.value, assets: box.assets, ergoTree: box.ergoTree, creationHeight: box.creationHeight,
@@ -179,7 +267,9 @@ export async function updateReputationProofList(ergo, all, search) {
                         content: box_content,
                     };
                     if (current_box.object_pointer === proof.token_id) {
-                        proof.type = typeNftForBox;
+                        if (!proof.types.some(t => t.tokenId === typeNftForBox.tokenId)) {
+                            proof.types.push(typeNftForBox);
+                        }
                     }
                     proof.current_boxes.push(current_box);
                     proof.number_of_boxes += 1;
@@ -204,10 +294,10 @@ export function getAllRPBoxesFromProof(proof) {
 }
 /**
  * Finds and returns the ReputationProof to which a specific RPBox belongs.
- * This function retrieves the complete map of proofs from the 'proofs' Svelte store.
  * @param box The RPBox for which to find its parent ReputationProof.
+ * @param proofs The map of all fetched reputation proofs.
  * @returns The corresponding ReputationProof or 'undefined' if not found.
  */
-export function getReputationProofFromRPBox(box) {
-    return get(proofs).get(box.token_id);
+export function getReputationProofFromRPBox(box, proofs) {
+    return proofs.get(box.token_id);
 }

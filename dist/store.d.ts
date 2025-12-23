@@ -1,6 +1,8 @@
 /// <reference types="svelte" />
 import type { ReputationProof, TypeNFT } from './ReputationProof';
 export declare const proofs: import("svelte/store").Writable<Map<string, ReputationProof>>;
+export declare const reputation_proof: import("svelte/store").Writable<ReputationProof | null>;
+export declare const user_profiles: import("svelte/store").Writable<ReputationProof[]>;
 export declare const advance_mode: import("svelte/store").Writable<boolean>;
 export declare const fetch_all: import("svelte/store").Writable<boolean>;
 export declare const building_graph: import("svelte/store").Writable<boolean | null>;

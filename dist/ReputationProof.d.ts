@@ -1,4 +1,23 @@
 import { type Amount, type Box } from "@fleet-sdk/core";
+export interface ApiBox {
+    boxId: string;
+    value: string | number;
+    ergoTree: string;
+    assets: {
+        tokenId: string;
+        amount: string | number;
+    }[];
+    creationHeight: number;
+    blockId: string;
+    additionalRegisters: {
+        [key: string]: {
+            serializedValue: string;
+            renderedValue?: string;
+        };
+    };
+    index: number;
+    transactionId: string;
+}
 export interface TypeNFT {
     tokenId: string;
     boxId: string;
@@ -9,14 +28,14 @@ export interface TypeNFT {
 }
 export interface ReputationProof {
     token_id: string;
-    type: TypeNFT;
+    types: TypeNFT[];
     total_amount: number;
     owner_address: string;
     owner_serialized: string;
     can_be_spend: boolean;
     current_boxes: RPBox[];
     number_of_boxes: number;
-    network: Network;
+    network: string;
     data: object;
 }
 export interface RPBox {
@@ -31,10 +50,4 @@ export interface RPBox {
     content: object | string | null;
 }
 export declare function token_rendered(proof: ReputationProof): string;
-export declare enum Network {
-    ErgoTestnet = "ergo-testnet",
-    ErgoMainnet = "ergo",
-    BitcoinTestnet = "btc-testnet",
-    BitcoinMainnet = "btc"
-}
 export declare function compute(proof: ReputationProof, target_object_pointer: string): number;

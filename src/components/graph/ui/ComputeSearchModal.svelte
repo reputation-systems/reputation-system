@@ -31,7 +31,7 @@
     // Show the dialog when the 'showModal' prop is true.
     $: if (dialog && showModal) dialog.showModal();
 </script>
-  
+
 <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -40,16 +40,23 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div on:click|stopPropagation>
         <h2 class="modal-title" id="generateReputationLabel">
-            Compute score from: {proof.type.typeName}
+            Compute score from: {proof.types.map((t) => t.typeName).join(", ")}
         </h2>
         <p class="modal-subtitle">
             Proof ID: {proof.token_id.slice(0, 20)}...
         </p>
         <hr />
-        
+
         <form class="compute-form" on:submit|preventDefault={computeResult}>
-            <label for="target-input" class="form-label">Target Object Pointer</label>
-            <input id="target-input" class="form-control" bind:value={target_object_pointer} placeholder="Enter URL, token ID, hash..."/>
+            <label for="target-input" class="form-label"
+                >Target Object Pointer</label
+            >
+            <input
+                id="target-input"
+                class="form-control"
+                bind:value={target_object_pointer}
+                placeholder="Enter URL, token ID, hash..."
+            />
             <button type="submit" class="button-primary">Calculate</button>
         </form>
 
@@ -63,7 +70,7 @@
         {/if}
     </div>
 </dialog>
-  
+
 <style>
     dialog {
         max-width: 32em;
@@ -74,16 +81,16 @@
         color: #f0f0f0;
         border: 1px solid #444;
     }
-  
+
     dialog::backdrop {
         background: rgba(0, 0, 0, 0.7);
         backdrop-filter: blur(3px);
     }
-  
+
     h2.modal-title {
         font-size: 1.5rem;
         margin: 0;
-        color: #FBBF24;
+        color: #fbbf24;
     }
 
     .modal-subtitle {
@@ -126,7 +133,7 @@
         align-self: flex-end;
         padding: 0.75em 1.5em;
         font-size: 1rem;
-        background-color: #FBBF24;
+        background-color: #fbbf24;
         color: #1a1a1a;
         border: none;
         cursor: pointer;

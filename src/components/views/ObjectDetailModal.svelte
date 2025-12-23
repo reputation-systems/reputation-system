@@ -144,7 +144,9 @@
                         {parentProof.token_id}
                       </h3>
                       <p class="card-source-id">
-                        Type: {parentProof.type.typeName}
+                        Types: {parentProof.types
+                          .map((t) => t.typeName)
+                          .join(", ")}
                       </p>
                     </div>
                     <span
@@ -211,7 +213,9 @@
                         {parentProof.token_id}
                       </h3>
                       <p class="card-source-id">
-                        Type: {parentProof.type.typeName}
+                        Types: {parentProof.types
+                          .map((t) => t.typeName)
+                          .join(", ")}
                       </p>
                     </div>
                     <span

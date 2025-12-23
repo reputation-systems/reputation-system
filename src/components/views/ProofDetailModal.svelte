@@ -143,7 +143,9 @@
                         {activeProof.token_id}
                     </h1>
                     <p class="proof-subtitle">
-                        Type: {activeProof.type.typeName}
+                        Types: {activeProof.types
+                            .map((t) => t.typeName)
+                            .join(", ")}
                     </p>
                 </div>
                 <span class="network-badge">{activeProof.network}</span>
@@ -157,13 +159,19 @@
                         >{activeProof.owner_address}</span
                     >
                     <strong>Description:</strong><span
-                        >{activeProof.type.description}</span
+                        >{activeProof.types
+                            .map((t) => t.description)
+                            .filter((d) => d)
+                            .join(" | ")}</span
                     >
                     <strong>Total Amount:</strong><span
                         >{activeProof.total_amount}</span
                     >
                     <strong>Schema:</strong><span class="breakable"
-                        >{activeProof.type.schemaURI}</span
+                        >{activeProof.types
+                            .map((t) => t.schemaURI)
+                            .filter((s) => s)
+                            .join(" | ")}</span
                     >
                 </div>
             </section>
@@ -400,8 +408,9 @@
                                                     {ref.parentProof.token_id}
                                                 </h3>
                                                 <p class="card-source-id">
-                                                    Type: {ref.parentProof.type
-                                                        .typeName}
+                                                    Types: {ref.parentProof.types
+                                                        .map((t) => t.typeName)
+                                                        .join(", ")}
                                                 </p>
                                             </div>
                                             <span
@@ -485,8 +494,9 @@
                                                     {ref.parentProof.token_id}
                                                 </h3>
                                                 <p class="card-source-id">
-                                                    Type: {ref.parentProof.type
-                                                        .typeName}
+                                                    Types: {ref.parentProof.types
+                                                        .map((t) => t.typeName)
+                                                        .join(", ")}
                                                 </p>
                                             </div>
                                             <span

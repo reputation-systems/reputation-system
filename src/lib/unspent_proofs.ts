@@ -1,5 +1,5 @@
 import { Network, type RPBox, type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
-import { hexToBytes, hexToUtf8, serializedToRendered, SString } from "$lib/utils";
+import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "$lib/utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
 import { hexOrUtf8ToBytes } from "./utils";
@@ -260,7 +260,7 @@ export async function updateReputationProofList(
 
                         proof = {
                             token_id: rep_token_id,
-                            type: { tokenId: "", boxId: '', typeName: "N/A", description: "...", schemaURI: "", isRepProof: false },
+                            types: [],
                             total_amount: emissionAmount,
                             owner_address: serializedToRendered(owner_serialized),
                             owner_serialized: owner_serialized,
@@ -294,7 +294,7 @@ export async function updateReputationProofList(
                         box_content = {};
                     }
 
-                    const object_pointer_for_box = hexToBytes(box.additionalRegisters.R5?.renderedValue ?? "") ?? "";
+                    const object_pointer_for_box = parseCollByteToHex(box.additionalRegisters.R5?.renderedValue) ?? "";
 
                     const current_box: RPBox = {
                         box: {
@@ -313,7 +313,9 @@ export async function updateReputationProofList(
                     };
 
                     if (current_box.object_pointer === proof.token_id) {
-                        proof.type = typeNftForBox;
+                        if (!proof.types.some(t => t.tokenId === typeNftForBox.tokenId)) {
+                            proof.types.push(typeNftForBox);
+                        }
                     }
 
                     proof.current_boxes.push(current_box);

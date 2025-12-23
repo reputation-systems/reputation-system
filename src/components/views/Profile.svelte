@@ -210,10 +210,19 @@
                         <i class="fas fa-user-shield"></i>
                     </div>
                     <div class="profile-meta">
-                        <span class="profile-type-badge"
-                            >{reputationProof?.type?.typeName ||
-                                "Reputation Proof"}</span
-                        >
+                        <div class="profile-types-container">
+                            {#if reputationProof?.types && reputationProof.types.length > 0}
+                                {#each reputationProof.types as type}
+                                    <span class="profile-type-badge"
+                                        >{type.typeName}</span
+                                    >
+                                {/each}
+                            {:else}
+                                <span class="profile-type-badge"
+                                    >Reputation Proof</span
+                                >
+                            {/if}
+                        </div>
                         <span class="profile-id-main"
                             >{reputationProof?.token_id.substring(
                                 0,
@@ -250,10 +259,19 @@
                                 </div>
                                 <div class="item-content">
                                     <div class="item-top">
-                                        <span class="item-type"
-                                            >{profile.type?.typeName ||
-                                                "Proof"}</span
-                                        >
+                                        <div class="item-types">
+                                            {#if profile.types && profile.types.length > 0}
+                                                {#each profile.types as type}
+                                                    <span class="item-type"
+                                                        >{type.typeName}</span
+                                                    >
+                                                {/each}
+                                            {:else}
+                                                <span class="item-type"
+                                                    >Proof</span
+                                                >
+                                            {/if}
+                                        </div>
                                         <span class="item-id"
                                             >{profile.token_id.substring(
                                                 0,
@@ -575,15 +593,24 @@
     .profile-meta {
         display: flex;
         flex-direction: column;
-        gap: 0.125rem;
+        gap: 0.25rem;
+    }
+
+    .profile-types-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
     }
 
     .profile-type-badge {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #fbbf24;
+        color: #000;
+        background: #fbbf24;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
     }
 
     .profile-id-main {
@@ -696,12 +723,22 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .item-types {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
     }
 
     .item-type {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         font-weight: 600;
-        color: #e2e8f0;
+        color: #fbbf24;
+        background: rgba(251, 191, 36, 0.1);
+        padding: 0.05rem 0.3rem;
+        border-radius: 3px;
     }
 
     .item-id {

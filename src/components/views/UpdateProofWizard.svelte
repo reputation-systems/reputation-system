@@ -77,7 +77,7 @@
             const txId = await generate_reputation_proof(
                 token_amount,
                 selectedProof.total_amount,
-                selectedProof.type.tokenId,
+                selectedProof.types[0].tokenId,
                 object_to_assign,
                 !is_negative,
                 data,
@@ -142,8 +142,11 @@
                 {#each Array.from(proofs.values()) as proof (proof.token_id)}
                     {#if proof.can_be_spend}
                         <option value={proof.token_id}>
-                            {proof.type.typeName} (Total: {proof.total_amount})
-                            - ID: {proof.token_id.substring(0, 10)}...
+                            {proof.types.map((t) => t.typeName).join(", ")} (Total:
+                            {proof.total_amount}) - ID: {proof.token_id.substring(
+                                0,
+                                10,
+                            )}...
                         </option>
                     {/if}
                 {/each}
@@ -255,7 +258,9 @@
                 <p>
                     <strong>Updating Proof:</strong>
                     <span
-                        >{selectedProof?.type.typeName ?? "Unknown"} ({selectedProof?.token_id.substring(
+                        >{selectedProof?.types
+                            .map((t) => t.typeName)
+                            .join(", ") ?? "Unknown"} ({selectedProof?.token_id.substring(
                             0,
                             10,
                         )}...)</span

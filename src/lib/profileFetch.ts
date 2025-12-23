@@ -281,15 +281,12 @@ export async function fetchAllProfiles(
             const emissionAmount = await fetchTokenEmissionAmount(tokenId);
             if (emissionAmount === null) continue;
 
-            const firstBox = userBoxes[0];
-            const typeNftId = parseCollByteToHex(firstBox.additionalRegisters.R4.renderedValue) ?? '';
-
             // Fetch ALL boxes for this profile token to have the complete proof
             const allProfileBoxes = await fetchAllBoxesByTokenId(tokenId);
 
             const proof: ReputationProof = {
                 token_id: tokenId,
-                type: availableTypes.get(typeNftId)!,
+                types: [],
                 data: {},
                 total_amount: emissionAmount,
                 owner_address: changeAddress,
@@ -300,13 +297,33 @@ export async function fetchAllProfiles(
                 network: Network.ErgoMainnet
             };
 
+            const uniqueTypeIds = new Set<string>();
+
             for (const box of allProfileBoxes) {
                 const rpbox = convertToRPBox(box, tokenId, availableTypes);
                 if (rpbox) {
                     proof.current_boxes.push(rpbox);
                     proof.number_of_boxes += 1;
+
+                    // Aggregate types from boxes that point to self (R5 = tokenId)
+                    if (rpbox.object_pointer === tokenId) {
+                        const typeId = rpbox.type.tokenId;
+                        if (!uniqueTypeIds.has(typeId)) {
+                            uniqueTypeIds.add(typeId);
+                            proof.types.push(rpbox.type);
+                        }
+                    }
                 }
             }
+
+            // Fallback: if no self-pointing boxes found (unlikely for a profile), 
+            // use the type from the first user box we found
+            if (proof.types.length === 0 && userBoxes.length > 0) {
+                const firstBoxTypeId = parseCollByteToHex(userBoxes[0].additionalRegisters.R4.renderedValue) ?? '';
+                const fallbackType = availableTypes.get(firstBoxTypeId);
+                if (fallbackType) proof.types.push(fallbackType);
+            }
+
             profiles.push(proof);
         }
 

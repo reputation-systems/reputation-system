@@ -45,10 +45,13 @@
                 id: proof.token_id,
                 type: "reputation",
                 position: { x: parentX + layoutX, y: layoutY },
-                data: { label: proof.type.typeName, tokenId: proof.token_id },
+                data: {
+                    label: proof.types.map((t) => t.typeName).join(", "),
+                    tokenId: proof.token_id,
+                },
             });
 
-            if (proof.type.isRepProof) {
+            if (proof.types.some((t) => t.isRepProof)) {
                 let childCount = 0;
                 for (const box of proof.current_boxes) {
                     //

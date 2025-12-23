@@ -1,19 +1,25 @@
 <script lang="ts">
-  import { Position, type NodeProps, Handle, useSvelteFlow, type Connection } from '@xyflow/svelte';
-  import { type ReputationProof } from '$lib/ReputationProof';
-  import { building_graph, data_store } from '$lib/store';
-  import PointOneToAnother from './point_to/PointOneToAnother.svelte';
-  import { get } from 'svelte/store';
+  import {
+    Position,
+    type NodeProps,
+    Handle,
+    useSvelteFlow,
+    type Connection,
+  } from "@xyflow/svelte";
+  import { type ReputationProof } from "$lib/ReputationProof";
+  import { building_graph, data_store } from "$lib/store";
+  import PointOneToAnother from "./point_to/PointOneToAnother.svelte";
+  import { get } from "svelte/store";
 
   // --- Component Props and SvelteFlow hooks ---
   type $$Props = NodeProps;
-  export let id: $$Props['id'];
-  export let data: $$Props['data'];
-  export let selected: $$Props['selected'] = undefined;
-  export let isConnectable: $$Props['isConnectable'] = undefined;
+  export let id: $$Props["id"];
+  export let data: $$Props["data"];
+  export let selected: $$Props["selected"] = undefined;
+  export let isConnectable: $$Props["isConnectable"] = undefined;
   // ... other props are available but not used directly in this logic
-  export let targetPosition: $$Props['targetPosition'] = undefined;
-  export let sourcePosition: $$Props['sourcePosition'] = undefined;
+  export let targetPosition: $$Props["targetPosition"] = undefined;
+  export let sourcePosition: $$Props["sourcePosition"] = undefined;
 
   const { viewport } = useSvelteFlow();
 
@@ -25,7 +31,7 @@
   let activeConnection: Connection | null = null;
   // This will be the ID of the object the new proof box will point to.
   let targetPointer: string | null = null;
-  
+
   // --- Computed State ---
   // Determines if the content inside the node should be visible based on zoom level.
   let showContent = false;
@@ -49,18 +55,21 @@
     if (!connections || connections.length === 0) return;
 
     activeConnection = connections[0];
-    
+
     // Do not allow creating new connections while the graph is being built.
     if (activeConnection && !get(building_graph)) {
       // The target node's ID is expected in the format "type::id" (e.g., "proof::abc..." or "object::xyz...").
       // We only need the ID part for the object pointer.
       const [targetType, targetId] = activeConnection.target.split("::");
-      
+
       if (targetId) {
         targetPointer = targetId;
         showModal = true;
       } else {
-        console.warn("Could not determine target ID from connection:", activeConnection);
+        console.warn(
+          "Could not determine target ID from connection:",
+          activeConnection,
+        );
       }
     }
   }
@@ -70,22 +79,24 @@
   <Handle type="target" position={Position.Left} isConnectable />
   <Handle
     type="source"
-    position={Position.Right} 
+    position={Position.Right}
     on:connect={handleConnection}
     isConnectable={proof.can_be_spend}
   />
-  
+
   <!-- svelte-ignore a11y-no-static-element-interactions -->
   <div class="node-content" on:dblclick={handleDblClick}>
-      <div class="node-title">{proof.token_id.substring(0, 10)}</div>
-    {#if showContent && proof.type}
-      <div class="token-id">Type: {proof.type.typeName}</div>
+    <div class="node-title">{proof.token_id.substring(0, 10)}</div>
+    {#if showContent && proof.types && proof.types.length > 0}
+      <div class="token-id">
+        Types: {proof.types.map((t) => t.typeName).join(", ")}
+      </div>
     {/if}
   </div>
 </div>
 
 {#if showModal && activeConnection && targetPointer}
-  <PointOneToAnother 
+  <PointOneToAnother
     bind:showModal
     bind:connection={activeConnection}
     source_proof={proof}
@@ -94,8 +105,9 @@
 {/if}
 
 <style>
-  .customNode, .customExternalNode {
-    background: #2D2D2D;
+  .customNode,
+  .customExternalNode {
+    background: #2d2d2d;
     padding: 10px 15px;
     border-radius: 8px;
     border: 1px solid #444;

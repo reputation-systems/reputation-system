@@ -34,7 +34,7 @@ export interface TypeNFT {
 
 export interface ReputationProof {
     token_id: string;
-    type: TypeNFT;  // SELF identification of the proof type (by Type NFT)
+    types: TypeNFT[];  // SELF identification of the proof types (by Type NFTs)
     total_amount: number;
     owner_address: string;
     owner_serialized: string;
@@ -48,13 +48,13 @@ export interface ReputationProof {
 export interface RPBox {
     box: Box<Amount>;
     box_id: string;
-    type: TypeNFT; 
+    type: TypeNFT;
     token_id: string;
     token_amount: number;
     object_pointer: string;
     is_locked: boolean;
     polarization: boolean;
-    content: object|string|null;
+    content: object | string | null;
 }
 
 // --- ENUMS & UTILITIES ---
@@ -88,8 +88,8 @@ function internal_compute(
     target_object_pointer: string,
     deep_level: number
 ): number {
-    console.log(`Compute (deep_level: ${deep_level}) on proof: ${proof.type.typeName} (${proof.token_id})`);
-    
+    console.log(`Compute (deep_level: ${deep_level}) on proof: ${proof.types.map(t => t.typeName).join(', ')} (${proof.token_id})`);
+
     return proof.current_boxes.reduce((total, box) => {
         if (proof.total_amount === 0) return total; // Avoid division by zero
         const proportion = box.token_amount / proof.total_amount;
@@ -106,7 +106,7 @@ function computeBoxReputation(
     target_object_pointer: string,
     deep_level: number
 ): number {
-    if (parent_proof.type.typeName.includes("Proof-by-Token")) {
+    if (parent_proof.types.some(t => t.typeName.includes("Proof-by-Token"))) {
         const pointed_token_id = box.object_pointer;
         if (pointed_token_id === parent_proof.token_id) return 0.00;
 

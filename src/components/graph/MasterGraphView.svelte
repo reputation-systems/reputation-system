@@ -247,7 +247,7 @@
         id: `proof::${p.token_id}`,
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
-        data: { label: p.type.typeName, proof: p },
+        data: { label: p.types.map((t) => t.typeName).join(", "), proof: p },
         type: "proof_type",
         position: { x: 0, y: 0 },
       });

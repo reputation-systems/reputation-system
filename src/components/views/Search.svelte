@@ -76,7 +76,7 @@
 
                 const filteredResults = new Map<string, ReputationProof>();
                 for (const [key, proof] of proofsFromApi.entries()) {
-                    if (proof.type.tokenId === selectedTypeId) {
+                    if (proof.types.some((t) => t.tokenId === selectedTypeId)) {
                         filteredResults.set(key, proof);
                     }
 
@@ -194,9 +194,19 @@
                     <li class="result-item">
                         <div class="result-main-info">
                             <div class="result-info">
-                                <span class="result-type"
-                                    >{result.type.typeName}</span
-                                >
+                                <div class="result-types">
+                                    {#if result.types && result.types.length > 0}
+                                        {#each result.types as type}
+                                            <span class="result-type"
+                                                >{type.typeName}</span
+                                            >
+                                        {/each}
+                                    {:else}
+                                        <span class="result-type"
+                                            >Reputation Proof</span
+                                        >
+                                    {/if}
+                                </div>
                                 <span class="result-id" title={result.token_id}>
                                     {result.token_id}
                                 </span>
@@ -477,12 +487,17 @@
         gap: 0.5rem;
         flex-grow: 1;
     }
+    .result-types {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
     .result-type {
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: bold;
         color: #fbbf24;
-        background-color: rgba(251, 191, 36, 0.15);
-        padding: 2px 6px;
+        background-color: rgba(251, 191, 36, 0.1);
+        padding: 2px 8px;
         border-radius: 4px;
         align-self: flex-start;
     }

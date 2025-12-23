@@ -19,14 +19,78 @@
 
     let editingContent = "";
     let editingAmount = 0;
+    let editingMaxAmount = 0;
+
+    type EditorMode = "text" | "kv" | "json";
+    let editorMode: EditorMode = "text";
+    let kvPairs: { key: string; value: string }[] = [];
 
     function openUpdateBox(box: RPBox) {
         showUpdateBox = box;
         editingAmount = box.token_amount;
+        editingMaxAmount = box.token_amount + (mainBox?.token_amount || 0);
         editingContent =
             typeof box.content === "object"
                 ? JSON.stringify(box.content, null, 2)
                 : box.content || "";
+
+        // Initialize KV pairs if it's an object
+        if (typeof box.content === "object" && box.content !== null) {
+            kvPairs = Object.entries(box.content).map(([k, v]) => ({
+                key: k,
+                value: typeof v === "object" ? JSON.stringify(v) : String(v),
+            }));
+            editorMode = "kv";
+        } else {
+            kvPairs = [];
+            editorMode = "text";
+        }
+    }
+
+    function syncToKV() {
+        try {
+            const obj = JSON.parse(editingContent);
+            if (typeof obj === "object" && obj !== null) {
+                kvPairs = Object.entries(obj).map(([k, v]) => ({
+                    key: k,
+                    value:
+                        typeof v === "object" ? JSON.stringify(v) : String(v),
+                }));
+            }
+        } catch (e) {
+            // If not valid JSON, we can't sync to KV easily, maybe just leave as is or clear
+        }
+    }
+
+    function syncFromKV() {
+        const obj: any = {};
+        kvPairs.forEach((p) => {
+            if (p.key) {
+                try {
+                    obj[p.key] = JSON.parse(p.value);
+                } catch (e) {
+                    obj[p.key] = p.value;
+                }
+            }
+        });
+        editingContent = JSON.stringify(obj, null, 2);
+    }
+
+    function setEditorMode(mode: EditorMode) {
+        if (mode === "kv") {
+            syncToKV();
+        } else if (editorMode === "kv") {
+            syncFromKV();
+        }
+        editorMode = mode;
+    }
+
+    function addKVPair() {
+        kvPairs = [...kvPairs, { key: "", value: "" }];
+    }
+
+    function removeKVPair(index: number) {
+        kvPairs = kvPairs.filter((_, i) => i !== index);
     }
 
     function refreshProfile() {
@@ -45,9 +109,37 @@
     }
 
     // --- Derived State ---
-    $: mainBox = reputationProof?.current_boxes.find(
-        (b) => b.object_pointer === reputationProof?.token_id,
-    );
+    let selectedMainBoxId: string | null = null;
+
+    $: if (reputationProof) {
+        if (
+            selectedMainBoxId &&
+            !reputationProof.current_boxes.some(
+                (b) => b.box_id === selectedMainBoxId,
+            )
+        ) {
+            selectedMainBoxId = null;
+        }
+    }
+
+    $: mainBox = (() => {
+        const selfBoxes =
+            reputationProof?.current_boxes.filter(
+                (b) => b.object_pointer === reputationProof?.token_id,
+            ) || [];
+
+        if (selfBoxes.length === 0) return null;
+
+        if (selectedMainBoxId) {
+            const found = selfBoxes.find((b) => b.box_id === selectedMainBoxId);
+            if (found) return found;
+        }
+
+        // Default: most tokens
+        return [...selfBoxes].sort(
+            (a, b) => b.token_amount - a.token_amount,
+        )[0];
+    })();
 
     // --- Sacrificed Assets Logic ---
     let burnedERG = "0";
@@ -84,6 +176,8 @@
     // --- Filtering Logic ---
     const ALL_TYPES = "All";
     let selectedType: string = ALL_TYPES;
+    let showOnlySelf = false;
+    let lockedFilter: "all" | "locked" | "unlocked" = "all";
     let uniqueTypes: string[] = [];
 
     $: if (reputationProof) {
@@ -100,9 +194,17 @@
 
     $: filteredBoxes =
         reputationProof?.current_boxes.filter((box) => {
-            if (selectedType === ALL_TYPES) return true;
-            const typeName = box.type?.typeName || "Unknown";
-            return typeName === selectedType;
+            const matchesType =
+                selectedType === ALL_TYPES ||
+                (box.type?.typeName || "Unknown") === selectedType;
+            const matchesSelf =
+                !showOnlySelf ||
+                box.object_pointer === reputationProof?.token_id;
+            const matchesLocked =
+                lockedFilter === "all" ||
+                (lockedFilter === "locked" && box.is_locked) ||
+                (lockedFilter === "unlocked" && !box.is_locked);
+            return matchesType && matchesSelf && matchesLocked;
         }) ?? [];
 
     // --- Actions ---
@@ -135,10 +237,15 @@
         errorMessage = "";
 
         let finalContent: any = editingContent;
-        try {
+        if (editorMode === "kv") {
+            syncFromKV();
             finalContent = JSON.parse(editingContent);
-        } catch (e) {
-            // Not JSON, keep as string
+        } else {
+            try {
+                finalContent = JSON.parse(editingContent);
+            } catch (e) {
+                // Not JSON, keep as string
+            }
         }
 
         try {
@@ -187,6 +294,14 @@
             errorMessage = `Error deleting box: ${e.message}`;
         } finally {
             isLoading = false;
+        }
+    }
+
+    function toggleLockedFilter(value: "locked" | "unlocked") {
+        if (lockedFilter === value) {
+            lockedFilter = "all";
+        } else {
+            lockedFilter = value;
         }
     }
 </script>
@@ -423,23 +538,76 @@
                 </div>
 
                 <!-- Filter Menu -->
-                <div class="filter-menu">
-                    <button
-                        class="filter-badge"
-                        class:active={selectedType === ALL_TYPES}
-                        on:click={() => (selectedType = ALL_TYPES)}
-                    >
-                        All
-                    </button>
-                    {#each uniqueTypes as type}
+                <div class="filter-container">
+                    <div class="filter-menu">
                         <button
                             class="filter-badge"
-                            class:active={selectedType === type}
-                            on:click={() => (selectedType = type)}
+                            class:active={selectedType === ALL_TYPES}
+                            on:click={() => (selectedType = ALL_TYPES)}
                         >
-                            {type}
+                            All
                         </button>
-                    {/each}
+                        {#each uniqueTypes as type}
+                            <button
+                                class="filter-badge"
+                                class:active={selectedType === type}
+                                on:click={() => (selectedType = type)}
+                            >
+                                {type}
+                            </button>
+                        {/each}
+                    </div>
+
+                    <div class="secondary-filters-column">
+                        <div class="secondary-filters">
+                            <div class="filter-group-with-info">
+                                <button
+                                    class="filter-badge self-filter"
+                                    class:active={showOnlySelf}
+                                    on:click={() =>
+                                        (showOnlySelf = !showOnlySelf)}
+                                >
+                                    <i class="fas fa-fingerprint"></i> SELF Only
+                                </button>
+                                <div
+                                    class="info-tooltip"
+                                    title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation. While ERG can be in any box, SELF boxes are specifically used to store your reputation tokens. When you delete other boxes, their tokens are merged into your selected Main SELF box."
+                                >
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="secondary-filters">
+                            <div class="filter-group-with-info">
+                                <div class="locked-filter-group">
+                                    <button
+                                        class="filter-badge"
+                                        class:active={lockedFilter === "locked"}
+                                        on:click={() =>
+                                            toggleLockedFilter("locked")}
+                                    >
+                                        <i class="fas fa-lock"></i> Locked
+                                    </button>
+                                    <button
+                                        class="filter-badge"
+                                        class:active={lockedFilter ===
+                                            "unlocked"}
+                                        on:click={() =>
+                                            toggleLockedFilter("unlocked")}
+                                    >
+                                        <i class="fas fa-lock-open"></i> Unlocked
+                                    </button>
+                                </div>
+                                <div
+                                    class="info-tooltip"
+                                    title="Locked boxes are those that cannot be modified or deleted, often used as a guarantee. Unlocked boxes can be updated or deleted, but tokens (reputation and sacrificed assets) can only be moved to other boxes within the same profile. They can never leave the reputation proof system."
+                                >
+                                    <i class="fas fa-question-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="boxes-grid">
@@ -453,6 +621,9 @@
                                 <span class="box-type"
                                     >{box.type?.typeName || "Unknown"}</span
                                 >
+                                {#if mainBox?.box_id === box.box_id}
+                                    <span class="main-badge">Main</span>
+                                {/if}
                                 <span class="polarization-icon">
                                     {#if box.polarization}
                                         <i class="fas fa-check-circle"></i>
@@ -491,6 +662,21 @@
                             </div>
 
                             <div class="box-actions">
+                                {#if mainBox?.box_id === box.box_id}
+                                    <span class="main-action-label">
+                                        <i class="fas fa-star"></i> Main
+                                    </span>
+                                {/if}
+                                {#if box.object_pointer === reputationProof?.token_id && mainBox?.box_id !== box.box_id}
+                                    <button
+                                        class="icon-button main-selector"
+                                        title="Set as Main"
+                                        on:click={() =>
+                                            (selectedMainBoxId = box.box_id)}
+                                    >
+                                        <i class="fas fa-star"></i>
+                                    </button>
+                                {/if}
                                 {#if !box.is_locked}
                                     <button
                                         class="icon-button"
@@ -517,20 +703,93 @@
                             <div class="form-card edit-overlay">
                                 <h3>Update Box</h3>
                                 <div class="form-group">
-                                    <label for="edit-amount">Amount</label>
+                                    <label for="edit-amount"
+                                        >Amount (Max: {editingMaxAmount})</label
+                                    >
                                     <input
                                         id="edit-amount"
                                         type="number"
                                         bind:value={editingAmount}
                                         min="1"
+                                        max={editingMaxAmount}
                                     />
+                                    {#if editingAmount > editingMaxAmount}
+                                        <p class="warning-text">
+                                            Amount exceeds available balance in
+                                            main box.
+                                        </p>
+                                    {/if}
                                 </div>
                                 <div class="form-group">
                                     <label for="edit-content">Content</label>
-                                    <textarea
-                                        id="edit-content"
-                                        bind:value={editingContent}
-                                    ></textarea>
+                                    <div class="editor-toggle">
+                                        <button
+                                            class="toggle-btn"
+                                            class:active={editorMode === "text"}
+                                            on:click={() =>
+                                                setEditorMode("text")}
+                                            >Text</button
+                                        >
+                                        <button
+                                            class="toggle-btn"
+                                            class:active={editorMode === "kv"}
+                                            on:click={() => setEditorMode("kv")}
+                                            >Key-Value</button
+                                        >
+                                        <button
+                                            class="toggle-btn"
+                                            class:active={editorMode === "json"}
+                                            on:click={() =>
+                                                setEditorMode("json")}
+                                            >Advanced JSON</button
+                                        >
+                                    </div>
+
+                                    {#if editorMode === "text"}
+                                        <textarea
+                                            id="edit-content"
+                                            bind:value={editingContent}
+                                            placeholder="Enter text content..."
+                                        ></textarea>
+                                    {:else if editorMode === "kv"}
+                                        <div class="kv-editor">
+                                            {#each kvPairs as pair, i}
+                                                <div class="kv-row">
+                                                    <input
+                                                        type="text"
+                                                        bind:value={pair.key}
+                                                        placeholder="Key"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        bind:value={pair.value}
+                                                        placeholder="Value"
+                                                    />
+                                                    <button
+                                                        class="remove-kv"
+                                                        on:click={() =>
+                                                            removeKVPair(i)}
+                                                    >
+                                                        <i class="fas fa-times"
+                                                        ></i>
+                                                    </button>
+                                                </div>
+                                            {/each}
+                                            <button
+                                                class="add-kv-btn"
+                                                on:click={addKVPair}
+                                            >
+                                                <i class="fas fa-plus"></i> Add Pair
+                                            </button>
+                                        </div>
+                                    {:else if editorMode === "json"}
+                                        <textarea
+                                            id="edit-content-json"
+                                            class="mono"
+                                            bind:value={editingContent}
+                                            placeholder="Enter JSON content..."
+                                        ></textarea>
+                                    {/if}
                                 </div>
                                 <div class="form-actions">
                                     <button
@@ -1305,5 +1564,190 @@
         color: #71717a;
         margin-top: 2rem;
         font-style: italic;
+    }
+    .filter-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .secondary-filters-column {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .secondary-filters {
+        display: flex;
+        align-items: center;
+        width: 100%;
+    }
+
+    .filter-group-with-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .locked-filter-group {
+        display: flex;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .locked-filter-group .filter-badge {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .self-filter {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .self-filter.active {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: #10b981;
+        color: #10b981;
+    }
+
+    .info-tooltip {
+        color: #64748b;
+        cursor: help;
+        font-size: 1.1rem;
+        transition: color 0.2s;
+    }
+
+    .info-tooltip:hover {
+        color: #fbbf24;
+    }
+
+    .main-action-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #3b82f6;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.5rem;
+        background: rgba(59, 130, 246, 0.1);
+        border-radius: 6px;
+    }
+
+    .main-badge {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #fff;
+        background: #3b82f6;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        margin-left: 0.5rem;
+        box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+    }
+
+    .main-selector {
+        color: #64748b;
+    }
+
+    .main-selector:hover {
+        color: #3b82f6 !important;
+        background: rgba(59, 130, 246, 0.1) !important;
+    }
+    .warning-text {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+
+    /* --- Editor Toggle --- */
+    .editor-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .toggle-btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        font-size: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .toggle-btn.active {
+        background: #fbbf24;
+        color: #000;
+        border-color: #fbbf24;
+    }
+
+    /* --- KV Editor --- */
+    .kv-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .kv-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .kv-row input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        color: #fff;
+        font-size: 0.875rem;
+    }
+
+    .remove-kv {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+        transition: color 0.2s;
+    }
+
+    .remove-kv:hover {
+        color: #ef4444;
+    }
+
+    .add-kv-btn {
+        margin-top: 0.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        color: #94a3b8;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .add-kv-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #fbbf24;
+        color: #fbbf24;
+    }
+
+    textarea.mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+            monospace;
     }
 </style>

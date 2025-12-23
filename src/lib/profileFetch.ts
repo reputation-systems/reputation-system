@@ -5,7 +5,7 @@ import {
     ergo_tree_hash
 } from './envs';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
-import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox, Network } from './ReputationProof';
+import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './ReputationProof';
 
 
 const LIMIT_PER_PAGE = 100;
@@ -295,7 +295,7 @@ export async function fetchAllProfiles(
                 can_be_spend: true,
                 current_boxes: [],
                 number_of_boxes: 0,
-                network: Network.ErgoMainnet
+                network: "ergo"
             };
 
             const uniqueTypeIds = new Set<string>();

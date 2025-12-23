@@ -1,4 +1,4 @@
-import { Network, type RPBox, type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
+import { type RPBox, type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "$lib/utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
@@ -267,7 +267,7 @@ export async function updateReputationProofList(
                             can_be_spend: userR7SerializedHex ? owner_serialized === userR7SerializedHex : false,
                             current_boxes: [],
                             number_of_boxes: 0,
-                            network: Network.ErgoMainnet,
+                            network: "ergo",
                             data: {}
                         };
                         proofs.set(rep_token_id, proof);

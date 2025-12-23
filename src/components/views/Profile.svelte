@@ -1,12 +1,49 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
+    import { createEventDispatcher, onDestroy } from "svelte";
     import { generate_reputation_proof } from "$lib/generate_reputation_proof";
     import { PROFILE_TOTAL_SUPPLY, PROFILE_TYPE_NFT_ID } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
 
+    // --- Core Props ---
     export let reputationProof: ReputationProof | null;
     export let userProfiles: ReputationProof[] = [];
     export let connected: boolean;
+
+    // --- Existing Customization Props ---
+    export let title = "Reputation Profile";
+    export let showDidacticInfo = true;
+    export let visibleTokenTypes: string[] | null = null;
+
+    // --- Section Visibility Props ---
+    export let showProfileSwitcher = true;
+    export let showSacrificedAssets = true;
+    export let showTechnicalDetails = true;
+    export let showBoxesSection = true;
+    export let showFilters = true;
+
+    // --- Action Control Props ---
+    export let allowCreateProfile = true;
+    export let allowSacrifice = true;
+    export let allowEditBox = true;
+    export let allowDeleteBox = true;
+    export let allowSetMainBox = true;
+
+    // --- Visual Customization Props ---
+    export let subtitle: string | null = null;
+    export let compact = false;
+    export let maxBoxesVisible: number | null = null;
+
+    // --- Behavior Props ---
+    export let readOnly = false;
+    export let autoRefresh = false;
+    export let refreshInterval = 30000;
+
+    // --- Computed Effective Permissions ---
+    $: effectiveAllowCreate = !readOnly && allowCreateProfile;
+    $: effectiveAllowSacrifice = !readOnly && allowSacrifice;
+    $: effectiveAllowEdit = !readOnly && allowEditBox;
+    $: effectiveAllowDelete = !readOnly && allowDeleteBox;
+    $: effectiveAllowSetMain = !readOnly && allowSetMainBox;
 
     const dispatch = createEventDispatcher();
 
@@ -248,11 +285,24 @@
         uniqueTypes = Array.from(types).sort();
     }
 
+    const OTHERS_TYPE = "Others";
+    $: displayedTypes = visibleTokenTypes
+        ? uniqueTypes.filter((t) => visibleTokenTypes.includes(t))
+        : uniqueTypes;
+
+    $: hasOthers = visibleTokenTypes
+        ? uniqueTypes.some((t) => !visibleTokenTypes.includes(t))
+        : false;
+
     $: filteredBoxes =
         reputationProof?.current_boxes.filter((box) => {
+            const typeName = box.type?.typeName || "Unknown";
             const matchesType =
                 selectedType === ALL_TYPES ||
-                (box.type?.typeName || "Unknown") === selectedType;
+                (selectedType === OTHERS_TYPE &&
+                    visibleTokenTypes &&
+                    !visibleTokenTypes.includes(typeName)) ||
+                typeName === selectedType;
             const matchesSelf =
                 !showOnlySelf ||
                 box.object_pointer === reputationProof?.token_id;
@@ -262,6 +312,13 @@
                 (lockedFilter === "unlocked" && !box.is_locked);
             return matchesType && matchesSelf && matchesLocked;
         }) ?? [];
+
+    // --- MaxBoxesVisible Logic ---
+    $: displayedBoxes = maxBoxesVisible
+        ? filteredBoxes.slice(0, maxBoxesVisible)
+        : filteredBoxes;
+
+    $: hasMoreBoxes = maxBoxesVisible && filteredBoxes.length > maxBoxesVisible;
 
     // --- Actions ---
     async function handleCreateProfile() {
@@ -369,6 +426,7 @@
         amount: number;
         name?: string;
         maxAmount: number;
+        decimals?: number;
     }[] = [];
     let walletTokens: { tokenId: string; amount: number; name?: string }[] = [];
     let showTokenSelector = false;
@@ -477,24 +535,42 @@
     $: if (showSacrificeForm) {
         fetchWalletTokens();
     }
+
+    // --- Auto-Refresh Logic ---
+    let refreshTimer: ReturnType<typeof setInterval> | null = null;
+
+    $: if (autoRefresh && refreshInterval > 0) {
+        if (refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(refreshProfile, refreshInterval);
+    } else if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    }
+
+    onDestroy(() => {
+        if (refreshTimer) clearInterval(refreshTimer);
+    });
 </script>
 
-<div class="profile-container">
+<div class="profile-container" class:compact>
     <div class="hero-section">
-        <h2 class="project-title">Reputation Profile</h2>
+        <h2 class="project-title">{title}</h2>
         {#if reputationProof}
             <p class="subtitle">
-                Manage your reputation and view your sacrifices.
-                <span
-                    class="terminology-tip"
-                    title="Every Reputation Profile is technically a Reputation Proof. A Profile is a Proof used for identity."
-                >
-                    <i class="fas fa-info-circle"></i>
-                </span>
+                {subtitle || "Manage your reputation and view your sacrifices."}
+                {#if showDidacticInfo}
+                    <span
+                        class="terminology-tip"
+                        title="Every Reputation Profile is technically a Reputation Proof. A Profile is a Proof used for identity."
+                    >
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                {/if}
             </p>
         {:else}
             <p class="subtitle">
-                Connect and create your profile to start building reputation.
+                {subtitle ||
+                    "Connect and create your profile to start building reputation."}
             </p>
         {/if}
     </div>
@@ -504,107 +580,121 @@
             <p>Please connect your wallet to view or create your profile.</p>
         </div>
     {:else}
-        <!-- Compactable Profile Switcher -->
-        <div class="profile-switcher-v2" class:expanded={isSwitcherExpanded}>
-            <div class="switcher-main-row">
-                <div class="current-profile-info" on:click={toggleSwitcher}>
-                    <div class="profile-avatar">
-                        <i class="fas fa-user-shield"></i>
-                    </div>
-                    <div class="profile-meta">
-                        <div class="profile-types-container">
-                            {#if reputationProof?.types && reputationProof.types.length > 0}
-                                {#each reputationProof.types as type}
-                                    <span class="profile-type-badge"
-                                        >{type.typeName}</span
-                                    >
-                                {/each}
-                            {:else}
-                                <span class="profile-type-badge"
-                                    >Reputation Proof</span
-                                >
-                            {/if}
+        {#if showProfileSwitcher}
+            <!-- Compactable Profile Switcher -->
+            <div
+                class="profile-switcher-v2"
+                class:expanded={isSwitcherExpanded}
+            >
+                <div class="switcher-main-row">
+                    <button
+                        class="current-profile-info"
+                        on:click={toggleSwitcher}
+                    >
+                        <div class="profile-avatar">
+                            <i class="fas fa-user-shield"></i>
                         </div>
-                        <span class="profile-id-main"
-                            >{reputationProof?.token_id.substring(
-                                0,
-                                12,
-                            )}...</span
-                        >
-                    </div>
-                    <i class="fas fa-chevron-down chevron-icon"></i>
-                </div>
-
-                <button
-                    class="create-profile-btn-v2"
-                    on:click={handleCreateProfile}
-                    disabled={isLoading}
-                    title="Create New Reputation Proof"
-                >
-                    <i class="fas fa-plus"></i>
-                </button>
-            </div>
-
-            {#if isSwitcherExpanded}
-                <div class="profiles-dropdown">
-                    <div class="dropdown-header">Select a Profile / Proof</div>
-                    <div class="dropdown-list">
-                        {#each userProfiles as profile}
-                            <button
-                                class="dropdown-item"
-                                class:active={reputationProof?.token_id ===
-                                    profile.token_id}
-                                on:click={() => switchProfile(profile)}
-                            >
-                                <div class="item-icon">
-                                    <i class="fas fa-id-card"></i>
-                                </div>
-                                <div class="item-content">
-                                    <div class="item-top">
-                                        <div class="item-types">
-                                            {#if profile.types && profile.types.length > 0}
-                                                {#each profile.types as type}
-                                                    <span class="item-type"
-                                                        >{type.typeName}</span
-                                                    >
-                                                {/each}
-                                            {:else}
-                                                <span class="item-type"
-                                                    >Proof</span
-                                                >
-                                            {/if}
-                                        </div>
-                                        <span class="item-id"
-                                            >{profile.token_id.substring(
-                                                0,
-                                                8,
-                                            )}...</span
+                        <div class="profile-meta">
+                            <div class="profile-types-container">
+                                {#if reputationProof?.types && reputationProof.types.length > 0}
+                                    {#each reputationProof.types as type}
+                                        <span class="profile-type-badge"
+                                            >{type.typeName}</span
                                         >
-                                    </div>
-                                    <div class="item-bottom">
-                                        <span class="item-erg">
-                                            {(
-                                                Number(
-                                                    profile.current_boxes.reduce(
-                                                        (acc, b) =>
-                                                            acc +
-                                                            BigInt(b.box.value),
-                                                        BigInt(0),
-                                                    ),
-                                                ) / 1000000000
-                                            ).toFixed(4)} ERG Burned
-                                        </span>
-                                    </div>
-                                </div>
-                                {#if reputationProof?.token_id === profile.token_id}
-                                    <i class="fas fa-check check-icon"></i>
+                                    {/each}
+                                {:else}
+                                    <span class="profile-type-badge"
+                                        >Reputation Proof</span
+                                    >
                                 {/if}
-                            </button>
-                        {/each}
-                    </div>
+                            </div>
+                            <span class="profile-id-main"
+                                >{reputationProof?.token_id.substring(
+                                    0,
+                                    12,
+                                )}...</span
+                            >
+                        </div>
+                        <i class="fas fa-chevron-down chevron-icon"></i>
+                    </button>
+
+                    {#if effectiveAllowCreate}
+                        <button
+                            class="create-profile-btn-v2"
+                            on:click={handleCreateProfile}
+                            disabled={isLoading}
+                            title="Create New Reputation Proof"
+                        >
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    {/if}
                 </div>
-            {/if}
-        </div>
+
+                {#if isSwitcherExpanded}
+                    <div class="profiles-dropdown">
+                        <div class="dropdown-header">
+                            Select a Profile / Proof
+                        </div>
+                        <div class="dropdown-list">
+                            {#each userProfiles as profile}
+                                <button
+                                    class="dropdown-item"
+                                    class:active={reputationProof?.token_id ===
+                                        profile.token_id}
+                                    on:click={() => switchProfile(profile)}
+                                >
+                                    <div class="item-icon">
+                                        <i class="fas fa-id-card"></i>
+                                    </div>
+                                    <div class="item-content">
+                                        <div class="item-top">
+                                            <div class="item-types">
+                                                {#if profile.types && profile.types.length > 0}
+                                                    {#each profile.types as type}
+                                                        <span class="item-type"
+                                                            >{type.typeName}</span
+                                                        >
+                                                    {/each}
+                                                {:else}
+                                                    <span class="item-type"
+                                                        >Proof</span
+                                                    >
+                                                {/if}
+                                            </div>
+                                            <span class="item-id"
+                                                >{profile.token_id.substring(
+                                                    0,
+                                                    8,
+                                                )}...</span
+                                            >
+                                        </div>
+                                        <div class="item-bottom">
+                                            <span class="item-erg">
+                                                {(
+                                                    Number(
+                                                        profile.current_boxes.reduce(
+                                                            (acc, b) =>
+                                                                acc +
+                                                                BigInt(
+                                                                    b.box.value,
+                                                                ),
+                                                            BigInt(0),
+                                                        ),
+                                                    ) / 1000000000
+                                                ).toFixed(4)} ERG Burned
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {#if reputationProof?.token_id === profile.token_id}
+                                        <i class="fas fa-check check-icon"></i>
+                                    {/if}
+                                </button>
+                            {/each}
+                        </div>
+                    </div>
+                {/if}
+            </div>
+        {/if}
 
         {#if isLoading && !reputationProof}
             <div class="loading-spinner">Loading profile...</div>
@@ -623,173 +713,157 @@
                 </div>
             </div>
         {:else}
-            <!-- Sacrificed Assets Section -->
-            <section class="sacrificed-assets">
-                <div class="section-title-row">
-                    <div class="icon-circle orange">
-                        <i class="fas fa-fire"></i>
-                    </div>
-                    <h3>Sacrificed Assets</h3>
-                    <div
-                        class="info-tooltip"
-                        title="Sacrificed assets (burned ERG and tokens) demonstrate your commitment and responsibility. By locking value into your reputation boxes, you provide a tangible backing for your decentralized identity. These assets are permanent and can never be withdrawn (except for storage rent/demurrage)."
-                    >
-                        <i class="fas fa-question-circle"></i>
-                    </div>
-                    <button
-                        class="sacrifice-toggle-btn"
-                        on:click={() =>
-                            (showSacrificeForm = !showSacrificeForm)}
-                    >
-                        <i class="fas fa-plus"></i> Sacrifice More
-                    </button>
-                </div>
-
-                {#if showSacrificeForm}
-                    <div class="sacrifice-form info-card">
-                        <h4>Sacrifice Assets</h4>
-                        <p class="small-text">
-                            Add ERG or tokens to your main reputation box. This
-                            action is irreversible and demonstrates your
-                            commitment.
-                        </p>
-
-                        <div class="form-group">
-                            <label for="sacrifice-erg">Extra ERG</label>
-                            <input
-                                id="sacrifice-erg"
-                                type="number"
-                                step="0.000000001"
-                                bind:value={sacrificeERG}
-                                placeholder="0.000000000"
-                            />
+            {#if showSacrificedAssets}
+                <!-- Sacrificed Assets Section -->
+                <section class="sacrificed-assets">
+                    <div class="section-title-row">
+                        <div class="icon-circle orange">
+                            <i class="fas fa-fire"></i>
                         </div>
-
-                        <div class="form-group">
-                            <label>Tokens to Sacrifice</label>
-                            <div class="selected-tokens-list">
-                                {#each sacrificeTokens as token}
-                                    <div class="selected-token-item">
-                                        <div class="token-info-mini">
-                                            <span
-                                                class="token-name"
-                                                title={token.tokenId}
-                                                >{token.name}</span
-                                            >
-                                            <span class="token-max"
-                                                >(Max: {token.maxAmount})</span
-                                            >
-                                        </div>
-                                        <input
-                                            type="number"
-                                            bind:value={token.amount}
-                                            max={token.maxAmount}
-                                            placeholder="Amount"
-                                        />
-                                        <button
-                                            class="remove-token-btn"
-                                            on:click={() =>
-                                                removeTokenFromSacrifice(
-                                                    token.tokenId,
-                                                )}
-                                        >
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                {/each}
-                            </div>
-
+                        <h3>Sacrificed Assets</h3>
+                        {#if showDidacticInfo}
                             <div
-                                class="token-selector-container"
-                                use:clickOutside={() =>
-                                    (showTokenSelector = false)}
+                                class="info-tooltip"
+                                title="Sacrificed assets (burned ERG and tokens) demonstrate your commitment and responsibility. By locking value into your reputation boxes, you provide a tangible backing for your decentralized identity. These assets are permanent and can never be withdrawn (except for storage rent/demurrage)."
                             >
-                                <button
-                                    class="add-token-trigger"
-                                    on:click|stopPropagation={() =>
-                                        (showTokenSelector =
-                                            !showTokenSelector)}
-                                >
-                                    <i class="fas fa-plus-circle"></i> Add Token
-                                    from Wallet
-                                </button>
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                        {/if}
+                        {#if effectiveAllowSacrifice}
+                            <button
+                                class="sacrifice-toggle-btn"
+                                on:click={() =>
+                                    (showSacrificeForm = !showSacrificeForm)}
+                            >
+                                <i class="fas fa-plus"></i> Sacrifice More
+                            </button>
+                        {/if}
+                    </div>
 
-                                {#if showTokenSelector}
-                                    <div class="token-dropdown">
-                                        {#if walletTokens.length === 0}
-                                            <p class="dropdown-empty">
-                                                No tokens found in wallet.
-                                            </p>
-                                        {:else}
-                                            {#each walletTokens as token}
-                                                <button
-                                                    class="dropdown-option"
-                                                    on:click={() =>
-                                                        addTokenToSacrifice(
-                                                            token,
-                                                        )}
-                                                    disabled={sacrificeTokens.some(
-                                                        (t) =>
-                                                            t.tokenId ===
-                                                            token.tokenId,
-                                                    )}
+                    {#if showSacrificeForm}
+                        <div class="sacrifice-form info-card">
+                            <h4>Sacrifice Assets</h4>
+                            <p class="small-text">
+                                Add ERG or tokens to your main reputation box.
+                                This action is irreversible and demonstrates
+                                your commitment.
+                            </p>
+
+                            <div class="form-group">
+                                <label for="sacrifice-erg">Extra ERG</label>
+                                <input
+                                    id="sacrifice-erg"
+                                    type="number"
+                                    step="0.000000001"
+                                    bind:value={sacrificeERG}
+                                    placeholder="0.000000000"
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Tokens to Sacrifice</label>
+                                <div class="selected-tokens-list">
+                                    {#each sacrificeTokens as token}
+                                        <div class="selected-token-item">
+                                            <div class="token-info-mini">
+                                                <span
+                                                    class="token-name"
+                                                    title={token.tokenId}
+                                                    >{token.name}</span
                                                 >
-                                                    <span class="opt-name"
-                                                        >{token.name}</span
+                                                <span class="token-max"
+                                                    >(Max: {token.maxAmount})</span
+                                                >
+                                            </div>
+                                            <input
+                                                type="number"
+                                                bind:value={token.amount}
+                                                max={token.maxAmount}
+                                                placeholder="Amount"
+                                            />
+                                            <button
+                                                class="remove-token-btn"
+                                                on:click={() =>
+                                                    removeTokenFromSacrifice(
+                                                        token.tokenId,
+                                                    )}
+                                            >
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    {/each}
+                                </div>
+
+                                <div
+                                    class="token-selector-container"
+                                    use:clickOutside={() =>
+                                        (showTokenSelector = false)}
+                                >
+                                    <button
+                                        class="add-token-trigger"
+                                        on:click|stopPropagation={() =>
+                                            (showTokenSelector =
+                                                !showTokenSelector)}
+                                    >
+                                        <i class="fas fa-plus-circle"></i> Add Token
+                                        from Wallet
+                                    </button>
+
+                                    {#if showTokenSelector}
+                                        <div class="token-dropdown">
+                                            {#if walletTokens.length === 0}
+                                                <p class="dropdown-empty">
+                                                    No tokens found in wallet.
+                                                </p>
+                                            {:else}
+                                                {#each walletTokens as token}
+                                                    <button
+                                                        class="dropdown-option"
+                                                        on:click={() =>
+                                                            addTokenToSacrifice(
+                                                                token,
+                                                            )}
+                                                        disabled={sacrificeTokens.some(
+                                                            (t) =>
+                                                                t.tokenId ===
+                                                                token.tokenId,
+                                                        )}
                                                     >
-                                                    <span class="opt-amount"
-                                                        >{token.amount}</span
-                                                    >
-                                                </button>
-                                            {/each}
-                                        {/if}
-                                    </div>
-                                {/if}
+                                                        <span class="opt-name"
+                                                            >{token.name}</span
+                                                        >
+                                                        <span class="opt-amount"
+                                                            >{token.amount}</span
+                                                        >
+                                                    </button>
+                                                {/each}
+                                            {/if}
+                                        </div>
+                                    {/if}
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button
+                                    class="primary-button"
+                                    on:click={handleSacrifice}
+                                    disabled={isLoading}
+                                >
+                                    Confirm Sacrifice
+                                </button>
+                                <button
+                                    class="secondary-button"
+                                    on:click={() => (showSacrificeForm = false)}
+                                >
+                                    Cancel
+                                </button>
                             </div>
                         </div>
+                    {/if}
 
-                        <div class="form-actions">
-                            <button
-                                class="primary-button"
-                                on:click={handleSacrifice}
-                                disabled={isLoading}
-                            >
-                                Confirm Sacrifice
-                            </button>
-                            <button
-                                class="secondary-button"
-                                on:click={() => (showSacrificeForm = false)}
-                            >
-                                Cancel
-                            </button>
-                        </div>
-                    </div>
-                {/if}
-
-                <div class="assets-grid">
-                    <!-- ERG Card -->
-                    <div class="asset-card orange-gradient">
-                        <div class="liquid-fire-container">
-                            <div class="wave-box"></div>
-                            <div class="wave-box"></div>
-                            <div class="wave-box"></div>
-                        </div>
-                        <div class="card-content">
-                            <div class="badge-row">
-                                <span class="badge orange">Burned</span>
-                            </div>
-                            <div class="asset-info">
-                                <p class="asset-label">Native Currency</p>
-                                <p class="asset-amount">
-                                    {burnedERG} <span class="unit">ERG</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Token Cards -->
-                    {#each burnedTokens as token}
-                        <div class="asset-card dark-card">
+                    <div class="assets-grid">
+                        <!-- ERG Card -->
+                        <div class="asset-card orange-gradient">
                             <div class="liquid-fire-container">
                                 <div class="wave-box"></div>
                                 <div class="wave-box"></div>
@@ -800,36 +874,63 @@
                                     <span class="badge orange">Burned</span>
                                 </div>
                                 <div class="asset-info">
-                                    <p
-                                        class="asset-label"
-                                        title={token.tokenId}
-                                    >
-                                        {token.name}
+                                    <p class="asset-label">Native Currency</p>
+                                    <p class="asset-amount">
+                                        {burnedERG}
+                                        <span class="unit">ERG</span>
                                     </p>
-                                    <p class="asset-amount">{token.amount}</p>
                                 </div>
                             </div>
                         </div>
-                    {/each}
-                </div>
-            </section>
 
-            <div class="divider"></div>
+                        <!-- Token Cards -->
+                        {#each burnedTokens as token}
+                            <div class="asset-card dark-card">
+                                <div class="liquid-fire-container">
+                                    <div class="wave-box"></div>
+                                    <div class="wave-box"></div>
+                                    <div class="wave-box"></div>
+                                </div>
+                                <div class="card-content">
+                                    <div class="badge-row">
+                                        <span class="badge orange">Burned</span>
+                                    </div>
+                                    <div class="asset-info">
+                                        <p
+                                            class="asset-label"
+                                            title={token.tokenId}
+                                        >
+                                            {token.name}
+                                        </p>
+                                        <p class="asset-amount">
+                                            {token.amount}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </section>
+            {/if}
 
-            <!-- Technical Details -->
-            <div class="technical-details">
-                <div class="token-id-display">
-                    <span class="label">Profile Token ID</span>
-                    <div class="value mono">{reputationProof.token_id}</div>
+            {#if showTechnicalDetails}
+                <div class="divider"></div>
+
+                <!-- Technical Details -->
+                <div class="technical-details">
+                    <div class="token-id-display">
+                        <span class="label">Profile Token ID</span>
+                        <div class="value mono">{reputationProof.token_id}</div>
+                    </div>
+                    <button
+                        class="secondary-button refresh-btn"
+                        on:click={refreshProfile}
+                        disabled={isLoading}
+                    >
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
                 </div>
-                <button
-                    class="secondary-button refresh-btn"
-                    on:click={refreshProfile}
-                    disabled={isLoading}
-                >
-                    <i class="fas fa-sync"></i> Refresh
-                </button>
-            </div>
+            {/if}
 
             {#if successMessage}
                 <div class="feedback success">{successMessage}</div>
@@ -838,292 +939,352 @@
                 <div class="feedback error">{errorMessage}</div>
             {/if}
 
-            <!-- Boxes Section -->
-            <section class="boxes-section">
-                <div class="section-title-row">
-                    <h3>Reputation Boxes</h3>
-                    <div
-                        class="info-tooltip"
-                        title="Reputation is modular. Each box represents a specific piece of information, an opinion, or a claim, linked to a specific Type standard."
-                    >
-                        <i class="fas fa-question-circle"></i>
-                    </div>
-                </div>
-
-                <!-- Filter Menu -->
-                <div class="filter-container">
-                    <div class="filter-menu">
-                        <button
-                            class="filter-badge"
-                            class:active={selectedType === ALL_TYPES}
-                            on:click={() => (selectedType = ALL_TYPES)}
-                        >
-                            All
-                        </button>
-                        {#each uniqueTypes as type}
-                            <button
-                                class="filter-badge"
-                                class:active={selectedType === type}
-                                on:click={() => (selectedType = type)}
+            {#if showBoxesSection}
+                <!-- Boxes Section -->
+                <section class="boxes-section">
+                    <div class="section-title-row">
+                        <h3>Reputation Boxes</h3>
+                        {#if showDidacticInfo}
+                            <div
+                                class="info-tooltip"
+                                title="Reputation is modular. Each box represents a specific piece of information, an opinion, or a claim, linked to a specific Type standard."
                             >
-                                {type}
-                            </button>
-                        {/each}
-                    </div>
-
-                    <div class="secondary-filters-column">
-                        <div class="secondary-filters">
-                            <div class="filter-group-with-info">
-                                <button
-                                    class="filter-badge self-filter"
-                                    class:active={showOnlySelf}
-                                    on:click={() =>
-                                        (showOnlySelf = !showOnlySelf)}
-                                >
-                                    <i class="fas fa-fingerprint"></i> SELF Only
-                                </button>
-                                <div
-                                    class="info-tooltip"
-                                    title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation and serve as containers for your reputation tokens, allowing you to issue new reputation boxes by distributing tokens from them. When you delete other boxes, their tokens are merged into your selected Main SELF box."
-                                >
-                                    <i class="fas fa-question-circle"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="secondary-filters">
-                            <div class="filter-group-with-info">
-                                <div class="locked-filter-group">
-                                    <button
-                                        class="filter-badge"
-                                        class:active={lockedFilter === "locked"}
-                                        on:click={() =>
-                                            toggleLockedFilter("locked")}
-                                    >
-                                        <i class="fas fa-lock"></i> Locked
-                                    </button>
-                                    <button
-                                        class="filter-badge"
-                                        class:active={lockedFilter ===
-                                            "unlocked"}
-                                        on:click={() =>
-                                            toggleLockedFilter("unlocked")}
-                                    >
-                                        <i class="fas fa-lock-open"></i> Unlocked
-                                    </button>
-                                </div>
-                                <div
-                                    class="info-tooltip"
-                                    title="Locked boxes are those that cannot be modified or deleted, often used as a guarantee. Unlocked boxes can be updated or deleted, but tokens (reputation and sacrificed assets) can only be moved to other boxes within the same profile. They can never leave the reputation proof system."
-                                >
-                                    <i class="fas fa-question-circle"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="boxes-grid">
-                    {#each filteredBoxes as box (box.box_id)}
-                        <div
-                            class="box-card"
-                            class:positive={box.polarization}
-                            class:negative={!box.polarization}
-                        >
-                            <div class="box-header">
-                                <span class="box-type"
-                                    >{box.type?.typeName || "Unknown"}</span
-                                >
-                                <span class="polarization-icon">
-                                    {#if box.polarization}
-                                        <i class="fas fa-check-circle"></i>
-                                    {:else}
-                                        <i class="fas fa-times-circle"></i>
-                                    {/if}
-                                </span>
-                            </div>
-
-                            <div class="box-body">
-                                <div class="info-row">
-                                    <span class="label">Pointer:</span>
-                                    <span class="value mono small">
-                                        {box.object_pointer ===
-                                        reputationProof.token_id
-                                            ? "SELF"
-                                            : box.object_pointer.substring(
-                                                  0,
-                                                  12,
-                                              ) + "..."}
-                                    </span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="label">Content:</span>
-                                    <span class="value content-text">
-                                        {typeof box.content === "object"
-                                            ? JSON.stringify(box.content)
-                                            : box.content || "No content"}
-                                    </span>
-                                </div>
-                                <div class="info-row">
-                                    <span class="label">Amount:</span>
-                                    <span class="value">{box.token_amount}</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div class="box-actions">
-                                {#if mainBox?.box_id === box.box_id}
-                                    <span
-                                        class="main-action-label"
-                                        title="The Main Box is your primary container for reputation tokens. When you delete other boxes, their tokens are merged here."
-                                    >
-                                        <i class="fas fa-star"></i> Main
-                                    </span>
-                                {/if}
-                                {#if box.object_pointer === reputationProof?.token_id && mainBox?.box_id !== box.box_id}
-                                    <button
-                                        class="icon-button main-selector"
-                                        title="Set as Main"
-                                        on:click={() =>
-                                            (selectedMainBoxId = box.box_id)}
-                                    >
-                                        <i class="fas fa-star"></i>
-                                    </button>
-                                {/if}
-                                {#if !box.is_locked}
-                                    <button
-                                        class="icon-button"
-                                        title="Update"
-                                        on:click={() => openUpdateBox(box)}
-                                    >
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button
-                                        class="icon-button delete"
-                                        title="Delete"
-                                        on:click={() => handleDeleteBox(box)}
-                                    >
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                {:else}
-                                    <span class="locked-badge">
-                                        <i class="fas fa-lock"></i> Locked
-                                    </span>
-                                {/if}
-                            </div>
-                        </div>
-                        {#if showUpdateBox === box}
-                            <div class="form-card edit-overlay">
-                                <h3>Update Box</h3>
-                                <div class="form-group">
-                                    <label for="edit-amount"
-                                        >Amount (Max: {editingMaxAmount})</label
-                                    >
-                                    <input
-                                        id="edit-amount"
-                                        type="number"
-                                        bind:value={editingAmount}
-                                        min="1"
-                                        max={editingMaxAmount}
-                                    />
-                                    {#if editingAmount > editingMaxAmount}
-                                        <p class="warning-text">
-                                            Amount exceeds available balance in
-                                            main box.
-                                        </p>
-                                    {/if}
-                                </div>
-                                <div class="form-group">
-                                    <label for="edit-content">Content</label>
-                                    <div class="editor-toggle">
-                                        <button
-                                            class="toggle-btn"
-                                            class:active={editorMode === "text"}
-                                            on:click={() =>
-                                                setEditorMode("text")}
-                                            >Text</button
-                                        >
-                                        <button
-                                            class="toggle-btn"
-                                            class:active={editorMode === "kv"}
-                                            on:click={() => setEditorMode("kv")}
-                                            >Key-Value</button
-                                        >
-                                        <button
-                                            class="toggle-btn"
-                                            class:active={editorMode === "json"}
-                                            on:click={() =>
-                                                setEditorMode("json")}
-                                            >Advanced JSON</button
-                                        >
-                                    </div>
-
-                                    {#if editorMode === "text"}
-                                        <textarea
-                                            id="edit-content"
-                                            bind:value={editingContent}
-                                            placeholder="Enter text content..."
-                                        ></textarea>
-                                    {:else if editorMode === "kv"}
-                                        <div class="kv-editor">
-                                            {#each kvPairs as pair, i}
-                                                <div class="kv-row">
-                                                    <input
-                                                        type="text"
-                                                        bind:value={pair.key}
-                                                        placeholder="Key"
-                                                    />
-                                                    <input
-                                                        type="text"
-                                                        bind:value={pair.value}
-                                                        placeholder="Value"
-                                                    />
-                                                    <button
-                                                        class="remove-kv"
-                                                        on:click={() =>
-                                                            removeKVPair(i)}
-                                                    >
-                                                        <i class="fas fa-times"
-                                                        ></i>
-                                                    </button>
-                                                </div>
-                                            {/each}
-                                            <button
-                                                class="add-kv-btn"
-                                                on:click={addKVPair}
-                                            >
-                                                <i class="fas fa-plus"></i> Add Pair
-                                            </button>
-                                        </div>
-                                    {:else if editorMode === "json"}
-                                        <textarea
-                                            id="edit-content-json"
-                                            class="mono"
-                                            bind:value={editingContent}
-                                            placeholder="Enter JSON content..."
-                                        ></textarea>
-                                    {/if}
-                                </div>
-                                <div class="form-actions">
-                                    <button
-                                        class="cancel-button"
-                                        on:click={() => (showUpdateBox = null)}
-                                        >Cancel</button
-                                    >
-                                    <button
-                                        class="primary-button"
-                                        on:click={() => handleUpdateBox(box)}
-                                        disabled={isLoading}>Update</button
-                                    >
-                                </div>
+                                <i class="fas fa-question-circle"></i>
                             </div>
                         {/if}
-                    {/each}
-                </div>
-                {#if filteredBoxes.length === 0}
-                    <p class="no-results">No boxes found for this type.</p>
-                {/if}
-            </section>
+                    </div>
+
+                    {#if showFilters}
+                        <!-- Filter Menu -->
+                        <div class="filter-container">
+                            <div class="filter-menu">
+                                <button
+                                    class="filter-badge"
+                                    class:active={selectedType === ALL_TYPES}
+                                    on:click={() => (selectedType = ALL_TYPES)}
+                                >
+                                    All
+                                </button>
+                                {#each displayedTypes as type}
+                                    <button
+                                        class="filter-badge"
+                                        class:active={selectedType === type}
+                                        on:click={() => (selectedType = type)}
+                                    >
+                                        {type}
+                                    </button>
+                                {/each}
+                                {#if hasOthers}
+                                    <button
+                                        class="filter-badge"
+                                        class:active={selectedType ===
+                                            OTHERS_TYPE}
+                                        on:click={() =>
+                                            (selectedType = OTHERS_TYPE)}
+                                    >
+                                        {OTHERS_TYPE}
+                                    </button>
+                                {/if}
+                            </div>
+
+                            <div class="secondary-filters-column">
+                                <div class="secondary-filters">
+                                    <div class="filter-group-with-info">
+                                        <button
+                                            class="filter-badge self-filter"
+                                            class:active={showOnlySelf}
+                                            on:click={() =>
+                                                (showOnlySelf = !showOnlySelf)}
+                                        >
+                                            <i class="fas fa-fingerprint"></i> SELF
+                                            Only
+                                        </button>
+                                        {#if showDidacticInfo}
+                                            <div
+                                                class="info-tooltip"
+                                                title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation and serve as containers for your reputation tokens, allowing you to issue new reputation boxes by distributing tokens from them. When you delete other boxes, their tokens are merged into your selected Main SELF box."
+                                            >
+                                                <i
+                                                    class="fas fa-question-circle"
+                                                ></i>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </div>
+
+                                <div class="secondary-filters">
+                                    <div class="filter-group-with-info">
+                                        <div class="locked-filter-group">
+                                            <button
+                                                class="filter-badge"
+                                                class:active={lockedFilter ===
+                                                    "locked"}
+                                                on:click={() =>
+                                                    toggleLockedFilter(
+                                                        "locked",
+                                                    )}
+                                            >
+                                                <i class="fas fa-lock"></i> Locked
+                                            </button>
+                                            <button
+                                                class="filter-badge"
+                                                class:active={lockedFilter ===
+                                                    "unlocked"}
+                                                on:click={() =>
+                                                    toggleLockedFilter(
+                                                        "unlocked",
+                                                    )}
+                                            >
+                                                <i class="fas fa-lock-open"></i>
+                                                Unlocked
+                                            </button>
+                                        </div>
+                                        {#if showDidacticInfo}
+                                            <div
+                                                class="info-tooltip"
+                                                title="Locked boxes are those that cannot be modified or deleted, often used as a guarantee. Unlocked boxes can be updated or deleted, but tokens (reputation and sacrificed assets) can only be moved to other boxes within the same profile. They can never leave the reputation proof system."
+                                            >
+                                                <i
+                                                    class="fas fa-question-circle"
+                                                ></i>
+                                            </div>
+                                        {/if}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {/if}
+
+                    <div class="boxes-grid">
+                        {#each displayedBoxes as box (box.box_id)}
+                            <div
+                                class="box-card"
+                                class:positive={box.polarization}
+                                class:negative={!box.polarization}
+                            >
+                                <div class="box-header">
+                                    <span class="box-type"
+                                        >{box.type?.typeName || "Unknown"}</span
+                                    >
+                                    <span class="polarization-icon">
+                                        {#if box.polarization}
+                                            <i class="fas fa-check-circle"></i>
+                                        {:else}
+                                            <i class="fas fa-times-circle"></i>
+                                        {/if}
+                                    </span>
+                                </div>
+
+                                <div class="box-body">
+                                    <div class="info-row">
+                                        <span class="label">Pointer:</span>
+                                        <span class="value mono small">
+                                            {box.object_pointer ===
+                                            reputationProof.token_id
+                                                ? "SELF"
+                                                : box.object_pointer.substring(
+                                                      0,
+                                                      12,
+                                                  ) + "..."}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Content:</span>
+                                        <span class="value content-text">
+                                            {typeof box.content === "object"
+                                                ? JSON.stringify(box.content)
+                                                : box.content || "No content"}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Amount:</span>
+                                        <span class="value"
+                                            >{box.token_amount}</span
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="box-actions">
+                                    {#if mainBox?.box_id === box.box_id}
+                                        <span
+                                            class="main-action-label"
+                                            title={showDidacticInfo
+                                                ? "The Main Box is your primary container for reputation tokens. When you delete other boxes, their tokens are merged here."
+                                                : ""}
+                                        >
+                                            <i class="fas fa-star"></i> Main
+                                        </span>
+                                    {/if}
+                                    {#if effectiveAllowSetMain && box.object_pointer === reputationProof?.token_id && mainBox?.box_id !== box.box_id}
+                                        <button
+                                            class="icon-button main-selector"
+                                            title="Set as Main"
+                                            on:click={() =>
+                                                (selectedMainBoxId =
+                                                    box.box_id)}
+                                        >
+                                            <i class="fas fa-star"></i>
+                                        </button>
+                                    {/if}
+                                    {#if !box.is_locked}
+                                        {#if effectiveAllowEdit}
+                                            <button
+                                                class="icon-button"
+                                                title="Update"
+                                                on:click={() =>
+                                                    openUpdateBox(box)}
+                                            >
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        {/if}
+                                        {#if effectiveAllowDelete}
+                                            <button
+                                                class="icon-button delete"
+                                                title="Delete"
+                                                on:click={() =>
+                                                    handleDeleteBox(box)}
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        {/if}
+                                    {:else}
+                                        <span class="locked-badge">
+                                            <i class="fas fa-lock"></i> Locked
+                                        </span>
+                                    {/if}
+                                </div>
+                            </div>
+                            {#if showUpdateBox === box}
+                                <div class="form-card edit-overlay">
+                                    <h3>Update Box</h3>
+                                    <div class="form-group">
+                                        <label for="edit-amount"
+                                            >Amount (Max: {editingMaxAmount})</label
+                                        >
+                                        <input
+                                            id="edit-amount"
+                                            type="number"
+                                            bind:value={editingAmount}
+                                            min="1"
+                                            max={editingMaxAmount}
+                                        />
+                                        {#if editingAmount > editingMaxAmount}
+                                            <p class="warning-text">
+                                                Amount exceeds available balance
+                                                in main box.
+                                            </p>
+                                        {/if}
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="edit-content">Content</label
+                                        >
+                                        <div class="editor-toggle">
+                                            <button
+                                                class="toggle-btn"
+                                                class:active={editorMode ===
+                                                    "text"}
+                                                on:click={() =>
+                                                    setEditorMode("text")}
+                                                >Text</button
+                                            >
+                                            <button
+                                                class="toggle-btn"
+                                                class:active={editorMode ===
+                                                    "kv"}
+                                                on:click={() =>
+                                                    setEditorMode("kv")}
+                                                >Key-Value</button
+                                            >
+                                            <button
+                                                class="toggle-btn"
+                                                class:active={editorMode ===
+                                                    "json"}
+                                                on:click={() =>
+                                                    setEditorMode("json")}
+                                                >Advanced JSON</button
+                                            >
+                                        </div>
+
+                                        {#if editorMode === "text"}
+                                            <textarea
+                                                id="edit-content"
+                                                bind:value={editingContent}
+                                                placeholder="Enter text content..."
+                                            ></textarea>
+                                        {:else if editorMode === "kv"}
+                                            <div class="kv-editor">
+                                                {#each kvPairs as pair, i}
+                                                    <div class="kv-row">
+                                                        <input
+                                                            type="text"
+                                                            bind:value={
+                                                                pair.key
+                                                            }
+                                                            placeholder="Key"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            bind:value={
+                                                                pair.value
+                                                            }
+                                                            placeholder="Value"
+                                                        />
+                                                        <button
+                                                            class="remove-kv"
+                                                            on:click={() =>
+                                                                removeKVPair(i)}
+                                                        >
+                                                            <i
+                                                                class="fas fa-times"
+                                                            ></i>
+                                                        </button>
+                                                    </div>
+                                                {/each}
+                                                <button
+                                                    class="add-kv-btn"
+                                                    on:click={addKVPair}
+                                                >
+                                                    <i class="fas fa-plus"></i> Add
+                                                    Pair
+                                                </button>
+                                            </div>
+                                        {:else if editorMode === "json"}
+                                            <textarea
+                                                id="edit-content-json"
+                                                class="mono"
+                                                bind:value={editingContent}
+                                                placeholder="Enter JSON content..."
+                                            ></textarea>
+                                        {/if}
+                                    </div>
+                                    <div class="form-actions">
+                                        <button
+                                            class="cancel-button"
+                                            on:click={() =>
+                                                (showUpdateBox = null)}
+                                            >Cancel</button
+                                        >
+                                        <button
+                                            class="primary-button"
+                                            on:click={() =>
+                                                handleUpdateBox(box)}
+                                            disabled={isLoading}>Update</button
+                                        >
+                                    </div>
+                                </div>
+                            {/if}
+                        {/each}
+                    </div>
+                    {#if displayedBoxes.length === 0}
+                        <p class="no-results">No boxes found for this type.</p>
+                    {/if}
+                    {#if hasMoreBoxes}
+                        <p class="more-boxes-hint">
+                            Showing {maxBoxesVisible} of {filteredBoxes.length} boxes.
+                        </p>
+                    {/if}
+                </section>
+            {/if}
         {/if}
     {/if}
 </div>
@@ -1136,6 +1297,55 @@
         padding: 2rem 1rem 4rem;
         color: #f0f0f0;
         font-family: "Inter", sans-serif;
+    }
+
+    /* --- Compact Mode --- */
+    .profile-container.compact {
+        padding: 1rem 0.75rem 2rem;
+    }
+
+    .profile-container.compact .hero-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-container.compact .project-title {
+        font-size: 1.75rem;
+    }
+
+    .profile-container.compact .subtitle {
+        font-size: 0.95rem;
+    }
+
+    .profile-container.compact .section-title-row h3 {
+        font-size: 1.25rem;
+    }
+
+    .profile-container.compact .box-card {
+        padding: 0.75rem;
+    }
+
+    .profile-container.compact .assets-grid {
+        gap: 1rem;
+    }
+
+    .profile-container.compact .asset-card {
+        min-height: 120px;
+        padding: 1rem;
+    }
+
+    .profile-container.compact .asset-amount {
+        font-size: 1.5rem;
+    }
+
+    /* --- More Boxes Hint --- */
+    .more-boxes-hint {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.875rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 0.5rem;
+        margin-top: 1rem;
     }
 
     /* --- Refined Profile Switcher --- */
@@ -1172,6 +1382,13 @@
         padding: 0.5rem;
         border-radius: 0.75rem;
         transition: background 0.2s;
+        /* Button reset styles */
+        background: transparent;
+        border: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        width: 100%;
     }
 
     .current-profile-info:hover {

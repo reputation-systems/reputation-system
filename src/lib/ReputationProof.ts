@@ -41,7 +41,7 @@ export interface ReputationProof {
     can_be_spend: boolean;
     current_boxes: RPBox[];
     number_of_boxes: number;
-    network: Network;
+    network: string;
     data: object;
 }
 
@@ -62,13 +62,6 @@ export interface RPBox {
 export function token_rendered(proof: ReputationProof): string {
     return stringToRendered(proof.token_id);
 };
-
-export enum Network {
-    ErgoTestnet = "ergo-testnet",
-    ErgoMainnet = "ergo",
-    BitcoinTestnet = "btc-testnet",
-    BitcoinMainnet = "btc"
-}
 
 // --- REPUTATION COMPUTATION LOGIC ---
 

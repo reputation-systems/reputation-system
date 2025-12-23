@@ -14,14 +14,20 @@
     let errorMessage = "";
     let successMessage = "";
 
-    // Form states
-    let showAddBox = false;
     let showUpdateBox: RPBox | null = null;
-
-    let newBoxAmount = 1;
-    let newBoxPointer = "";
-    let newBoxContent = "";
     let newBoxPolarization = true;
+
+    let editingContent = "";
+    let editingAmount = 0;
+
+    function openUpdateBox(box: RPBox) {
+        showUpdateBox = box;
+        editingAmount = box.token_amount;
+        editingContent =
+            typeof box.content === "object"
+                ? JSON.stringify(box.content, null, 2)
+                : box.content || "";
+    }
 
     function refreshProfile() {
         dispatch("refresh");
@@ -127,14 +133,22 @@
         if (!reputationProof) return;
         isLoading = true;
         errorMessage = "";
+
+        let finalContent: any = editingContent;
+        try {
+            finalContent = JSON.parse(editingContent);
+        } catch (e) {
+            // Not JSON, keep as string
+        }
+
         try {
             const txId = await generate_reputation_proof(
-                box.token_amount,
+                editingAmount,
                 reputationProof.total_amount,
-                PROFILE_TYPE_NFT_ID,
+                box.type.tokenId,
                 box.object_pointer,
                 box.polarization,
-                box.content,
+                finalContent,
                 false,
                 box,
             );
@@ -158,7 +172,7 @@
             const txId = await generate_reputation_proof(
                 mainBox.token_amount + box.token_amount,
                 reputationProof.total_amount,
-                PROFILE_TYPE_NFT_ID,
+                mainBox.type.tokenId,
                 mainBox.object_pointer,
                 mainBox.polarization,
                 mainBox.content,
@@ -477,14 +491,14 @@
                             </div>
 
                             <div class="box-actions">
-                                <button
-                                    class="icon-button"
-                                    title="Update"
-                                    on:click={() => (showUpdateBox = box)}
-                                >
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                {#if box.object_pointer !== reputationProof.token_id}
+                                {#if !box.is_locked}
+                                    <button
+                                        class="icon-button"
+                                        title="Update"
+                                        on:click={() => openUpdateBox(box)}
+                                    >
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                     <button
                                         class="icon-button delete"
                                         title="Delete"
@@ -492,6 +506,10 @@
                                     >
                                         <i class="fas fa-trash"></i>
                                     </button>
+                                {:else}
+                                    <span class="locked-badge">
+                                        <i class="fas fa-lock"></i> Locked
+                                    </span>
                                 {/if}
                             </div>
                         </div>
@@ -499,8 +517,19 @@
                             <div class="form-card edit-overlay">
                                 <h3>Update Box</h3>
                                 <div class="form-group">
-                                    <label>Content</label>
-                                    <textarea bind:value={box.content}
+                                    <label for="edit-amount">Amount</label>
+                                    <input
+                                        id="edit-amount"
+                                        type="number"
+                                        bind:value={editingAmount}
+                                        min="1"
+                                    />
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-content">Content</label>
+                                    <textarea
+                                        id="edit-content"
+                                        bind:value={editingContent}
                                     ></textarea>
                                 </div>
                                 <div class="form-actions">
@@ -1136,7 +1165,19 @@
         gap: 0.5rem;
         margin-top: 1rem;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding-top: 0.75rem;
+        padding-top: 1rem;
+    }
+
+    .locked-badge {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 0.25rem 0.6rem;
+        border-radius: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 500;
     }
 
     .icon-button {

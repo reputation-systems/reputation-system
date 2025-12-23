@@ -264,13 +264,15 @@
                                     <div class="item-bottom">
                                         <span class="item-erg">
                                             {(
-                                                profile.current_boxes.reduce(
-                                                    (acc, b) =>
-                                                        acc +
-                                                        BigInt(b.box.value),
-                                                    BigInt(0),
-                                                ) / BigInt(1000000000)
-                                            ).toString()} ERG Burned
+                                                Number(
+                                                    profile.current_boxes.reduce(
+                                                        (acc, b) =>
+                                                            acc +
+                                                            BigInt(b.box.value),
+                                                        BigInt(0),
+                                                    ),
+                                                ) / 1000000000
+                                            ).toFixed(4)} ERG Burned
                                         </span>
                                     </div>
                                 </div>

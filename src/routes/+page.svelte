@@ -102,30 +102,46 @@
                 >
                     <i class="fas fa-user-circle"></i> Profile
                 </button>
-                <button
-                    on:click={() => (currentPage = "graph")}
-                    class:active={currentPage === "graph"}
-                >
-                    <i class="fas fa-project-diagram"></i> Graph
-                </button>
-                <button
-                    on:click={() => (currentPage = "search")}
-                    class:active={currentPage === "search"}
-                >
-                    <i class="fas fa-search"></i> Search
-                </button>
-                <button
-                    on:click={() => (currentPage = "create")}
-                    class:active={currentPage === "create"}
-                >
-                    <i class="fas fa-plus-circle"></i> Submit
-                </button>
+
                 <button
                     on:click={() => (currentPage = "types")}
                     class:active={currentPage === "types"}
                 >
                     <i class="fas fa-tags"></i> Types
                 </button>
+
+                <div class="dropdown">
+                    <button
+                        class="dropdown-trigger"
+                        class:active={["graph", "search", "create"].includes(
+                            currentPage,
+                        )}
+                    >
+                        <i class="fas fa-flask"></i> In Development
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-content">
+                        <button
+                            on:click={() => (currentPage = "graph")}
+                            class:active={currentPage === "graph"}
+                        >
+                            <i class="fas fa-project-diagram"></i> Graph
+                        </button>
+                        <button
+                            on:click={() => (currentPage = "search")}
+                            class:active={currentPage === "search"}
+                        >
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                        <button
+                            on:click={() => (currentPage = "create")}
+                            class:active={currentPage === "create"}
+                        >
+                            <i class="fas fa-plus-circle"></i> Submit
+                        </button>
+                    </div>
+                </div>
+
                 <button
                     on:click={() => (currentPage = "settings")}
                     class:active={currentPage === "settings"}
@@ -314,6 +330,73 @@
     }
 
     .nav-buttons button.active {
+        background-color: #fbbf24;
+        color: #000;
+    }
+
+    /* Dropdown Styles */
+    .dropdown {
+        position: relative;
+        display: inline-block;
+        margin-left: 0.5rem;
+    }
+
+    .dropdown-trigger {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .dropdown-trigger i.fa-chevron-down {
+        font-size: 0.7rem;
+        transition: transform 0.2s;
+    }
+
+    .dropdown:hover .dropdown-trigger i.fa-chevron-down {
+        transform: rotate(180deg);
+    }
+
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #2a2a2a;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.5);
+        z-index: 1001;
+        border-radius: 6px;
+        border: 1px solid #444;
+        padding: 0.5rem 0;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+    .dropdown-content button {
+        display: flex;
+        align-items: center;
+        width: calc(100% - 1rem);
+        margin: 0.25rem 0.5rem;
+        text-align: left;
+        padding: 0.6rem 0.8rem;
+        background: transparent;
+        color: #ccc;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        transition:
+            background 0.2s,
+            color 0.2s;
+    }
+
+    .dropdown-content button:hover {
+        background-color: #3a3a3a;
+        color: white;
+    }
+
+    .dropdown-content button.active {
         background-color: #fbbf24;
         color: #000;
     }

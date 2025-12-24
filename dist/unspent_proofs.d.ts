@@ -30,7 +30,7 @@ export declare function getTimestampFromBlockId(blockId: string, explorerUri?: s
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export declare function searchBoxes(r4TypeNftId: string, r5Value: string, explorerUri?: string): Promise<ApiBox[]>;
+export declare function searchBoxes(token_id?: string, type_nft_id?: string, object_pointer?: string, is_locked?: boolean, polarization?: boolean, content?: string | object, owner_address?: string, limit?: number, offset?: number, explorerUri?: string): AsyncGenerator<ApiBox[]>;
 export declare function fetchTypeNfts(explorerUri?: string): Promise<Map<string, TypeNFT>>;
 export declare function updateReputationProofList(connected: boolean, availableTypes: Map<string, TypeNFT>, search: string | null, explorerUri?: string): Promise<Map<string, ReputationProof>>;
 /**

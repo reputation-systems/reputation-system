@@ -222,21 +222,32 @@ const proofs = await updateReputationProofList(
 
 ### Search & Query
 
-#### `searchBoxes(r4TypeNftId, r5Value, explorerUri?)`
+#### `searchBoxes(token_id?, type_nft_id?, object_pointer?, is_locked?, polarization?, content?, owner_address?, limit?, offset?, explorerUri?)`
 
-Search for boxes with specific R4 and R5 register values.
+Search for boxes with specific register values. All parameters are optional.
 
 ```typescript
 import { searchBoxes } from 'reputation-system';
 
-const boxes = await searchBoxes(
-    r4TypeNftId,  // string - Type NFT ID for R4
-    r5Value,      // string - Object pointer for R5
-    explorerUri   // string - Explorer URI (optional)
+const generator = searchBoxes(
+    token_id,        // string - Token ID to search in assets
+    type_nft_id,     // string - Type NFT ID for R4
+    object_pointer,  // string - Object pointer for R5
+    is_locked,       // boolean - Immutable flag for R6
+    polarization,    // boolean - Positive/negative for R8
+    content,         // string | object - Content for R9
+    owner_address,   // string - Owner address for R7
+    limit,           // number - Max results
+    offset,          // number - Start offset (default 0)
+    explorerUri      // string - Explorer URI (optional)
 );
+
+for await (const batch of generator) {
+    console.log('Received batch of boxes:', batch);
+}
 ```
 
-**Returns:** `Promise<ApiBox[]>`
+**Returns:** `AsyncGenerator<ApiBox[]>` - Yields batches of found boxes
 
 ---
 

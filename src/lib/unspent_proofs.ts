@@ -1,8 +1,9 @@
 import { type RPBox, type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "$lib/utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
-import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
+import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";
 import { hexOrUtf8ToBytes } from "./utils";
+import { stringToBytes } from "@scure/base";
 
 
 const LIMIT_PER_PAGE = 100;
@@ -44,33 +45,63 @@ export async function getTimestampFromBlockId(blockId: string, explorerUri: stri
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export async function searchBoxes(
-    r4TypeNftId: string,
-    r5Value: string,
+export async function* searchBoxes(
+    token_id?: string,
+    type_nft_id?: string,
+    object_pointer?: string,
+    is_locked?: boolean,
+    polarization?: boolean,
+    content?: string | object,
+    owner_address?: string,
+    limit?: number,
+    offset: number = 0,
     explorerUri: string = explorer_uri
-): Promise<ApiBox[]> {
-    const boxes: ApiBox[] = [];
+): AsyncGenerator<ApiBox[]> {
+    const registers: any = {};
 
-    const searchBody = {
-        registers: {
-            "R4": serializedToRendered(SColl(SByte, hexToBytes(r4TypeNftId) ?? "").toHex()),
-            "R5": serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(r5Value) ?? "").toHex())
+    if (type_nft_id) {
+        registers["R4"] = serializedToRendered(SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex());
+    }
+    if (object_pointer) {
+        registers["R5"] = serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(object_pointer) ?? "").toHex());
+    }
+    if (is_locked !== undefined) {
+        registers["R6"] = serializedToRendered(SBool(is_locked).toHex());
+    }
+    if (owner_address) {
+        const userAddress = ErgoAddress.fromBase58(owner_address);
+        const propositionBytes = hexToBytes(userAddress.ergoTree);
+        if (propositionBytes) {
+            registers["R7"] = serializedToRendered(SColl(SByte, propositionBytes).toHex());
         }
-    };
+    }
+    if (polarization !== undefined) {
+        registers["R8"] = serializedToRendered(SBool(polarization).toHex());
+    }
+    if (content) {
+        const raw_content = typeof (content) === "object" ? JSON.stringify(content) : content;
+        registers["R9"] = serializedToRendered(SColl(SByte, stringToBytes("utf8", raw_content)).toHex());
+    }
 
-    try {
-        let offset = 0;
-        let moreDataAvailable = true;
+    let currentOffset = offset;
+    let totalYielded = 0;
+    let moreDataAvailable = true;
 
-        while (moreDataAvailable) {
-            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
+    while (moreDataAvailable) {
+        if (limit !== undefined && totalYielded >= limit) {
+            break;
+        }
 
-            const finalBody = {
-                "ergoTreeTemplateHash": ergo_tree_hash,
-                "registers": searchBody.registers,
-                "assets": []
-            };
+        const fetchLimit = limit !== undefined ? Math.min(LIMIT_PER_PAGE, limit - totalYielded) : LIMIT_PER_PAGE;
+        const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${currentOffset}&limit=${fetchLimit}`;
 
+        const finalBody = {
+            "ergoTreeTemplateHash": ergo_tree_hash,
+            "registers": registers,
+            "assets": token_id ? [token_id] : []
+        };
+
+        try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -89,14 +120,18 @@ export async function searchBoxes(
                 continue;
             }
 
-            boxes.push(...jsonData.items);
-            offset += LIMIT_PER_PAGE;
-        }
+            yield jsonData.items;
+            totalYielded += jsonData.items.length;
+            currentOffset += jsonData.items.length;
 
-        return boxes;
-    } catch (error) {
-        console.error('Error while searching boxes:', error);
-        return [];
+            if (jsonData.items.length < fetchLimit) {
+                moreDataAvailable = false;
+            }
+
+        } catch (error) {
+            console.error('Error while searching boxes:', error);
+            moreDataAvailable = false;
+        }
     }
 }
 

@@ -1,8 +1,9 @@
 import {} from "./ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
-import { ErgoAddress, SByte, SColl } from "@fleet-sdk/core";
+import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";
 import { hexOrUtf8ToBytes } from "./utils";
+import { stringToBytes } from "@scure/base";
 const LIMIT_PER_PAGE = 100;
 /**
  * Gets the timestamp of a block given its block ID.
@@ -30,24 +31,46 @@ export async function getTimestampFromBlockId(blockId, explorerUri = explorer_ur
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export async function searchBoxes(r4TypeNftId, r5Value, explorerUri = explorer_uri) {
-    const boxes = [];
-    const searchBody = {
-        registers: {
-            "R4": serializedToRendered(SColl(SByte, hexToBytes(r4TypeNftId) ?? "").toHex()),
-            "R5": serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(r5Value) ?? "").toHex())
+export async function* searchBoxes(token_id, type_nft_id, object_pointer, is_locked, polarization, content, owner_address, limit, offset = 0, explorerUri = explorer_uri) {
+    const registers = {};
+    if (type_nft_id) {
+        registers["R4"] = serializedToRendered(SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex());
+    }
+    if (object_pointer) {
+        registers["R5"] = serializedToRendered(SColl(SByte, hexOrUtf8ToBytes(object_pointer) ?? "").toHex());
+    }
+    if (is_locked !== undefined) {
+        registers["R6"] = serializedToRendered(SBool(is_locked).toHex());
+    }
+    if (owner_address) {
+        const userAddress = ErgoAddress.fromBase58(owner_address);
+        const propositionBytes = hexToBytes(userAddress.ergoTree);
+        if (propositionBytes) {
+            registers["R7"] = serializedToRendered(SColl(SByte, propositionBytes).toHex());
         }
-    };
-    try {
-        let offset = 0;
-        let moreDataAvailable = true;
-        while (moreDataAvailable) {
-            const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${offset}&limit=${LIMIT_PER_PAGE}`;
-            const finalBody = {
-                "ergoTreeTemplateHash": ergo_tree_hash,
-                "registers": searchBody.registers,
-                "assets": []
-            };
+    }
+    if (polarization !== undefined) {
+        registers["R8"] = serializedToRendered(SBool(polarization).toHex());
+    }
+    if (content) {
+        const raw_content = typeof (content) === "object" ? JSON.stringify(content) : content;
+        registers["R9"] = serializedToRendered(SColl(SByte, stringToBytes("utf8", raw_content)).toHex());
+    }
+    let currentOffset = offset;
+    let totalYielded = 0;
+    let moreDataAvailable = true;
+    while (moreDataAvailable) {
+        if (limit !== undefined && totalYielded >= limit) {
+            break;
+        }
+        const fetchLimit = limit !== undefined ? Math.min(LIMIT_PER_PAGE, limit - totalYielded) : LIMIT_PER_PAGE;
+        const url = `${explorerUri}/api/v1/boxes/unspent/search?offset=${currentOffset}&limit=${fetchLimit}`;
+        const finalBody = {
+            "ergoTreeTemplateHash": ergo_tree_hash,
+            "registers": registers,
+            "assets": token_id ? [token_id] : []
+        };
+        try {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -63,14 +86,17 @@ export async function searchBoxes(r4TypeNftId, r5Value, explorerUri = explorer_u
                 moreDataAvailable = false;
                 continue;
             }
-            boxes.push(...jsonData.items);
-            offset += LIMIT_PER_PAGE;
+            yield jsonData.items;
+            totalYielded += jsonData.items.length;
+            currentOffset += jsonData.items.length;
+            if (jsonData.items.length < fetchLimit) {
+                moreDataAvailable = false;
+            }
         }
-        return boxes;
-    }
-    catch (error) {
-        console.error('Error while searching boxes:', error);
-        return [];
+        catch (error) {
+            console.error('Error while searching boxes:', error);
+            moreDataAvailable = false;
+        }
     }
 }
 export async function fetchTypeNfts(explorerUri = explorer_uri) {

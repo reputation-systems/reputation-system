@@ -25,16 +25,16 @@ declare const ergo: any;
  * @param content Optional content for the profile (text, JSON object, or null).
  * @param sacrified_erg Optional extra ERG to add to the profile box (sacrificed).
  * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
- * @param explorerUri Optional explorer URI to fetch the Type NFT box for dataInputs.
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
 export async function create_profile(
     total_supply: number,
     type_nft_id: string,
+    explorerUri: string,
     content: object | string | null = null,
     sacrified_erg: bigint = 0n,
-    sacrified_tokens: { tokenId: string; amount: bigint }[] = [],
-    explorerUri: string = ""
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
 ): Promise<string | null> {
 
     console.log("Creating profile with parameters:", {

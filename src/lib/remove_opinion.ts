@@ -18,13 +18,13 @@ declare const ergo: any;
  * 
  * @param opinion_box The opinion box to remove (must not be locked).
  * @param main_box The main box to receive all assets from the opinion box.
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
 export async function remove_opinion(
     opinion_box: RPBox,
     main_box: RPBox,
-    explorerUri: string = ""
+    explorerUri: string
 ): Promise<string | null> {
 
     // Validate: opinion_box must not be locked

@@ -23,9 +23,9 @@ declare const ergo: any;
  */
 export async function sacrifice_assets(
     target_box: RPBox,
+    explorerUri: string,
     sacrificed_erg: bigint = 0n,
-    sacrificed_tokens: { tokenId: string; amount: bigint }[] = [],
-    explorerUri: string = ""
+    sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
 ): Promise<string | null> {
 
     // Validate: target_box must not be locked

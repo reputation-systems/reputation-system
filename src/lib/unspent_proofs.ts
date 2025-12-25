@@ -19,7 +19,7 @@ type ApiBox = {
 /**
  * Gets the timestamp of a block given its block ID.
  */
-export async function getTimestampFromBlockId(blockId: string, explorerUri: string = explorer_uri): Promise<number> {
+export async function getTimestampFromBlockId(explorerUri: string, blockId: string): Promise<number> {
     const url = `${explorerUri}/api/v1/blocks/${blockId}`;
 
     try {
@@ -46,6 +46,7 @@ export async function getTimestampFromBlockId(blockId: string, explorerUri: stri
  * Generic search function for boxes with specific R4 and R5 values
  */
 export async function* searchBoxes(
+    explorerUri: string,
     token_id?: string,
     type_nft_id?: string,
     object_pointer?: string,
@@ -54,8 +55,7 @@ export async function* searchBoxes(
     content?: string | object,
     owner_address?: string,
     limit?: number,
-    offset: number = 0,
-    explorerUri: string = explorer_uri
+    offset: number = 0
 ): AsyncGenerator<ApiBox[]> {
     const registers: any = {};
 
@@ -135,7 +135,7 @@ export async function* searchBoxes(
     }
 }
 
-export async function fetchTypeNfts(explorerUri: string = explorer_uri): Promise<Map<string, TypeNFT>> {
+export async function fetchTypeNfts(explorerUri: string): Promise<Map<string, TypeNFT>> {
     try {
         const fetchedTypesArray: TypeNFT[] = [];
         let offset = 0;
@@ -190,10 +190,10 @@ export async function fetchTypeNfts(explorerUri: string = explorer_uri): Promise
 }
 
 export async function updateReputationProofList(
+    explorerUri: string,
     connected: boolean,
     availableTypes: Map<string, TypeNFT>,
-    search: string | null,
-    explorerUri: string = explorer_uri
+    search: string | null
 ): Promise<Map<string, ReputationProof>> {
 
     if (!connected) {

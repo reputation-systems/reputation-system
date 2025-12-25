@@ -4,7 +4,11 @@
     import { update_opinion } from "$lib/update_opinion";
     import { remove_opinion } from "$lib/remove_opinion";
     import { sacrifice_assets } from "$lib/sacrifice_assets";
-    import { PROFILE_TOTAL_SUPPLY, PROFILE_TYPE_NFT_ID } from "$lib/envs";
+    import {
+        PROFILE_TOTAL_SUPPLY,
+        PROFILE_TYPE_NFT_ID,
+        explorer_uri,
+    } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
 
     // --- Core Props ---
@@ -331,6 +335,7 @@
             const txId = await create_profile(
                 PROFILE_TOTAL_SUPPLY,
                 PROFILE_TYPE_NFT_ID,
+                explorer_uri,
                 "Anonymous",
             );
             if (txId) {
@@ -363,6 +368,7 @@
         try {
             const txId = await update_opinion(
                 box,
+                explorer_uri,
                 box.polarization,
                 finalContent,
                 editingAmount - box.token_amount,
@@ -387,7 +393,7 @@
         isLoading = true;
         errorMessage = "";
         try {
-            const txId = await remove_opinion(box, mainBox);
+            const txId = await remove_opinion(box, mainBox, explorer_uri);
             if (txId) {
                 successMessage = `Delete box transaction submitted: ${txId}`;
             }
@@ -496,6 +502,7 @@
         try {
             const txId = await sacrifice_assets(
                 mainBox,
+                explorer_uri,
                 extra_erg,
                 extra_tokens,
             );

@@ -32,13 +32,13 @@ declare const ergo: any;
  */
 export async function update_opinion(
     opinion_box: RPBox,
+    explorerUri: string,
     polarization?: boolean,
     content?: object | string | null,
     token_amount_delta: number = 0,
     extra_erg: bigint = 0n,
     is_locked?: boolean,
-    main_box?: RPBox,
-    explorerUri: string = ""
+    main_box?: RPBox
 ): Promise<string | null> {
 
     // Validate: opinion_box must not be locked

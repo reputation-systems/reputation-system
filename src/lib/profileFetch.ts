@@ -111,10 +111,10 @@ async function getSerializedR7(): Promise<{ changeAddress: string; r7SerializedH
 
 // Fetch all user boxes with pagination
 async function fetchProfileUserBoxes(
+    explorerUri: string,
     r7SerializedHex: string,
     is_self_defined: boolean | null = null,
-    types: string[] = [],
-    explorerUri: string = explorer_uri
+    types: string[] = []
 ): Promise<ApiBox[]> {
     const allBoxes: ApiBox[] = [];
     const searchRegisters: any = {
@@ -198,7 +198,7 @@ async function fetchProfileUserBoxes(
 }
 
 // Fetch token emission amount
-async function fetchTokenEmissionAmount(tokenId: string, explorerUri: string = explorer_uri): Promise<number | null> {
+async function fetchTokenEmissionAmount(explorerUri: string, tokenId: string): Promise<number | null> {
     try {
         const response = await fetch(`${explorerUri}/api/v1/tokens/${tokenId}`);
         if (!response.ok) {
@@ -214,7 +214,7 @@ async function fetchTokenEmissionAmount(tokenId: string, explorerUri: string = e
 }
 
 // Fetch all boxes for a specific token ID
-async function fetchAllBoxesByTokenId(tokenId: string, explorerUri: string = explorer_uri): Promise<ApiBox[]> {
+async function fetchAllBoxesByTokenId(explorerUri: string, tokenId: string): Promise<ApiBox[]> {
     const allBoxes: ApiBox[] = [];
     let offset = 0;
     let moreDataAvailable = true;
@@ -247,10 +247,10 @@ async function fetchAllBoxesByTokenId(tokenId: string, explorerUri: string = exp
  * Profiles are ordered by total ERG burned.
  */
 export async function fetchAllProfiles(
+    explorerUri: string,
     is_self_defined: boolean | null = null,
     types: string[] = [],
-    availableTypes: Map<string, TypeNFT>,
-    explorerUri: string = explorer_uri
+    availableTypes: Map<string, TypeNFT>
 ): Promise<ReputationProof[]> {
     try {
         const r7Data = await getSerializedR7();
@@ -260,7 +260,7 @@ export async function fetchAllProfiles(
         const { changeAddress, r7SerializedHex } = r7Data;
         console.log(`Fetching all profiles for R7: ${r7SerializedHex}, is_self_defined: ${is_self_defined}, types: ${types}`);
 
-        const allUserBoxes = await fetchProfileUserBoxes(r7SerializedHex, is_self_defined, types, explorerUri);
+        const allUserBoxes = await fetchProfileUserBoxes(explorerUri, r7SerializedHex, is_self_defined, types);
         if (allUserBoxes.length === 0) {
             console.log('No profile boxes found for this user.');
             return [];
@@ -280,8 +280,8 @@ export async function fetchAllProfiles(
 
         const profilePromises = Array.from(boxesByTokenId.entries()).map(async ([tokenId, userBoxes]) => {
             const [emissionAmount, allProfileBoxes] = await Promise.all([
-                fetchTokenEmissionAmount(tokenId, explorerUri),
-                fetchAllBoxesByTokenId(tokenId, explorerUri)
+                fetchTokenEmissionAmount(explorerUri, tokenId),
+                fetchAllBoxesByTokenId(explorerUri, tokenId)
             ]);
 
             if (emissionAmount === null) return null;

@@ -10,7 +10,7 @@ import {
     SByte,
     SBool
 } from '@fleet-sdk/core';
-import { ergo_tree_address, explorer_uri } from './envs';
+import { ergo_tree_address } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
 import { type RPBox } from '$lib/ReputationProof';
@@ -127,7 +127,7 @@ export async function update_boxes(
     output_configs: OutputConfig[],
     sacrificed_erg: bigint = 0n,
     sacrificed_tokens: { tokenId: string; amount: bigint }[] = [],
-    explorerUri: string = explorer_uri
+    explorerUri: string
 ): Promise<string> {
 
     // === VALIDATIONS ===

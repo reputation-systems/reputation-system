@@ -18,6 +18,7 @@
         updateReputationProofList,
         fetchTypeNfts,
     } from "$lib/unspent_proofs";
+    import { explorer_uri } from "$lib/envs";
 
     import MasterGraphView from "$components/graph/MasterGraphView.svelte";
     import Submit from "$components/views/Submit.svelte";
@@ -110,14 +111,19 @@
     }
 
     async function loadTypes() {
-        const typesMap = await fetchTypeNfts();
+        const typesMap = await fetchTypeNfts(explorer_uri);
         types.set(typesMap);
     }
 
     async function loadProfile() {
         loadingProfiles = true;
         try {
-            const allProfiles = await fetchAllProfiles(true, [], $types);
+            const allProfiles = await fetchAllProfiles(
+                explorer_uri,
+                true,
+                [],
+                $types,
+            );
             user_profiles.set(allProfiles);
             if (allProfiles.length > 0) {
                 reputation_proof.set(allProfiles[0]);
@@ -133,6 +139,7 @@
         // updateReputationProofList returns Map<string, ReputationProof>
         // We pass $connected and $types (value of store)
         const proofsMap = await updateReputationProofList(
+            explorer_uri,
             $connected,
             $types,
             null,

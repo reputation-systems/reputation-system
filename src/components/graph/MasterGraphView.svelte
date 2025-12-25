@@ -15,6 +15,7 @@
 
   import "@xyflow/svelte/dist/style.css";
   import { updateReputationProofList } from "$lib/unspent_proofs";
+  import { explorer_uri } from "$lib/envs";
   import { type ReputationProof } from "$lib/ReputationProof";
   import dagre from "@dagrejs/dagre";
 
@@ -149,6 +150,7 @@
       if (!get(connected)) fetch_all.set(true);
       proofs.set(
         await updateReputationProofList(
+          explorer_uri,
           get(connected),
           get(types),
           get(searchStore),

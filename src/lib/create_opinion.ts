@@ -32,12 +32,12 @@ declare const ergo: any;
 export async function create_opinion(
     token_amount: number,
     type_nft_id: string,
+    explorerUri: string,
     object_pointer: string | undefined,
     polarization: boolean,
     content: object | string | null,
     is_locked: boolean = false,
-    main_box: RPBox,
-    explorerUri: string = ""
+    main_box: RPBox
 ): Promise<string | null> {
 
 

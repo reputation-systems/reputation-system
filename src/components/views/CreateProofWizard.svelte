@@ -1,5 +1,6 @@
 <script lang="ts">
     import { create_profile } from "$lib/create_profile";
+    import { explorer_uri } from "$lib/envs";
     import type { ReputationProof, TypeNFT } from "$lib/ReputationProof";
 
     export let connected: boolean;
@@ -37,7 +38,12 @@
         }
 
         try {
-            const txId = await create_profile(token_amount, type_nft_id, data);
+            const txId = await create_profile(
+                token_amount,
+                type_nft_id,
+                explorer_uri,
+                data,
+            );
 
             if (txId) {
                 successMessage = `New reputation proof minted! Transaction ID: ${txId}`;

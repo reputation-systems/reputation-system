@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { RPBox, ReputationProof } from "$lib/ReputationProof";
   import { create_opinion } from "$lib/create_opinion";
+  import { explorer_uri } from "$lib/envs";
   import JsonInput from "../../ui/JsonInput.svelte";
 
   // --- Component Props ---
@@ -60,6 +61,7 @@
       const txId = await create_opinion(
         token_amount,
         source_proof.types[0].tokenId, // Pass the Type NFT ID from the source proof.
+        explorer_uri,
         object_to_assign,
         !negative, // Convert the "negative" checkbox state to the "polarization" parameter.
         data,

@@ -14,7 +14,7 @@
   } from "@xyflow/svelte";
 
   import "@xyflow/svelte/dist/style.css";
-  import { updateReputationProofList } from "$lib/unspent_proofs";
+  import { updateReputationProofList } from "$lib/fetch";
   import { explorer_uri } from "$lib/envs";
   import { type ReputationProof } from "$lib/ReputationProof";
   import dagre from "@dagrejs/dagre";

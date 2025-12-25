@@ -1,6 +1,6 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
-    import { updateReputationProofList } from "$lib/unspent_proofs";
+    import { updateReputationProofList } from "$lib/fetch";
     import { explorer_uri } from "$lib/envs";
     import { type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
 

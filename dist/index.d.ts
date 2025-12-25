@@ -4,7 +4,7 @@ export { update_opinion } from './update_opinion';
 export { remove_opinion } from './remove_opinion';
 export { sacrifice_assets } from './sacrifice_assets';
 export { update_boxes } from './update_boxes';
-export { fetchTypeNfts, updateReputationProofList, getAllRPBoxesFromProof, getReputationProofFromRPBox, searchBoxes, getTimestampFromBlockId } from './unspent_proofs';
+export { fetchTypeNfts, searchBoxes, getTimestampFromBlockId } from './fetch';
 export { fetchAllProfiles } from './profileFetch';
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';
 export type { OutputConfig } from './update_boxes';

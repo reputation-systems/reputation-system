@@ -8,12 +8,9 @@ export { update_boxes } from './update_boxes';
 
 export {
     fetchTypeNfts,
-    updateReputationProofList,
-    getAllRPBoxesFromProof,
-    getReputationProofFromRPBox,
     searchBoxes,
     getTimestampFromBlockId
-} from './unspent_proofs';
+} from './fetch'
 export { fetchAllProfiles } from './profileFetch';
 
 // --- Types ---

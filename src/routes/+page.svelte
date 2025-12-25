@@ -17,7 +17,7 @@
     import {
         updateReputationProofList,
         fetchTypeNfts,
-    } from "$lib/unspent_proofs";
+    } from "$lib/fetch";
     import { explorer_uri } from "$lib/envs";
 
     import MasterGraphView from "$components/graph/MasterGraphView.svelte";

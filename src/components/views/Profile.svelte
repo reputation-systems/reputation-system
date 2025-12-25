@@ -365,6 +365,9 @@
             }
         }
 
+        const mainBoxUsed =
+            mainBox && editingAmount !== box.token_amount ? mainBox : undefined;
+
         try {
             const txId = await update_opinion(
                 box,
@@ -374,7 +377,7 @@
                 editingAmount - box.token_amount,
                 0n,
                 false,
-                mainBox!,
+                mainBoxUsed,
             );
             if (txId) {
                 successMessage = `Update box transaction submitted: ${txId}`;

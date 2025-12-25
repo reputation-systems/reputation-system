@@ -100,7 +100,10 @@ export async function generate_reputation_proof(
     let opinion_box_output: OutputBuilder;
     let main_box_output: OutputBuilder | null = null;
 
-    const reputationTokenId = opinion_box ? opinion_box.token_id : null;
+    const reputationTokenId = opinion_box
+        ? opinion_box.token_id
+        : (main_boxes && main_boxes.length > 0 ? main_boxes[0].token_id : null);
+
     const allNonReputationTokens = new Map<string, bigint>();
     let totalReputationAvailable = 0n;
 
@@ -143,14 +146,13 @@ export async function generate_reputation_proof(
     let targetOpinionReputation = BigInt(token_amount);
     let targetMainReputation = 0n;
 
-    if (opinion_box) {
+    if (reputationTokenId) {
         if (totalReputationAvailable < targetOpinionReputation) {
             throw new Error(`Insufficient reputation tokens. Available: ${totalReputationAvailable}, Requested: ${targetOpinionReputation}`);
         }
         targetMainReputation = totalReputationAvailable - targetOpinionReputation;
     } else {
         // Minting case: We mint the full total_supply.
-        // For simplicity in a single transaction, we'll put it all in the opinion_box for now.
         targetOpinionReputation = BigInt(total_supply);
         targetMainReputation = 0n;
     }
@@ -159,7 +161,7 @@ export async function generate_reputation_proof(
     const opinionBoxValue = (opinion_box ? BigInt(opinion_box.box.value) : BigInt(SAFE_MIN_BOX_VALUE)) + BigInt(extra_erg);
     opinion_box_output = new OutputBuilder(opinionBoxValue, ergo_tree_address);
 
-    if (!opinion_box) {
+    if (!reputationTokenId) {
         // Minting: The tokenId will be the ID of the first input
         opinion_box_output.mintToken({
             amount: targetOpinionReputation.toString(),
@@ -167,8 +169,8 @@ export async function generate_reputation_proof(
         });
         if (!object_pointer) object_pointer = inputs[0].boxId;
     } else {
-        opinion_box_output.addTokens({ tokenId: reputationTokenId!, amount: targetOpinionReputation.toString() });
-        if (!object_pointer) object_pointer = reputationTokenId!;
+        opinion_box_output.addTokens({ tokenId: reputationTokenId, amount: targetOpinionReputation.toString() });
+        if (!object_pointer) object_pointer = reputationTokenId;
     }
 
     // Add all non-reputation tokens to the opinion box
@@ -235,10 +237,9 @@ export async function generate_reputation_proof(
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
 
-
-
         console.log("Transaction ID -> ", transactionId);
         return transactionId;
+
     } catch (e: any) {
         console.error("Error building or submitting transaction:", e);
         alert(`Transaction failed: ${e.message}`);

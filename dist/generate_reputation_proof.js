@@ -66,7 +66,9 @@ export async function generate_reputation_proof(token_amount, total_supply, type
     const outputs = [];
     let opinion_box_output;
     let main_box_output = null;
-    const reputationTokenId = opinion_box ? opinion_box.token_id : null;
+    const reputationTokenId = opinion_box
+        ? opinion_box.token_id
+        : (main_boxes && main_boxes.length > 0 ? main_boxes[0].token_id : null);
     const allNonReputationTokens = new Map();
     let totalReputationAvailable = 0n;
     // 1. Collect assets from opinion_box
@@ -106,7 +108,7 @@ export async function generate_reputation_proof(token_amount, total_supply, type
     // 4. Determine Reputation Distribution
     let targetOpinionReputation = BigInt(token_amount);
     let targetMainReputation = 0n;
-    if (opinion_box) {
+    if (reputationTokenId) {
         if (totalReputationAvailable < targetOpinionReputation) {
             throw new Error(`Insufficient reputation tokens. Available: ${totalReputationAvailable}, Requested: ${targetOpinionReputation}`);
         }
@@ -114,14 +116,13 @@ export async function generate_reputation_proof(token_amount, total_supply, type
     }
     else {
         // Minting case: We mint the full total_supply.
-        // For simplicity in a single transaction, we'll put it all in the opinion_box for now.
         targetOpinionReputation = BigInt(total_supply);
         targetMainReputation = 0n;
     }
     // 5. Build Opinion Box (The Proof)
     const opinionBoxValue = (opinion_box ? BigInt(opinion_box.box.value) : BigInt(SAFE_MIN_BOX_VALUE)) + BigInt(extra_erg);
     opinion_box_output = new OutputBuilder(opinionBoxValue, ergo_tree_address);
-    if (!opinion_box) {
+    if (!reputationTokenId) {
         // Minting: The tokenId will be the ID of the first input
         opinion_box_output.mintToken({
             amount: targetOpinionReputation.toString(),

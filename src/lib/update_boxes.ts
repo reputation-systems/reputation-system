@@ -13,7 +13,7 @@ import {
 import { ergo_tree_address, explorer_uri } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
-import { type RPBox } from 'ergo-reputation-system';
+import { type RPBox } from '$lib/ReputationProof';
 
 declare const ergo: any;
 

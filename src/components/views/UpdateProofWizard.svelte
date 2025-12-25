@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { generate_reputation_proof } from "$lib/generate_reputation_proof";
+    import { create_opinion } from "$lib/create_opinion";
     import type { RPBox, ReputationProof } from "$lib/ReputationProof";
 
     export let proofs: Map<string, ReputationProof>;
@@ -74,9 +74,8 @@
         }
 
         try {
-            const txId = await generate_reputation_proof(
+            const txId = await create_opinion(
                 token_amount,
-                selectedProof.total_amount,
                 selectedProof.types[0].tokenId,
                 object_to_assign,
                 !is_negative,

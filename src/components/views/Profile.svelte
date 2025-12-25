@@ -1,6 +1,9 @@
 <script lang="ts">
     import { createEventDispatcher, onDestroy } from "svelte";
-    import { generate_reputation_proof } from "$lib/generate_reputation_proof";
+    import { create_profile } from "$lib/create_profile";
+    import { update_opinion } from "$lib/update_opinion";
+    import { remove_opinion } from "$lib/remove_opinion";
+    import { sacrifice_assets } from "$lib/sacrifice_assets";
     import { PROFILE_TOTAL_SUPPLY, PROFILE_TYPE_NFT_ID } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
 
@@ -325,14 +328,10 @@
         isLoading = true;
         errorMessage = "";
         try {
-            const txId = await generate_reputation_proof(
-                1,
+            const txId = await create_profile(
                 PROFILE_TOTAL_SUPPLY,
                 PROFILE_TYPE_NFT_ID,
-                undefined, // Will point to self
-                true,
                 "Anonymous",
-                false,
             );
             if (txId) {
                 successMessage = `Profile creation transaction submitted: ${txId}`;
@@ -362,15 +361,14 @@
         }
 
         try {
-            const txId = await generate_reputation_proof(
-                editingAmount,
-                reputationProof.total_amount,
-                box.type.tokenId,
-                box.object_pointer,
+            const txId = await update_opinion(
+                box,
                 box.polarization,
                 finalContent,
+                editingAmount - box.token_amount,
+                0n,
                 false,
-                box,
+                mainBox!,
             );
             if (txId) {
                 successMessage = `Update box transaction submitted: ${txId}`;
@@ -389,17 +387,7 @@
         isLoading = true;
         errorMessage = "";
         try {
-            const txId = await generate_reputation_proof(
-                mainBox.token_amount + box.token_amount,
-                reputationProof.total_amount,
-                mainBox.type.tokenId,
-                mainBox.object_pointer,
-                mainBox.polarization,
-                mainBox.content,
-                false,
-                mainBox,
-                [box],
-            );
+            const txId = await remove_opinion(box, mainBox);
             if (txId) {
                 successMessage = `Delete box transaction submitted: ${txId}`;
             }
@@ -506,16 +494,8 @@
             }));
 
         try {
-            const txId = await generate_reputation_proof(
-                mainBox.token_amount,
-                reputationProof.total_amount,
-                mainBox.type.tokenId,
-                mainBox.object_pointer,
-                mainBox.polarization,
-                mainBox.content,
-                mainBox.is_locked,
+            const txId = await sacrifice_assets(
                 mainBox,
-                [],
                 extra_erg,
                 extra_tokens,
             );

@@ -7,7 +7,7 @@ import {
     ErgoAddress
 } from '@fleet-sdk/core';
 import { ergo_tree_address } from './envs';
-import { type RPBox } from 'ergo-reputation-system';
+import { type RPBox } from '$lib/ReputationProof';
 
 declare const ergo: any;
 

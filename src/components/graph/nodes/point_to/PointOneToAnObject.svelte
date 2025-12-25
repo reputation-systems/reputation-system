@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { RPBox, ReputationProof } from '$lib/ReputationProof';
-  import { generate_reputation_proof } from '$lib/generate_reputation_proof';
-  import JsonInput from '../../ui/JsonInput.svelte';
+  import type { RPBox, ReputationProof } from "$lib/ReputationProof";
+  import { create_opinion } from "$lib/create_opinion";
+  import JsonInput from "../../ui/JsonInput.svelte";
 
   // --- Component Props ---
   export let showModal: boolean;
@@ -10,7 +10,10 @@
   // The target object that the new pointer will reference.
   export let object_to_assign: string;
   // Callback function to manage the UI edge after the modal closes.
-  export let delete_edge_function: (connection: any, txId: string | null) => void;
+  export let delete_edge_function: (
+    connection: any,
+    txId: string | null,
+  ) => void;
   // The connection object from @xyflow/svelte.
   export let connection: any;
 
@@ -26,7 +29,7 @@
   let data: object = {};
   // To hold the submitted transaction ID.
   let submitted_tx_id: string | null = null;
-  
+
   // --- Lifecycle and Event Handlers ---
   // Automatically show the dialog when the showModal prop becomes true.
   $: if (dialog && showModal) dialog.showModal();
@@ -47,22 +50,21 @@
   function handleInputBoxChange() {
     token_amount = 0;
   }
-  
+
   /**
    * Gathers data from the form and calls the transaction generation function.
    */
   async function handleGenerateProof() {
     if (token_amount > 0 && input_proof_box && object_to_assign) {
       // Call the updated transaction generation function with the correct parameters.
-      const txId = await generate_reputation_proof(
+      const txId = await create_opinion(
         token_amount,
-        source_proof.total_amount, // Pass the total supply from the source proof.
-        source_proof.type_nft_id, // Pass the Type NFT ID from the source proof.
+        source_proof.types[0].tokenId, // Pass the Type NFT ID from the source proof.
         object_to_assign,
         !negative, // Convert the "negative" checkbox state to the "polarization" parameter.
         data,
         is_locked,
-        input_proof_box
+        input_proof_box,
       );
 
       if (txId) {
@@ -74,8 +76,12 @@
     }
   }
 </script>
-  
-<dialog bind:this={dialog} on:close={close} on:click|self={() => dialog.close()}>
+
+<dialog
+  bind:this={dialog}
+  on:close={close}
+  on:click|self={() => dialog.close()}
+>
   <div on:click|stopPropagation>
     <h2 class="modal-title" id="generateReputationLabel">
       Point from {source_proof.type.typeName}
@@ -85,12 +91,22 @@
 
     <form id="reputationForm" on:submit|preventDefault={handleGenerateProof}>
       <div class="mb-3">
-        <label for="proof-box-select" class="form-label">Spend from Proof Box</label>
-        <select id="proof-box-select" class="form-select" bind:value={input_proof_box} on:change={handleInputBoxChange}>
+        <label for="proof-box-select" class="form-label"
+          >Spend from Proof Box</label
+        >
+        <select
+          id="proof-box-select"
+          class="form-select"
+          bind:value={input_proof_box}
+          on:change={handleInputBoxChange}
+        >
           <option disabled selected value={null}>-- Select a box --</option>
           {#each source_proof.current_boxes as option (option.box_id)}
             <option value={option}>
-              Box ({option.token_amount} tokens) - ID: {option.box_id.slice(0, 10)}...
+              Box ({option.token_amount} tokens) - ID: {option.box_id.slice(
+                0,
+                10,
+              )}...
             </option>
           {/each}
         </select>
@@ -98,12 +114,14 @@
 
       {#if input_proof_box}
         <div class="mb-3">
-          <label for="reputationToken" class="form-label">Token Amount to Assign</label>
-          <input 
-            type="number" 
+          <label for="reputationToken" class="form-label"
+            >Token Amount to Assign</label
+          >
+          <input
+            type="number"
             min="1"
             max={input_proof_box.token_amount}
-            class="form-control" 
+            class="form-control"
             bind:value={token_amount}
             placeholder="e.g., 100"
           />
@@ -111,14 +129,28 @@
         </div>
 
         <div class="checkbox-group">
-            <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="polarCheckbox" bind:checked={negative} />
-                <label for="polarCheckbox" class="form-check-label">Negative Proof</label>
-            </div>
-             <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="lockCheckbox" bind:checked={is_locked} />
-                <label for="lockCheckbox" class="form-check-label">Lock (Immutable)</label>
-            </div>
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="polarCheckbox"
+              bind:checked={negative}
+            />
+            <label for="polarCheckbox" class="form-check-label"
+              >Negative Proof</label
+            >
+          </div>
+          <div class="form-check">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="lockCheckbox"
+              bind:checked={is_locked}
+            />
+            <label for="lockCheckbox" class="form-check-label"
+              >Lock (Immutable)</label
+            >
+          </div>
         </div>
 
         <div class="mb-3">
@@ -127,17 +159,21 @@
         </div>
       {/if}
     </form>
-    
+
     <hr />
     <div class="modal-actions">
       <button class="button-secondary" on:click={close}>Cancel</button>
-      <button class="button-primary" on:click={handleGenerateProof} disabled={!input_proof_box || token_amount <= 0}>
+      <button
+        class="button-primary"
+        on:click={handleGenerateProof}
+        disabled={!input_proof_box || token_amount <= 0}
+      >
         Generate Proof
       </button>
     </div>
   </div>
 </dialog>
-  
+
 <style>
   dialog {
     max-width: 40em;
@@ -158,7 +194,7 @@
     font-size: 1.5rem;
     margin-top: 0;
     margin-bottom: 0.25rem;
-    color: #FBBF24;
+    color: #fbbf24;
   }
 
   .modal-subtitle {
@@ -186,7 +222,8 @@
     margin-bottom: 0.5rem;
   }
 
-  .form-select, .form-control {
+  .form-select,
+  .form-control {
     width: 100%;
     padding: 0.75rem;
     font-size: 1rem;
@@ -196,7 +233,7 @@
     color: #f0f0f0;
     box-sizing: border-box;
   }
-  
+
   .form-control + small {
     display: block;
     margin-top: 0.25rem;
@@ -205,20 +242,20 @@
   }
 
   .checkbox-group {
-      display: flex;
-      gap: 2rem;
-      margin-bottom: 1.5rem;
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .form-check {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .form-check-input {
-      width: 1.25em;
-      height: 1.25em;
+    width: 1.25em;
+    height: 1.25em;
   }
 
   .modal-actions {
@@ -235,26 +272,28 @@
     cursor: pointer;
     border-radius: 6px;
     font-weight: bold;
-    transition: background-color 0.2s, opacity 0.2s;
+    transition:
+      background-color 0.2s,
+      opacity 0.2s;
   }
 
   .button-primary {
-    background-color: #FBBF24;
+    background-color: #fbbf24;
     color: #1a1a1a;
   }
   .button-primary:hover {
     background-color: #fca510;
   }
   .button-primary:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .button-secondary {
-      background-color: #444;
-      color: #f0f0f0;
+    background-color: #444;
+    color: #f0f0f0;
   }
   .button-secondary:hover {
-      background-color: #555;
+    background-color: #555;
   }
 </style>

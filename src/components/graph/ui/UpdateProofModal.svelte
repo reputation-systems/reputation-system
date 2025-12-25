@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { generate_reputation_proof } from "$lib/generate_reputation_proof";
+    import { create_opinion } from "$lib/create_opinion";
     import { type RPBox, type ReputationProof } from "$lib/ReputationProof";
     import JsonInput from "./JsonInput.svelte";
 
@@ -50,10 +50,9 @@
     async function generateReputationProof() {
         if (token_amount > 0 && input_proof_box && object_to_assign) {
             // Call the updated transaction generation function with the correct parameters.
-            const txId = await generate_reputation_proof(
+            const txId = await create_opinion(
                 token_amount,
-                proof.total_amount,
-                proof.type_nft_id,
+                proof.types[0].tokenId,
                 object_to_assign,
                 !negative, // Convert checkbox state to 'polarization' parameter
                 data,

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { generate_reputation_proof } from "$lib/generate_reputation_proof";
+    import { create_profile } from "$lib/create_profile";
     import type { ReputationProof, TypeNFT } from "$lib/ReputationProof";
 
     export let connected: boolean;
@@ -10,9 +10,7 @@
 
     let type_nft_id: string = "";
     let token_amount: number = 1000000;
-    let is_negative: boolean = false;
     let data: object | string | null = null;
-    let is_locked: boolean = false;
     let contentString: string = "";
 
     let isLoading = false;
@@ -39,16 +37,7 @@
         }
 
         try {
-            const txId = await generate_reputation_proof(
-                token_amount,
-                token_amount,
-                type_nft_id,
-                undefined,
-                !is_negative,
-                data,
-                is_locked,
-                undefined,
-            );
+            const txId = await create_profile(token_amount, type_nft_id, data);
 
             if (txId) {
                 successMessage = `New reputation proof minted! Transaction ID: ${txId}`;
@@ -166,8 +155,7 @@
                 </p>
                 <p>
                     <strong>Opinion:</strong>
-                    {is_negative ? "Negative" : "Positive"} ({token_amount.toLocaleString()}
-                    tokens to mint)
+                    Positive ({token_amount.toLocaleString()} tokens to mint)
                 </p>
                 <p>
                     <strong>Content:</strong>

@@ -10,10 +10,10 @@ import {
     SByte,
     SBool
 } from '@fleet-sdk/core';
-import { type RPBox } from 'ergo-reputation-system';
 import { ergo_tree_address } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
+import { RPBox } from './ReputationProof';
 
 declare const ergo: any;
 

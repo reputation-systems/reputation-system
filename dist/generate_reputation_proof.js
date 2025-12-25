@@ -1,8 +1,8 @@
 import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress, SColl, SByte, SBool } from '@fleet-sdk/core';
-import {} from './ReputationProof';
-import { ergo_tree_address, explorer_uri } from './envs';
+import { ergo_tree_address } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
+import { RPBox } from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param token_amount The amount of the token for the new proof box.
@@ -12,14 +12,14 @@ import { stringToBytes } from '@scure/base';
  * @param polarization `true` for a positive proof, `false` for a negative one.
  * @param content The JSON or string content for register R9.
  * @param is_locked `true` to make the resulting box immutable.
- * @param input_proof The existing RPBox to spend from (for splitting or modifying).
- * @param extra_inputs Additional RPBoxes to merge into the new proof.
+ * @param opinion_box The existing RPBox to spend from (for splitting or modifying).
+ * @param main_boxes Additional RPBoxes to merge into the new proof.
  * @param extra_erg Optional extra ERG to add to the proof (sacrificed).
  * @param extra_tokens Optional extra tokens to add to the proof (sacrificed).
  * @param explorerUri Optional explorer URI to use for fetching the Type NFT box.
  * @returns A promise that resolves to the transaction ID string, or null on failure.
  */
-export async function generate_reputation_proof(token_amount, total_supply, type_nft_id, object_pointer, polarization, content, is_locked = false, input_proof, extra_inputs, extra_erg = 0n, extra_tokens = [], explorerUri = explorer_uri) {
+export async function generate_reputation_proof(token_amount, total_supply, type_nft_id, object_pointer, polarization, content, is_locked = false, opinion_box, main_boxes, extra_erg = 0n, extra_tokens = [], explorerUri = "") {
     console.log("Generating reputation proof with parameters:", {
         token_amount,
         total_supply,
@@ -28,9 +28,11 @@ export async function generate_reputation_proof(token_amount, total_supply, type
         polarization,
         content,
         is_locked,
-        input_proof,
+        opinion_box,
+        main_boxes,
         extra_erg,
-        extra_tokens
+        extra_tokens,
+        explorerUri
     });
     console.log("Ergo Tree Address:", ergo_tree_address);
     const creatorAddressString = await ergo.get_change_address();
@@ -38,80 +40,123 @@ export async function generate_reputation_proof(token_amount, total_supply, type
         throw new Error("Could not get the creator's address from the wallet.");
     }
     const creatorP2PKAddress = ErgoAddress.fromBase58(creatorAddressString);
-    // Fetch the Type NFT box to be used in dataInputs. This is required by the contract.
-    const typeNftBoxResponse = await fetch(`${explorerUri}/api/v1/boxes/byTokenId/${type_nft_id}`);
-    if (!typeNftBoxResponse.ok) {
-        alert("Could not fetch the Type NFT box. Aborting transaction.");
-        return null;
+    // Fetch the Type NFT boxes to be used in dataInputs. This is required by the contract.
+    const typeTokenIds = new Set();
+    typeTokenIds.add(type_nft_id);
+    if (opinion_box)
+        typeTokenIds.add(opinion_box.type.tokenId);
+    if (main_boxes)
+        main_boxes.forEach(b => typeTokenIds.add(b.type.tokenId));
+    const dataInputs = [];
+    for (const tokenId of typeTokenIds) {
+        const response = await fetch(`${explorerUri}/api/v1/boxes/byTokenId/${tokenId}`);
+        if (response.ok) {
+            const box = (await response.json()).items[0];
+            if (box)
+                dataInputs.push(box);
+        }
     }
-    const typeNftBox = (await typeNftBoxResponse.json()).items[0];
-    console.log("type nft box ", typeNftBox);
+    console.log("Data Inputs (Type NFTs):", dataInputs);
     // Inputs for the transaction
     const utxos = await ergo.get_utxos();
-    const inputs = input_proof ? [input_proof.box, ...utxos] : utxos;
-    if (extra_inputs) {
-        inputs.push(...extra_inputs.map(i => i.box));
+    const inputs = opinion_box ? [opinion_box.box, ...utxos] : utxos;
+    if (main_boxes) {
+        inputs.push(...main_boxes.map(i => i.box));
     }
-    let dataInputs = [typeNftBox];
     const outputs = [];
-    // --- Create the main output for the new/modified proof ---
-    const new_proof_output = new OutputBuilder((input_proof ? BigInt(input_proof.box.value) : BigInt(SAFE_MIN_BOX_VALUE)) + BigInt(extra_erg), ergo_tree_address);
-    const tokenMap = new Map();
-    if (input_proof === undefined || input_proof === null) {
-        // Minting a new token if no input proof is provided
-        new_proof_output.mintToken({
-            amount: token_amount.toString(),
-            name: "Reputation Proof Token", // Optional: EIP-4 metadata
+    let opinion_box_output;
+    let main_box_output = null;
+    const reputationTokenId = opinion_box ? opinion_box.token_id : null;
+    const allNonReputationTokens = new Map();
+    let totalReputationAvailable = 0n;
+    // 1. Collect assets from opinion_box
+    if (opinion_box) {
+        opinion_box.box.assets.forEach(a => {
+            if (a.tokenId === reputationTokenId) {
+                totalReputationAvailable += BigInt(a.amount);
+            }
+            else {
+                const current = allNonReputationTokens.get(a.tokenId) || 0n;
+                allNonReputationTokens.set(a.tokenId, current + BigInt(a.amount));
+            }
         });
-        if (!object_pointer)
-            object_pointer = inputs[0].boxId; // Points to the self token being evaluated by default
+    }
+    // 2. Collect assets from main_boxes
+    if (main_boxes) {
+        main_boxes.forEach(box => {
+            box.box.assets.forEach(a => {
+                if (a.tokenId === reputationTokenId) {
+                    totalReputationAvailable += BigInt(a.amount);
+                }
+                else {
+                    // Move all non-reputation tokens to the opinion box as per request
+                    const current = allNonReputationTokens.get(a.tokenId) || 0n;
+                    allNonReputationTokens.set(a.tokenId, current + BigInt(a.amount));
+                }
+            });
+        });
+    }
+    // 3. Collect extra_tokens (Sacrificed from wallet)
+    if (extra_tokens) {
+        extra_tokens.forEach(t => {
+            const current = allNonReputationTokens.get(t.tokenId) || 0n;
+            allNonReputationTokens.set(t.tokenId, current + BigInt(t.amount));
+        });
+    }
+    // 4. Determine Reputation Distribution
+    let targetOpinionReputation = BigInt(token_amount);
+    let targetMainReputation = 0n;
+    if (opinion_box) {
+        if (totalReputationAvailable < targetOpinionReputation) {
+            throw new Error(`Insufficient reputation tokens. Available: ${totalReputationAvailable}, Requested: ${targetOpinionReputation}`);
+        }
+        targetMainReputation = totalReputationAvailable - targetOpinionReputation;
     }
     else {
-        // Transferring existing tokens
-        // 1. Add all tokens from the main input box
-        for (const asset of input_proof.box.assets) {
-            tokenMap.set(asset.tokenId, BigInt(asset.amount));
-        }
-        // 2. Add all tokens from extra input boxes (merging)
-        if (extra_inputs) {
-            for (const extra of extra_inputs) {
-                for (const asset of extra.box.assets) {
-                    const current = tokenMap.get(asset.tokenId) || 0n;
-                    tokenMap.set(asset.tokenId, current + BigInt(asset.amount));
-                }
-            }
-        }
-        // 3. Calculate total reputation tokens available
-        const total_input_reputation_amount = tokenMap.get(input_proof.token_id) || 0n;
-        // 4. If splitting, create a change box to send the remaining tokens back to the same contract
-        if (total_input_reputation_amount - BigInt(token_amount) > 0n) {
-            outputs.push(new OutputBuilder(SAFE_MIN_BOX_VALUE, ergo_tree_address)
-                .addTokens({
-                tokenId: input_proof.token_id,
-                amount: (total_input_reputation_amount - BigInt(token_amount)).toString()
-            })
-                // The change box must retain the original registers
-                .setAdditionalRegisters(input_proof.box.additionalRegisters));
-        }
-        // 5. Set the reputation token amount for the new main output
-        tokenMap.set(input_proof.token_id, BigInt(token_amount));
+        // Minting case: We mint the full total_supply.
+        // For simplicity in a single transaction, we'll put it all in the opinion_box for now.
+        targetOpinionReputation = BigInt(total_supply);
+        targetMainReputation = 0n;
+    }
+    // 5. Build Opinion Box (The Proof)
+    const opinionBoxValue = (opinion_box ? BigInt(opinion_box.box.value) : BigInt(SAFE_MIN_BOX_VALUE)) + BigInt(extra_erg);
+    opinion_box_output = new OutputBuilder(opinionBoxValue, ergo_tree_address);
+    if (!opinion_box) {
+        // Minting: The tokenId will be the ID of the first input
+        opinion_box_output.mintToken({
+            amount: targetOpinionReputation.toString(),
+            name: "Reputation Proof Token"
+        });
         if (!object_pointer)
-            object_pointer = input_proof.token_id;
+            object_pointer = inputs[0].boxId;
     }
-    // Add extra tokens (sacrificed)
-    if (extra_tokens) {
-        for (const extra of extra_tokens) {
-            const current = tokenMap.get(extra.tokenId) || 0n;
-            tokenMap.set(extra.tokenId, current + BigInt(extra.amount));
+    else {
+        opinion_box_output.addTokens({ tokenId: reputationTokenId, amount: targetOpinionReputation.toString() });
+        if (!object_pointer)
+            object_pointer = reputationTokenId;
+    }
+    // Add all non-reputation tokens to the opinion box
+    for (const [tokenId, amount] of allNonReputationTokens) {
+        opinion_box_output.addTokens({ tokenId, amount: amount.toString() });
+    }
+    outputs.push(opinion_box_output);
+    // 6. Build Main Box (The Liquidity Buffer)
+    if (targetMainReputation > 0n || (main_boxes && main_boxes.length > 0)) {
+        const mainBoxValue = main_boxes && main_boxes.length > 0
+            ? main_boxes.reduce((sum, b) => sum + BigInt(b.box.value), 0n)
+            : BigInt(SAFE_MIN_BOX_VALUE);
+        // Use registers from the first main_box, or fallback to opinion_box, or empty
+        const mainBoxRegisters = main_boxes && main_boxes.length > 0
+            ? main_boxes[0].box.additionalRegisters
+            : (opinion_box ? opinion_box.box.additionalRegisters : {});
+        main_box_output = new OutputBuilder(mainBoxValue, ergo_tree_address)
+            .setAdditionalRegisters(mainBoxRegisters);
+        if (opinion_box && targetMainReputation > 0n) {
+            main_box_output.addTokens({ tokenId: reputationTokenId, amount: targetMainReputation.toString() });
         }
-    }
-    // Add all aggregated tokens to the main output
-    for (const [tokenId, amount] of tokenMap.entries()) {
-        if (amount > 0n) {
-            new_proof_output.addTokens({
-                tokenId,
-                amount: amount.toString()
-            });
+        // Only push if we specifically want to recreate the main_box or it has reputation tokens
+        if (targetMainReputation > 0n || (main_boxes && main_boxes.length > 0)) {
+            outputs.push(main_box_output);
         }
     }
     const propositionBytes = hexToBytes(creatorP2PKAddress.ergoTree);
@@ -128,8 +173,7 @@ export async function generate_reputation_proof(token_amount, total_supply, type
         R9: SColl(SByte, stringToBytes("utf8", raw_content)).toHex(),
     };
     console.log("New registers:", new_registers);
-    new_proof_output.setAdditionalRegisters(new_registers);
-    outputs.push(new_proof_output);
+    opinion_box_output.setAdditionalRegisters(new_registers);
     // --- Build and submit the transaction ---
     try {
         const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())

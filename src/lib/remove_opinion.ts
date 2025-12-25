@@ -53,6 +53,7 @@ export async function remove_opinion(
 
     // Fetch the Type NFT boxes to be used in dataInputs
     const typeTokenIds = new Set<string>();
+    typeTokenIds.add(opinion_box.type.tokenId);
     typeTokenIds.add(main_box.type.tokenId);
 
     const dataInputs: any[] = [];

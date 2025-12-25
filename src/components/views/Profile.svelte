@@ -333,9 +333,9 @@
         errorMessage = "";
         try {
             const txId = await create_profile(
+                explorer_uri,
                 PROFILE_TOTAL_SUPPLY,
                 PROFILE_TYPE_NFT_ID,
-                explorer_uri,
                 "Anonymous",
             );
             if (txId) {
@@ -370,8 +370,8 @@
 
         try {
             const txId = await update_opinion(
-                box,
                 explorer_uri,
+                box,
                 box.polarization,
                 finalContent,
                 editingAmount - box.token_amount,
@@ -396,7 +396,7 @@
         isLoading = true;
         errorMessage = "";
         try {
-            const txId = await remove_opinion(box, mainBox, explorer_uri);
+            const txId = await remove_opinion(explorer_uri, box, mainBox);
             if (txId) {
                 successMessage = `Delete box transaction submitted: ${txId}`;
             }
@@ -504,8 +504,8 @@
 
         try {
             const txId = await sacrifice_assets(
-                mainBox,
                 explorer_uri,
+                mainBox,
                 extra_erg,
                 extra_tokens,
             );

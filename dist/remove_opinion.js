@@ -6,12 +6,12 @@ import {} from './ReputationProof';
  * The opinion box is consumed and not recreated, effectively deleting it.
  * The main box is recreated with the combined assets.
  *
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @param opinion_box The opinion box to remove (must not be locked).
  * @param main_box The main box to receive all assets from the opinion box.
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function remove_opinion(opinion_box, main_box, explorerUri) {
+export async function remove_opinion(explorerUri, opinion_box, main_box) {
     // Validate: opinion_box must not be locked
     if (opinion_box.is_locked) {
         throw new Error("Cannot remove a locked opinion box. Locked boxes are immutable.");

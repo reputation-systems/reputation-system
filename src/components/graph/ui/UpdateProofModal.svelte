@@ -52,9 +52,9 @@
         if (token_amount > 0 && input_proof_box && object_to_assign) {
             // Call the updated transaction generation function with the correct parameters.
             const txId = await create_opinion(
+                explorer_uri,
                 token_amount,
                 proof.types[0].tokenId,
-                explorer_uri,
                 object_to_assign,
                 !negative, // Convert checkbox state to 'polarization' parameter
                 data,

@@ -13,6 +13,7 @@ import {} from './ReputationProof';
  * Update content, polarization, or lock state of a single box.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [myBox],
  *     [{ token_amount: 100, content: "New content", is_locked: true }]
  * );
@@ -22,6 +23,7 @@ import {} from './ReputationProof';
  * Combine multiple boxes into one.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [box1, box2, box3],
  *     [{ token_amount: 300 }] // Sum of all input tokens
  * );
@@ -31,6 +33,7 @@ import {} from './ReputationProof';
  * Divide a box into multiple boxes.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [bigBox],
  *     [
  *         { token_amount: 50, content: "Part 1" },
@@ -43,6 +46,7 @@ import {} from './ReputationProof';
  * Complex redistribution of tokens across boxes.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [box1, box2],
  *     [
  *         { token_amount: 30, object_pointer: "target1" },
@@ -51,15 +55,15 @@ import {} from './ReputationProof';
  * );
  * ```
  *
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
  * @param input_boxes Array of RPBox to consume (must have same token_id, none locked)
  * @param output_configs Array of OutputConfig defining the output boxes
  * @param sacrificed_erg Optional extra ERG to add to the first output box
  * @param sacrificed_tokens Optional extra tokens to add (distributed based on receive_non_reputation_tokens flag)
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
  * @returns Transaction ID if successful
  * @throws Error if validation fails or transaction cannot be built/submitted
  */
-export async function update_boxes(input_boxes, output_configs, sacrificed_erg = 0n, sacrificed_tokens = [], explorerUri) {
+export async function update_boxes(explorerUri, input_boxes, output_configs, sacrificed_erg = 0n, sacrificed_tokens = []) {
     // === VALIDATIONS ===
     // Must have at least one input (no minting)
     if (input_boxes.length === 0) {

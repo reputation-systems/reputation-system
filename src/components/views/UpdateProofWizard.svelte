@@ -76,9 +76,9 @@
 
         try {
             const txId = await create_opinion(
+                explorer_uri,
                 token_amount,
                 selectedProof.types[0].tokenId,
-                explorer_uri,
                 object_to_assign,
                 !is_negative,
                 data,

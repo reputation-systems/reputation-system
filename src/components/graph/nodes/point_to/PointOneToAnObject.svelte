@@ -59,9 +59,9 @@
     if (token_amount > 0 && input_proof_box && object_to_assign) {
       // Call the updated transaction generation function with the correct parameters.
       const txId = await create_opinion(
+        explorer_uri,
         token_amount,
         source_proof.types[0].tokenId, // Pass the Type NFT ID from the source proof.
-        explorer_uri,
         object_to_assign,
         !negative, // Convert the "negative" checkbox state to the "polarization" parameter.
         data,

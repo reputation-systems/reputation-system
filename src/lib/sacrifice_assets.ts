@@ -15,15 +15,15 @@ declare const ergo: any;
  * Sacrifices ERG and tokens by adding them to an existing reputation box.
  * The target box is recreated with the additional assets permanently locked inside.
  * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
  * @param target_box The reputation box to receive the sacrificed assets.
  * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
  * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
  * @returns The transaction ID if successful, otherwise null.
  */
 export async function sacrifice_assets(
-    target_box: RPBox,
     explorerUri: string,
+    target_box: RPBox,
     sacrificed_erg: bigint = 0n,
     sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
 ): Promise<string | null> {

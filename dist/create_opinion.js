@@ -5,6 +5,7 @@ import { stringToBytes } from '@scure/base';
 import {} from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @param token_amount The amount of the token for the new proof box.
  * @param type_nft_id The Type NFT ID associated with the proof.
  * @param object_pointer An optional pointer to the object being evaluated.
@@ -12,10 +13,9 @@ import {} from './ReputationProof';
  * @param content The content associated with the opinion, can be an object or string.
  * @param is_locked A boolean indicating if the opinion is locked.
  * @param main_box The main RPBox containing the reputation tokens to spend.
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function create_opinion(token_amount, type_nft_id, explorerUri, object_pointer, polarization, content, is_locked = false, main_box) {
+export async function create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
     console.log("Generating reputation proof with parameters:", {
         token_amount,
         type_nft_id,

@@ -50,6 +50,7 @@ export interface OutputConfig {
  * Update content, polarization, or lock state of a single box.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [myBox],
  *     [{ token_amount: 100, content: "New content", is_locked: true }]
  * );
@@ -59,6 +60,7 @@ export interface OutputConfig {
  * Combine multiple boxes into one.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [box1, box2, box3],
  *     [{ token_amount: 300 }] // Sum of all input tokens
  * );
@@ -68,6 +70,7 @@ export interface OutputConfig {
  * Divide a box into multiple boxes.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [bigBox],
  *     [
  *         { token_amount: 50, content: "Part 1" },
@@ -80,6 +83,7 @@ export interface OutputConfig {
  * Complex redistribution of tokens across boxes.
  * ```typescript
  * await update_boxes(
+ *     explorer_uri,
  *     [box1, box2],
  *     [
  *         { token_amount: 30, object_pointer: "target1" },
@@ -88,15 +92,15 @@ export interface OutputConfig {
  * );
  * ```
  *
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
  * @param input_boxes Array of RPBox to consume (must have same token_id, none locked)
  * @param output_configs Array of OutputConfig defining the output boxes
  * @param sacrificed_erg Optional extra ERG to add to the first output box
  * @param sacrificed_tokens Optional extra tokens to add (distributed based on receive_non_reputation_tokens flag)
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
  * @returns Transaction ID if successful
  * @throws Error if validation fails or transaction cannot be built/submitted
  */
-export declare function update_boxes(input_boxes: RPBox[], output_configs: OutputConfig[], sacrificed_erg: bigint | undefined, sacrificed_tokens: {
+export declare function update_boxes(explorerUri: string, input_boxes: RPBox[], output_configs: OutputConfig[], sacrificed_erg?: bigint, sacrificed_tokens?: {
     tokenId: string;
     amount: bigint;
-}[] | undefined, explorerUri: string): Promise<string>;
+}[]): Promise<string>;

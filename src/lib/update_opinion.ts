@@ -20,6 +20,7 @@ declare const ergo: any;
  * Updates an existing opinion box by recreating it with modified parameters.
  * The main_box is optional and only required if token_amount_delta is non-zero.
  * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
  * @param opinion_box The existing opinion box to update (must not be locked).
  * @param polarization Optional new polarization value (true = positive, false = negative).
  * @param content Optional new content (text, JSON object, or null). Pass undefined to keep existing.
@@ -27,12 +28,11 @@ declare const ergo: any;
  * @param extra_erg Optional extra ERG to add on top of the existing opinion_box value.
  * @param is_locked Optional flag to lock the opinion box (only false -> true transition allowed).
  * @param main_box Optional main box to use for reputation token adjustments. Required if token_amount_delta != 0.
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
  * @returns The transaction ID if successful, otherwise null.
  */
 export async function update_opinion(
-    opinion_box: RPBox,
     explorerUri: string,
+    opinion_box: RPBox,
     polarization?: boolean,
     content?: object | string | null,
     token_amount_delta: number = 0,

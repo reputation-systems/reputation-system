@@ -75,9 +75,9 @@ interface OutputConfig {
 Creates a new reputation profile by minting a new reputation token.
 ```typescript
 async function create_profile(
+    explorerUri: string,
     total_supply: number,
     type_nft_id: string,
-    explorerUri: string,
     content: object | string | null = null,
     sacrified_erg: bigint = 0n,
     sacrified_tokens: { tokenId: string; amount: bigint }[] = []
@@ -88,9 +88,9 @@ async function create_profile(
 Creates a new opinion box by spending tokens from a main box.
 ```typescript
 async function create_opinion(
+    explorerUri: string,
     token_amount: number,
     type_nft_id: string,
-    explorerUri: string,
     object_pointer: string | undefined,
     polarization: boolean,
     content: object | string | null,
@@ -103,8 +103,8 @@ async function create_opinion(
 Updates an existing opinion box by recreating it with modified parameters.
 ```typescript
 async function update_opinion(
-    opinion_box: RPBox,
     explorerUri: string,
+    opinion_box: RPBox,
     polarization?: boolean,
     content?: object | string | null,
     token_amount_delta: number = 0,
@@ -118,9 +118,9 @@ async function update_opinion(
 Removes an opinion box by merging its assets into the main box.
 ```typescript
 async function remove_opinion(
+    explorerUri: string,
     opinion_box: RPBox,
-    main_box: RPBox,
-    explorerUri: string
+    main_box: RPBox
 ): Promise<string | null>
 ```
 
@@ -128,8 +128,8 @@ async function remove_opinion(
 Adds ERG and tokens to an existing reputation box permanently.
 ```typescript
 async function sacrifice_assets(
-    target_box: RPBox,
     explorerUri: string,
+    target_box: RPBox,
     sacrified_erg: bigint = 0n,
     sacrified_tokens: { tokenId: string; amount: bigint }[] = []
 ): Promise<string | null>
@@ -139,11 +139,11 @@ async function sacrifice_assets(
 Generic function for complex box manipulations (merge, split, redistribute).
 ```typescript
 async function update_boxes(
+    explorerUri: string,
     input_boxes: RPBox[],
     output_configs: OutputConfig[],
     sacrified_erg: bigint = 0n,
-    sacrified_tokens: { tokenId: string; amount: bigint }[] = [],
-    explorerUri: string
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
 ): Promise<string>
 ```
 

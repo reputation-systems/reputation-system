@@ -39,9 +39,9 @@
 
         try {
             const txId = await create_profile(
+                explorer_uri,
                 token_amount,
                 type_nft_id,
-                explorer_uri,
                 data,
             );
 

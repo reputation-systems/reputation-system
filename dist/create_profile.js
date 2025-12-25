@@ -6,15 +6,15 @@ import { stringToBytes } from '@scure/base';
  * Creates a new reputation profile by minting a new reputation token.
  * This creates a "SELF" box where R5 points to its own token ID (the minted token).
  *
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @param total_supply The total amount of reputation tokens to mint.
  * @param type_nft_id The Type NFT ID that defines the category/type for this profile.
  * @param content Optional content for the profile (text, JSON object, or null).
  * @param sacrified_erg Optional extra ERG to add to the profile box (sacrificed).
  * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function create_profile(total_supply, type_nft_id, explorerUri, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
+export async function create_profile(explorerUri, total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
     console.log("Creating profile with parameters:", {
         total_supply,
         type_nft_id,

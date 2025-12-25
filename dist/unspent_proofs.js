@@ -8,7 +8,7 @@ const LIMIT_PER_PAGE = 100;
 /**
  * Gets the timestamp of a block given its block ID.
  */
-export async function getTimestampFromBlockId(blockId, explorerUri = explorer_uri) {
+export async function getTimestampFromBlockId(explorerUri, blockId) {
     const url = `${explorerUri}/api/v1/blocks/${blockId}`;
     try {
         const response = await fetch(url, { method: "GET" });
@@ -31,7 +31,7 @@ export async function getTimestampFromBlockId(blockId, explorerUri = explorer_ur
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export async function* searchBoxes(token_id, type_nft_id, object_pointer, is_locked, polarization, content, owner_address, limit, offset = 0, explorerUri = explorer_uri) {
+export async function* searchBoxes(explorerUri, token_id, type_nft_id, object_pointer, is_locked, polarization, content, owner_address, limit, offset = 0) {
     const registers = {};
     if (type_nft_id) {
         registers["R4"] = serializedToRendered(SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex());
@@ -99,7 +99,7 @@ export async function* searchBoxes(token_id, type_nft_id, object_pointer, is_loc
         }
     }
 }
-export async function fetchTypeNfts(explorerUri = explorer_uri) {
+export async function fetchTypeNfts(explorerUri) {
     try {
         const fetchedTypesArray = [];
         let offset = 0;
@@ -147,7 +147,7 @@ export async function fetchTypeNfts(explorerUri = explorer_uri) {
         return new Map();
     }
 }
-export async function updateReputationProofList(connected, availableTypes, search, explorerUri = explorer_uri) {
+export async function updateReputationProofList(explorerUri, connected, availableTypes, search) {
     if (!connected) {
         // If not connected, we might want to fetch all or handle differently.
         // For now, let's assume 'all' logic applies if not connected or if explicitly requested.

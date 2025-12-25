@@ -4,4 +4,4 @@ import { type TypeNFT, type ReputationProof } from './ReputationProof';
  * by searching all boxes where R7 matches their wallet address.
  * Profiles are ordered by total ERG burned.
  */
-export declare function fetchAllProfiles(is_self_defined: boolean | null | undefined, types: string[] | undefined, availableTypes: Map<string, TypeNFT>, explorerUri?: string): Promise<ReputationProof[]>;
+export declare function fetchAllProfiles(explorerUri: string, is_self_defined: boolean | null | undefined, types: string[] | undefined, availableTypes: Map<string, TypeNFT>): Promise<ReputationProof[]>;

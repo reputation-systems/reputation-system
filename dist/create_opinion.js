@@ -1,8 +1,8 @@
 import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress, SColl, SByte, SBool } from '@fleet-sdk/core';
-import { ergo_tree_address } from './contract';
+import { ergo_tree_address } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
-import {} from 'ergo-reputation-system';
+import {} from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param token_amount The amount of the token for the new proof box.
@@ -15,7 +15,7 @@ import {} from 'ergo-reputation-system';
  * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function create_opinion(token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box, explorerUri = "") {
+export async function create_opinion(token_amount, type_nft_id, explorerUri, object_pointer, polarization, content, is_locked = false, main_box) {
     console.log("Generating reputation proof with parameters:", {
         token_amount,
         type_nft_id,
@@ -34,7 +34,6 @@ export async function create_opinion(token_amount, type_nft_id, object_pointer, 
     const creatorP2PKAddress = ErgoAddress.fromBase58(creatorAddressString);
     // Fetch the Type NFT boxes to be used in dataInputs. This is required by the contract.
     const typeTokenIds = new Set();
-    typeTokenIds.add(type_nft_id);
     typeTokenIds.add(main_box.type.tokenId);
     const dataInputs = [];
     for (const tokenId of typeTokenIds) {

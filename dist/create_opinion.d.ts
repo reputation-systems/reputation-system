@@ -1,4 +1,4 @@
-import { type RPBox } from 'ergo-reputation-system';
+import { type RPBox } from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param token_amount The amount of the token for the new proof box.
@@ -11,4 +11,4 @@ import { type RPBox } from 'ergo-reputation-system';
  * @param explorerUri The URI of the Ergo explorer to fetch box data.
  * @returns The transaction ID if successful, otherwise null.
  */
-export declare function create_opinion(token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox, explorerUri?: string): Promise<string | null>;
+export declare function create_opinion(token_amount: number, type_nft_id: string, explorerUri: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox): Promise<string | null>;

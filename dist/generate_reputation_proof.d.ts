@@ -1,5 +1,5 @@
 import { type Amount } from '@fleet-sdk/core';
-import { RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param token_amount The amount of the token for the new proof box.

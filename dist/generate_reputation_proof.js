@@ -2,7 +2,7 @@ import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, Transacti
 import { ergo_tree_address } from './envs';
 import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
-import { RPBox } from './ReputationProof';
+import {} from './ReputationProof';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param token_amount The amount of the token for the new proof box.

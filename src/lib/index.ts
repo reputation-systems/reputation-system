@@ -16,3 +16,6 @@ export { fetchAllProfiles } from './profileFetch';
 // --- Types ---
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';
 export type { OutputConfig } from './update_boxes';
+
+// --- Svelte components ---
+export { default as Profile } from './components/views/Profile.svelte';

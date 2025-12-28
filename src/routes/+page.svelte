@@ -25,7 +25,7 @@
     import Search from "$components/views/Search.svelte";
     import Settings from "$components/views/Settings.svelte";
     import ManageTypes from "$components/views/ManageTypes.svelte";
-    import Profile from "$components/views/Profile.svelte";
+    import { Profile } from "$lib";
 
     let currentPage:
         | "intro"

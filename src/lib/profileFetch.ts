@@ -10,7 +10,7 @@ import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './R
 const LIMIT_PER_PAGE = 100;
 
 // Convert ApiBox to RPBox
-function convertToRPBox(box: ApiBox, token_id: string, availableTypes: Map<string, TypeNFT>): RPBox | null {
+export function convertToRPBox(box: ApiBox, token_id: string, availableTypes: Map<string, TypeNFT>): RPBox | null {
     if (!box.assets?.length || box.assets[0].tokenId !== token_id) {
         console.warn(`convertToRPBox: Box ${box.boxId} has different token ID. Skipping.`);
         return null;

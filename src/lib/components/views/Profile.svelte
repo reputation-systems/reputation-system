@@ -10,6 +10,14 @@
         explorer_uri,
     } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
+    import { searchBoxes } from "$lib/fetch";
+    import { types } from "$lib/store";
+    import { convertToRPBox } from "$lib/profileFetch";
+    import {
+        calculate_reputation,
+        total_burned_string,
+        total_burned,
+    } from "$lib/utils";
 
     // --- Core Props ---
     export let reputationProof: ReputationProof | null;
@@ -26,7 +34,10 @@
     export let showSacrificedAssets = true;
     export let showTechnicalDetails = true;
     export let showBoxesSection = true;
+    export let showReceivedOpinions = true;
     export let showFilters = true;
+
+    let activeMainTab: "boxes" | "received" = "received";
 
     // --- Action Control Props ---
     export let allowCreateProfile = true;
@@ -139,6 +150,13 @@
 
     function refreshProfile() {
         dispatch("refresh");
+        if (
+            reputationProof &&
+            reputationProof.token_id &&
+            showReceivedOpinions
+        ) {
+            fetchReceivedOpinions(reputationProof.token_id);
+        }
     }
 
     let isSwitcherExpanded = false;
@@ -526,6 +544,98 @@
         fetchWalletTokens();
     }
 
+    // --- Received Opinions Logic ---
+    let receivedOpinions: RPBox[] = [];
+    let isFetchingOpinions = false;
+    let issuerReputations = new Map<string, number>();
+
+    async function fetchReceivedOpinions(tokenId: string) {
+        isFetchingOpinions = true;
+        receivedOpinions = [];
+        try {
+            const generator = searchBoxes(
+                explorer_uri,
+                undefined,
+                undefined,
+                tokenId,
+            );
+
+            let allFetched: RPBox[] = [];
+            for await (const apiBoxes of generator) {
+                const parsed = apiBoxes
+                    .map((box) => {
+                        if (box.assets[0].tokenId === tokenId) return null;
+                        return convertToRPBox(
+                            box,
+                            box.assets[0].tokenId,
+                            $types,
+                        );
+                    })
+                    .filter((b) => b !== null) as RPBox[];
+                allFetched = [...allFetched, ...parsed];
+            }
+            receivedOpinions = allFetched;
+
+            // Fetch reputations for all unique issuers
+            const uniqueIssuers = [
+                ...new Set(receivedOpinions.map((o) => o.token_id)),
+            ];
+            await fetchIssuerReputations(uniqueIssuers);
+        } catch (e) {
+            console.error("Error fetching received opinions:", e);
+        } finally {
+            isFetchingOpinions = false;
+        }
+    }
+
+    async function fetchIssuerReputations(issuerIds: string[]) {
+        for (const id of issuerIds) {
+            if (issuerReputations.has(id)) continue;
+            try {
+                const response = await fetch(
+                    `${explorer_uri}/api/v1/boxes/unspent/byTokenId/${id}`,
+                );
+                if (response.ok) {
+                    const data = await response.json();
+                    const totalBurned = data.items.reduce(
+                        (acc: bigint, box: any) => acc + BigInt(box.value),
+                        0n,
+                    );
+                    issuerReputations.set(id, Number(totalBurned));
+                    issuerReputations = issuerReputations; // Trigger reactivity
+                }
+            } catch (e) {
+                console.error(`Error fetching reputation for issuer ${id}:`, e);
+            }
+        }
+    }
+
+    $: profileScore = (() => {
+        if (!reputationProof) return 0;
+        let score = total_burned(reputationProof);
+
+        receivedOpinions.forEach((op) => {
+            const issuerRep = issuerReputations.get(op.token_id) || 0;
+            const weight = issuerRep / 1000000000; // Normalize by 1 ERG
+            const contribution = op.token_amount * weight;
+            if (op.polarization) {
+                score += contribution;
+            } else {
+                score -= contribution;
+            }
+        });
+
+        return score;
+    })();
+
+    $: if (
+        reputationProof &&
+        reputationProof.token_id &&
+        showReceivedOpinions
+    ) {
+        fetchReceivedOpinions(reputationProof.token_id);
+    }
+
     // --- Auto-Refresh Logic ---
     let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -546,6 +656,13 @@
     <div class="hero-section">
         <h2 class="project-title">{title}</h2>
         {#if reputationProof}
+            <div class="profile-score-display">
+                <span class="score-label">Global Reputation Score</span>
+                <span class="score-value">
+                    {(profileScore / 1000000000).toFixed(4)}
+                    <span class="unit">Σ</span>
+                </span>
+            </div>
             <p class="subtitle">
                 {subtitle || "Manage your reputation and view your sacrifices."}
                 {#if showDidacticInfo}
@@ -929,7 +1046,115 @@
                 <div class="feedback error">{errorMessage}</div>
             {/if}
 
-            {#if showBoxesSection}
+            <div class="main-tabs-container">
+                <button
+                    class="main-tab-btn"
+                    class:active={activeMainTab === "received"}
+                    on:click={() => (activeMainTab = "received")}
+                >
+                    <i class="fas fa-comments"></i> Opinions Received
+                    <span class="tab-count">{receivedOpinions.length}</span>
+                </button>
+                <button
+                    class="main-tab-btn"
+                    class:active={activeMainTab === "boxes"}
+                    on:click={() => (activeMainTab = "boxes")}
+                >
+                    <i class="fas fa-box-open"></i> Reputation Boxes
+                    <span class="tab-count"
+                        >{reputationProof.current_boxes.length}</span
+                    >
+                </button>
+            </div>
+
+            {#if activeMainTab === "received" && showReceivedOpinions}
+                <!-- Received Opinions Section -->
+                <section class="received-opinions-section">
+                    <div class="section-title-row">
+                        <h3>Opinions Received</h3>
+                        {#if showDidacticInfo}
+                            <div
+                                class="info-tooltip"
+                                title="These are opinions issued by other profiles about this profile. They represent what the community says about this identity."
+                            >
+                                <i class="fas fa-question-circle"></i>
+                            </div>
+                        {/if}
+                    </div>
+
+                    {#if isFetchingOpinions}
+                        <div class="loading-spinner">Fetching opinions...</div>
+                    {:else if receivedOpinions.length === 0}
+                        <div class="info-card center-text">
+                            <p>No opinions received yet.</p>
+                        </div>
+                    {:else}
+                        <div class="boxes-grid">
+                            {#each receivedOpinions as box (box.box_id)}
+                                <div
+                                    class="box-card"
+                                    class:positive={box.polarization}
+                                    class:negative={!box.polarization}
+                                >
+                                    <div class="box-header">
+                                        <span class="box-type"
+                                            >{box.type?.typeName ||
+                                                "Unknown"}</span
+                                        >
+                                        <span class="polarization-icon">
+                                            {#if box.polarization}
+                                                <i class="fas fa-check-circle"
+                                                ></i>
+                                            {:else}
+                                                <i class="fas fa-times-circle"
+                                                ></i>
+                                            {/if}
+                                        </span>
+                                    </div>
+
+                                    <div class="box-body">
+                                        <div class="info-row">
+                                            <span class="label">From:</span>
+                                            <span class="value mono small">
+                                                {box.token_id.substring(
+                                                    0,
+                                                    12,
+                                                )}...
+                                                <span class="issuer-rep"
+                                                    >({(
+                                                        (issuerReputations.get(
+                                                            box.token_id,
+                                                        ) || 0) / 1000000000
+                                                    ).toFixed(2)} Σ)</span
+                                                >
+                                            </span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Content:</span>
+                                            <span class="value content-text">
+                                                {typeof box.content === "object"
+                                                    ? JSON.stringify(
+                                                          box.content,
+                                                      )
+                                                    : box.content ||
+                                                      "No content"}
+                                            </span>
+                                        </div>
+                                        <div class="info-row">
+                                            <span class="label">Amount:</span>
+                                            <span class="value"
+                                                >{box.token_amount}</span
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
+                </section>
+            {/if}
+
+            {#if activeMainTab === "boxes" && showBoxesSection}
                 <!-- Boxes Section -->
                 <section class="boxes-section">
                     <div class="section-title-row">
@@ -1600,6 +1825,87 @@
         margin: 0 auto;
     }
 
+    .profile-score-display {
+        margin: 1.5rem 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .score-label {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    .score-value {
+        font-size: 3rem;
+        font-weight: 800;
+        color: #fbbf24;
+        text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+    }
+
+    .score-value .unit {
+        font-size: 1.5rem;
+        margin-left: 0.25rem;
+        color: #f59e0b;
+    }
+
+    .main-tabs-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding-bottom: 1rem;
+    }
+
+    .main-tab-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .main-tab-btn:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #f1f5f9;
+    }
+
+    .main-tab-btn.active {
+        background: rgba(251, 191, 36, 0.1);
+        color: #fbbf24;
+    }
+
+    .tab-count {
+        font-size: 0.75rem;
+        background: rgba(255, 255, 255, 0.1);
+        color: #cbd5e1;
+        padding: 0.1rem 0.5rem;
+        border-radius: 1rem;
+    }
+
+    .main-tab-btn.active .tab-count {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+    }
+
+    .issuer-rep {
+        color: #fbbf24;
+        font-weight: 600;
+        margin-left: 0.25rem;
+    }
+
     /* --- Sacrificed Assets --- */
     .section-title-row {
         display: flex;
@@ -1627,12 +1933,27 @@
         color: #ea580c; /* orange-600 */
     }
 
+    .icon-circle.blue {
+        background-color: rgba(
+            219,
+            234,
+            254,
+            0.1
+        ); /* blue-100 equivalent with opacity */
+        color: #2563eb; /* blue-600 */
+    }
+
     .sacrificed-assets h3,
+    .received-opinions-section h3,
     .boxes-section h3 {
         font-size: 1.5rem;
         font-weight: 700;
         color: #e2e8f0;
         margin: 0;
+    }
+
+    .received-opinions-section {
+        margin-bottom: 2rem;
     }
 
     .assets-grid {

@@ -216,3 +216,45 @@ function getReputationProofFromRPBox(
     proofs: Map<string, ReputationProof>
 ): ReputationProof | undefined
 ```
+
+#### `calculate_reputation`
+Calculates a basic reputation score based on the burned value of a proof.
+```typescript
+function calculate_reputation(proof: ReputationProof): number
+```
+
+#### `total_burned`
+Calculates the total burned ERG value from a `ReputationProof` in nanoERG.
+```typescript
+function total_burned(proof: ReputationProof): number
+```
+
+#### `total_burned_string`
+Formats the total burned ERG value into a human-readable string with up to 9 decimal places.
+```typescript
+function total_burned_string(proof: ReputationProof): string
+```
+
+---
+
+## Svelte Components
+
+### `Profile`
+A comprehensive view component for displaying and managing a reputation profile.
+
+**Props:**
+- `reputationProof`: The `ReputationProof` object to display.
+- `userProfiles`: List of other profiles owned by the user (for the switcher).
+- `connected`: Boolean indicating if a wallet is connected.
+- `title`: Header title (default: "Reputation Profile").
+- `subtitle`: Optional subtitle.
+- `compact`: Boolean for a more condensed layout.
+- `showBoxesSection`: Show/hide the reputation boxes list.
+- `showReceivedOpinions`: Show/hide the opinions received section.
+- `readOnly`: Disable all interactive actions.
+- `allowCreateProfile`: Enable/disable profile creation.
+- `allowSacrifice`: Enable/disable asset sacrifice.
+- `allowEditBox`: Enable/disable editing existing boxes.
+- `allowDeleteBox`: Enable/disable deleting boxes.
+- `allowSetMainBox`: Enable/disable setting a box as the main profile box.
+

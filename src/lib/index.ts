@@ -12,6 +12,11 @@ export {
     getTimestampFromBlockId
 } from './fetch'
 export { fetchAllProfiles } from './profileFetch';
+export {
+    calculate_reputation,
+    total_burned_string,
+    total_burned,
+} from './utils';
 
 // --- Types ---
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';

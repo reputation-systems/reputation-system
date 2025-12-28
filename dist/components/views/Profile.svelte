@@ -1,664 +1,530 @@
-<script lang="ts">
-    import { createEventDispatcher, onDestroy } from "svelte";
-    import { create_profile } from "$lib/create_profile";
-    import { update_opinion } from "$lib/update_opinion";
-    import { remove_opinion } from "$lib/remove_opinion";
-    import { sacrifice_assets } from "$lib/sacrifice_assets";
-    import {
-        PROFILE_TOTAL_SUPPLY,
-        PROFILE_TYPE_NFT_ID,
-        explorer_uri,
-    } from "$lib/envs";
-    import type { ReputationProof, RPBox } from "$lib/ReputationProof";
-    import { searchBoxes } from "$lib/fetch";
-    import { types } from "$lib/store";
-    import { convertToRPBox } from "$lib/profileFetch";
-    import {
-        calculate_reputation,
-        total_burned_string,
-        total_burned,
-    } from "$lib/utils";
-
-    // --- Core Props ---
-    export let reputationProof: ReputationProof | null;
-    export let userProfiles: ReputationProof[] = [];
-    export let connected: boolean;
-
-    // --- Existing Customization Props ---
-    export let title = "Reputation Profile";
-    export let showDidacticInfo = true;
-    export let visibleTokenTypes: string[] | null = null;
-
-    // --- Section Visibility Props ---
-    export let showProfileSwitcher = true;
-    export let showSacrificedAssets = true;
-    export let showTechnicalDetails = true;
-    export let showFilters = true;
-
-    // --- Action Control Props ---
-    export let showBoxesSection = true;
-    export let showReceivedOpinions = true;
-    export let allowCreateProfile = true;
-    export let allowSacrifice = true;
-    export let allowEditBox = true;
-    export let allowDeleteBox = true;
-    export let allowSetMainBox = true;
-
-    let activeMainTab: "boxes" | "received" = "received";
-
-    // Ensure activeMainTab is valid based on visibility props
-    $: if (!showReceivedOpinions && activeMainTab === "received") {
-        activeMainTab = "boxes";
-    } else if (!showBoxesSection && activeMainTab === "boxes") {
-        activeMainTab = "received";
+<script>import { createEventDispatcher, onDestroy } from "svelte";
+import { create_profile } from "../../create_profile";
+import { update_opinion } from "../../update_opinion";
+import { remove_opinion } from "../../remove_opinion";
+import { sacrifice_assets } from "../../sacrifice_assets";
+import {
+  PROFILE_TOTAL_SUPPLY,
+  PROFILE_TYPE_NFT_ID,
+  explorer_uri
+} from "../../envs";
+import { searchBoxes } from "../../fetch";
+import { types } from "../../store";
+import { convertToRPBox } from "../../profileFetch";
+import {
+  calculate_reputation,
+  total_burned_string,
+  total_burned
+} from "../../utils";
+export let reputationProof;
+export let userProfiles = [];
+export let connected;
+export let title = "Reputation Profile";
+export let showDidacticInfo = true;
+export let visibleTokenTypes = null;
+export let showProfileSwitcher = true;
+export let showSacrificedAssets = true;
+export let showTechnicalDetails = true;
+export let showFilters = true;
+export let showBoxesSection = true;
+export let showReceivedOpinions = true;
+export let allowCreateProfile = true;
+export let allowSacrifice = true;
+export let allowEditBox = true;
+export let allowDeleteBox = true;
+export let allowSetMainBox = true;
+let activeMainTab = "received";
+$:
+  if (!showReceivedOpinions && activeMainTab === "received") {
+    activeMainTab = "boxes";
+  } else if (!showBoxesSection && activeMainTab === "boxes") {
+    activeMainTab = "received";
+  }
+$:
+  showTabs = showBoxesSection && showReceivedOpinions;
+export let subtitle = null;
+export let compact = false;
+export let maxBoxesVisible = null;
+export let readOnly = false;
+export let autoRefresh = false;
+export let refreshInterval = 3e4;
+$:
+  effectiveAllowCreate = !readOnly && allowCreateProfile;
+$:
+  effectiveAllowSacrifice = !readOnly && allowSacrifice;
+$:
+  effectiveAllowEdit = !readOnly && allowEditBox;
+$:
+  effectiveAllowDelete = !readOnly && allowDeleteBox;
+$:
+  effectiveAllowSetMain = !readOnly && allowSetMainBox;
+const dispatch = createEventDispatcher();
+let isLoading = false;
+let errorMessage = "";
+let successMessage = "";
+let showUpdateBox = null;
+let newBoxPolarization = true;
+let editingContent = "";
+let editingAmount = 0;
+let editingMaxAmount = 0;
+let editorMode = "text";
+let kvPairs = [];
+function openUpdateBox(box) {
+  showUpdateBox = box;
+  editingAmount = box.token_amount;
+  editingMaxAmount = box.token_amount + (mainBox?.token_amount || 0);
+  editingContent = typeof box.content === "object" ? JSON.stringify(box.content, null, 2) : box.content || "";
+  if (typeof box.content === "object" && box.content !== null) {
+    kvPairs = Object.entries(box.content).map(([k, v]) => ({
+      key: k,
+      value: typeof v === "object" ? JSON.stringify(v) : String(v)
+    }));
+    editorMode = "kv";
+  } else {
+    kvPairs = [];
+    editorMode = "text";
+  }
+}
+function syncToKV() {
+  try {
+    const obj = JSON.parse(editingContent);
+    if (typeof obj === "object" && obj !== null) {
+      kvPairs = Object.entries(obj).map(([k, v]) => ({
+        key: k,
+        value: typeof v === "object" ? JSON.stringify(v) : String(v)
+      }));
     }
-
-    $: showTabs = showBoxesSection && showReceivedOpinions;
-
-    // --- Visual Customization Props ---
-    export let subtitle: string | null = null;
-    export let compact = false;
-    export let maxBoxesVisible: number | null = null;
-
-    // --- Behavior Props ---
-    export let readOnly = false;
-    export let autoRefresh = false;
-    export let refreshInterval = 30000;
-
-    // --- Computed Effective Permissions ---
-    $: effectiveAllowCreate = !readOnly && allowCreateProfile;
-    $: effectiveAllowSacrifice = !readOnly && allowSacrifice;
-    $: effectiveAllowEdit = !readOnly && allowEditBox;
-    $: effectiveAllowDelete = !readOnly && allowDeleteBox;
-    $: effectiveAllowSetMain = !readOnly && allowSetMainBox;
-
-    const dispatch = createEventDispatcher();
-
-    let isLoading = false;
-    let errorMessage = "";
-    let successMessage = "";
-
-    let showUpdateBox: RPBox | null = null;
-    let newBoxPolarization = true;
-
-    let editingContent = "";
-    let editingAmount = 0;
-    let editingMaxAmount = 0;
-
-    type EditorMode = "text" | "kv" | "json";
-    let editorMode: EditorMode = "text";
-    let kvPairs: { key: string; value: string }[] = [];
-
-    function openUpdateBox(box: RPBox) {
-        showUpdateBox = box;
-        editingAmount = box.token_amount;
-        editingMaxAmount = box.token_amount + (mainBox?.token_amount || 0);
-        editingContent =
-            typeof box.content === "object"
-                ? JSON.stringify(box.content, null, 2)
-                : box.content || "";
-
-        // Initialize KV pairs if it's an object
-        if (typeof box.content === "object" && box.content !== null) {
-            kvPairs = Object.entries(box.content).map(([k, v]) => ({
-                key: k,
-                value: typeof v === "object" ? JSON.stringify(v) : String(v),
-            }));
-            editorMode = "kv";
-        } else {
-            kvPairs = [];
-            editorMode = "text";
-        }
+  } catch (e) {
+  }
+}
+function syncFromKV() {
+  const obj = {};
+  kvPairs.forEach((p) => {
+    if (p.key) {
+      try {
+        obj[p.key] = JSON.parse(p.value);
+      } catch (e) {
+        obj[p.key] = p.value;
+      }
     }
-
-    function syncToKV() {
-        try {
-            const obj = JSON.parse(editingContent);
-            if (typeof obj === "object" && obj !== null) {
-                kvPairs = Object.entries(obj).map(([k, v]) => ({
-                    key: k,
-                    value:
-                        typeof v === "object" ? JSON.stringify(v) : String(v),
-                }));
-            }
-        } catch (e) {
-            // If not valid JSON, we can't sync to KV easily, maybe just leave as is or clear
-        }
+  });
+  editingContent = JSON.stringify(obj, null, 2);
+}
+function setEditorMode(mode) {
+  if (mode === "kv") {
+    syncToKV();
+  } else if (editorMode === "kv") {
+    syncFromKV();
+  }
+  editorMode = mode;
+}
+function addKVPair() {
+  kvPairs = [...kvPairs, { key: "", value: "" }];
+}
+function removeKVPair(index) {
+  kvPairs = kvPairs.filter((_, i) => i !== index);
+}
+function refreshProfile() {
+  dispatch("refresh");
+  if (reputationProof && reputationProof.token_id && showReceivedOpinions) {
+    fetchReceivedOpinions(reputationProof.token_id);
+  }
+}
+let isSwitcherExpanded = false;
+function toggleSwitcher() {
+  isSwitcherExpanded = !isSwitcherExpanded;
+}
+function switchProfile(profile) {
+  dispatch("switchProfile", profile);
+  isSwitcherExpanded = false;
+}
+function clickOutside(node, callback) {
+  const handleClick = (event) => {
+    if (node && !node.contains(event.target) && !event.defaultPrevented) {
+      callback();
     }
-
-    function syncFromKV() {
-        const obj: any = {};
-        kvPairs.forEach((p) => {
-            if (p.key) {
-                try {
-                    obj[p.key] = JSON.parse(p.value);
-                } catch (e) {
-                    obj[p.key] = p.value;
-                }
-            }
+  };
+  document.addEventListener("click", handleClick, true);
+  return {
+    destroy() {
+      document.removeEventListener("click", handleClick, true);
+    }
+  };
+}
+let selectedMainBoxId = null;
+$:
+  if (reputationProof) {
+    if (selectedMainBoxId && !reputationProof.current_boxes.some(
+      (b) => b.box_id === selectedMainBoxId
+    )) {
+      selectedMainBoxId = null;
+    }
+  }
+$:
+  mainBox = (() => {
+    const selfBoxes = reputationProof?.current_boxes.filter(
+      (b) => b.object_pointer === reputationProof?.token_id
+    ) || [];
+    if (selfBoxes.length === 0)
+      return null;
+    if (selectedMainBoxId) {
+      const found = selfBoxes.find((b) => b.box_id === selectedMainBoxId);
+      if (found)
+        return found;
+    }
+    return [...selfBoxes].sort(
+      (a, b) => b.token_amount - a.token_amount
+    )[0];
+  })();
+let burnedERG = "0";
+let burnedTokens = [];
+let tokenMetadataCache = /* @__PURE__ */ new Map();
+async function fetchTokenMetadata(tokenId) {
+  if (tokenMetadataCache.has(tokenId))
+    return;
+  try {
+    const response = await fetch(
+      `https://api.ergoplatform.com/api/v1/tokens/${tokenId}`
+    );
+    if (response.ok) {
+      const data = await response.json();
+      if (data.name) {
+        tokenMetadataCache.set(tokenId, {
+          name: data.name,
+          decimals: data.decimals
         });
-        editingContent = JSON.stringify(obj, null, 2);
+        tokenMetadataCache = tokenMetadataCache;
+      }
     }
-
-    function setEditorMode(mode: EditorMode) {
-        if (mode === "kv") {
-            syncToKV();
-        } else if (editorMode === "kv") {
-            syncFromKV();
+  } catch (e) {
+    console.error(`Error fetching metadata for ${tokenId}:`, e);
+  }
+}
+$:
+  if (reputationProof) {
+    const totalNanoErg = reputationProof.current_boxes.reduce(
+      (acc, b) => acc + BigInt(b.box.value),
+      BigInt(0)
+    );
+    burnedERG = (Number(totalNanoErg) / 1e9).toFixed(4);
+    const tokenMap = /* @__PURE__ */ new Map();
+    reputationProof.current_boxes.forEach((box) => {
+      box.box.assets.forEach((asset) => {
+        if (asset.tokenId !== reputationProof?.token_id) {
+          const current = tokenMap.get(asset.tokenId) || 0;
+          tokenMap.set(asset.tokenId, current + Number(asset.amount));
         }
-        editorMode = mode;
-    }
-
-    function addKVPair() {
-        kvPairs = [...kvPairs, { key: "", value: "" }];
-    }
-
-    function removeKVPair(index: number) {
-        kvPairs = kvPairs.filter((_, i) => i !== index);
-    }
-
-    function refreshProfile() {
-        dispatch("refresh");
-        if (
-            reputationProof &&
-            reputationProof.token_id &&
-            showReceivedOpinions
-        ) {
-            fetchReceivedOpinions(reputationProof.token_id);
-        }
-    }
-
-    let isSwitcherExpanded = false;
-
-    function toggleSwitcher() {
-        isSwitcherExpanded = !isSwitcherExpanded;
-    }
-
-    function switchProfile(profile: ReputationProof) {
-        dispatch("switchProfile", profile);
-        isSwitcherExpanded = false;
-    }
-
-    // --- Click Outside Action ---
-    function clickOutside(node: HTMLElement, callback: () => void) {
-        const handleClick = (event: MouseEvent) => {
-            if (
-                node &&
-                !node.contains(event.target as Node) &&
-                !event.defaultPrevented
-            ) {
-                callback();
-            }
-        };
-
-        document.addEventListener("click", handleClick, true);
-
-        return {
-            destroy() {
-                document.removeEventListener("click", handleClick, true);
-            },
-        };
-    }
-
-    // --- Derived State ---
-    let selectedMainBoxId: string | null = null;
-
-    $: if (reputationProof) {
-        if (
-            selectedMainBoxId &&
-            !reputationProof.current_boxes.some(
-                (b) => b.box_id === selectedMainBoxId,
-            )
-        ) {
-            selectedMainBoxId = null;
-        }
-    }
-
-    $: mainBox = (() => {
-        const selfBoxes =
-            reputationProof?.current_boxes.filter(
-                (b) => b.object_pointer === reputationProof?.token_id,
-            ) || [];
-
-        if (selfBoxes.length === 0) return null;
-
-        if (selectedMainBoxId) {
-            const found = selfBoxes.find((b) => b.box_id === selectedMainBoxId);
-            if (found) return found;
-        }
-
-        // Default: most tokens
-        return [...selfBoxes].sort(
-            (a, b) => b.token_amount - a.token_amount,
-        )[0];
-    })();
-
-    // --- Sacrificed Assets Logic ---
-    let burnedERG = "0";
-    let burnedTokens: {
-        tokenId: string;
-        amount: number;
-        name?: string;
-        decimals?: number;
-    }[] = [];
-    let tokenMetadataCache = new Map<
-        string,
-        { name: string; decimals?: number }
-    >();
-
-    async function fetchTokenMetadata(tokenId: string) {
-        if (tokenMetadataCache.has(tokenId)) return;
-        try {
-            const response = await fetch(
-                `https://api.ergoplatform.com/api/v1/tokens/${tokenId}`,
-            );
-            if (response.ok) {
-                const data = await response.json();
-                if (data.name) {
-                    tokenMetadataCache.set(tokenId, {
-                        name: data.name,
-                        decimals: data.decimals,
-                    });
-                    tokenMetadataCache = tokenMetadataCache; // Trigger reactivity
-                }
-            }
-        } catch (e) {
-            console.error(`Error fetching metadata for ${tokenId}:`, e);
-        }
-    }
-
-    $: if (reputationProof) {
-        // Calculate total burned ERG (sum of all box values)
-        const totalNanoErg = reputationProof.current_boxes.reduce(
-            (acc, b) => acc + BigInt(b.box.value),
-            BigInt(0),
-        );
-        burnedERG = (Number(totalNanoErg) / 1000000000).toFixed(4);
-
-        // Aggregate burned tokens (excluding the reputation token itself)
-        const tokenMap = new Map<string, number>();
-        reputationProof.current_boxes.forEach((box) => {
-            box.box.assets.forEach((asset) => {
-                if (asset.tokenId !== reputationProof?.token_id) {
-                    const current = tokenMap.get(asset.tokenId) || 0;
-                    tokenMap.set(asset.tokenId, current + Number(asset.amount));
-                }
-            });
-        });
-
-        burnedTokens = Array.from(tokenMap.entries()).map(
-            ([tokenId, amount]) => {
-                const metadata = tokenMetadataCache.get(tokenId);
-                if (!metadata) fetchTokenMetadata(tokenId);
-                return {
-                    tokenId,
-                    amount,
-                    name: metadata?.name || tokenId.substring(0, 8) + "...",
-                    decimals: metadata?.decimals || 0,
-                };
-            },
-        );
-    }
-
-    // --- Filtering Logic ---
-    const ALL_TYPES = "All";
-    let selectedType: string = ALL_TYPES;
-    let showOnlySelf = false;
-    let lockedFilter: "all" | "locked" | "unlocked" = "all";
-    let uniqueTypes: string[] = [];
-
-    $: if (reputationProof) {
-        const types = new Set<string>();
-        reputationProof.current_boxes.forEach((box) => {
-            if (box.type && box.type.typeName) {
-                types.add(box.type.typeName);
-            } else {
-                types.add("Unknown");
-            }
-        });
-        uniqueTypes = Array.from(types).sort();
-    }
-
-    const OTHERS_TYPE = "Others";
-    $: displayedTypes = visibleTokenTypes
-        ? uniqueTypes.filter((t) => visibleTokenTypes.includes(t))
-        : uniqueTypes;
-
-    $: hasOthers = visibleTokenTypes
-        ? uniqueTypes.some((t) => !visibleTokenTypes.includes(t))
-        : false;
-
-    $: filteredBoxes =
-        reputationProof?.current_boxes.filter((box) => {
-            const typeName = box.type?.typeName || "Unknown";
-            const matchesType =
-                selectedType === ALL_TYPES ||
-                (selectedType === OTHERS_TYPE &&
-                    visibleTokenTypes &&
-                    !visibleTokenTypes.includes(typeName)) ||
-                typeName === selectedType;
-            const matchesSelf =
-                !showOnlySelf ||
-                box.object_pointer === reputationProof?.token_id;
-            const matchesLocked =
-                lockedFilter === "all" ||
-                (lockedFilter === "locked" && box.is_locked) ||
-                (lockedFilter === "unlocked" && !box.is_locked);
-            return matchesType && matchesSelf && matchesLocked;
-        }) ?? [];
-
-    // --- MaxBoxesVisible Logic ---
-    $: displayedBoxes = maxBoxesVisible
-        ? filteredBoxes.slice(0, maxBoxesVisible)
-        : filteredBoxes;
-
-    $: hasMoreBoxes = maxBoxesVisible && filteredBoxes.length > maxBoxesVisible;
-
-    // --- Actions ---
-    async function handleCreateProfile() {
-        isLoading = true;
-        errorMessage = "";
-        try {
-            const txId = await create_profile(
-                explorer_uri,
-                PROFILE_TOTAL_SUPPLY,
-                PROFILE_TYPE_NFT_ID,
-                "Anonymous",
-            );
-            if (txId) {
-                successMessage = `Profile creation transaction submitted: ${txId}`;
-            }
-        } catch (e: any) {
-            errorMessage = `Error creating profile: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
-    }
-
-    async function handleUpdateBox(box: RPBox) {
-        if (!reputationProof) return;
-        isLoading = true;
-        errorMessage = "";
-
-        let finalContent: any = editingContent;
-        if (editorMode === "kv") {
-            syncFromKV();
-            finalContent = JSON.parse(editingContent);
-        } else {
-            try {
-                finalContent = JSON.parse(editingContent);
-            } catch (e) {
-                // Not JSON, keep as string
-            }
-        }
-
-        const mainBoxUsed =
-            mainBox && editingAmount !== box.token_amount ? mainBox : undefined;
-
-        try {
-            const txId = await update_opinion(
-                explorer_uri,
-                box,
-                box.polarization,
-                finalContent,
-                editingAmount - box.token_amount,
-                0n,
-                false,
-                mainBoxUsed,
-            );
-            if (txId) {
-                successMessage = `Update box transaction submitted: ${txId}`;
-                showUpdateBox = null;
-            }
-        } catch (e: any) {
-            errorMessage = `Error updating box: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
-    }
-
-    async function handleDeleteBox(box: RPBox) {
-        if (!reputationProof || !mainBox) return;
-
-        isLoading = true;
-        errorMessage = "";
-        try {
-            const txId = await remove_opinion(explorer_uri, box, mainBox);
-            if (txId) {
-                successMessage = `Delete box transaction submitted: ${txId}`;
-            }
-        } catch (e: any) {
-            errorMessage = `Error deleting box: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
-    }
-
-    function toggleLockedFilter(value: "locked" | "unlocked") {
-        if (lockedFilter === value) {
-            lockedFilter = "all";
-        } else {
-            lockedFilter = value;
-        }
-    }
-
-    // --- Sacrifice Assets ---
-    let showSacrificeForm = false;
-    let sacrificeERG = 0;
-    let sacrificeTokens: {
-        tokenId: string;
-        amount: number;
-        name?: string;
-        maxAmount: number;
-        decimals?: number;
-    }[] = [];
-    let walletTokens: { tokenId: string; amount: number; name?: string }[] = [];
-    let showTokenSelector = false;
-
-    async function fetchWalletTokens() {
-        try {
-            // @ts-ignore
-            const utxos = await ergo.get_utxos();
-            const tokenMap = new Map<
-                string,
-                { tokenId: string; amount: number }
-            >();
-            for (const utxo of utxos) {
-                for (const asset of utxo.assets) {
-                    const current = tokenMap.get(asset.tokenId) || {
-                        tokenId: asset.tokenId,
-                        amount: 0,
-                    };
-                    tokenMap.set(asset.tokenId, {
-                        tokenId: asset.tokenId,
-                        amount: current.amount + Number(asset.amount),
-                    });
-                }
-            }
-            walletTokens = Array.from(tokenMap.values()).map((t) => {
-                const metadata = tokenMetadataCache.get(t.tokenId);
-                if (!metadata) fetchTokenMetadata(t.tokenId);
-                return {
-                    ...t,
-                    name: metadata?.name || t.tokenId.substring(0, 8) + "...",
-                };
-            });
-        } catch (e) {
-            console.error("Error fetching wallet tokens:", e);
-        }
-    }
-
-    function addTokenToSacrifice(token: {
-        tokenId: string;
-        amount: number;
-        name?: string;
-        decimals?: number;
-    }) {
-        if (sacrificeTokens.some((t) => t.tokenId === token.tokenId)) return;
-        sacrificeTokens = [
-            ...sacrificeTokens,
-            {
-                tokenId: token.tokenId,
-                amount: 0,
-                name: token.name,
-                maxAmount: token.amount,
-                decimals: token.decimals || 0,
-            },
-        ];
-        showTokenSelector = false;
-    }
-
-    function removeTokenFromSacrifice(tokenId: string) {
-        sacrificeTokens = sacrificeTokens.filter((t) => t.tokenId !== tokenId);
-    }
-
-    async function handleSacrifice() {
-        if (!reputationProof || !mainBox) return;
-        isLoading = true;
-        errorMessage = "";
-
-        // ERG has 9 decimals
-        const extra_erg = BigInt(Math.round(sacrificeERG * 1000000000));
-        const extra_tokens = sacrificeTokens
-            .filter((t) => t.amount > 0)
-            .map((t) => ({
-                tokenId: t.tokenId,
-                // Tokens can have decimals too, but for now we use raw amount if not specified
-                amount: BigInt(
-                    Math.round(t.amount * Math.pow(10, t.decimals || 0)),
-                ),
-            }));
-
-        try {
-            const txId = await sacrifice_assets(
-                explorer_uri,
-                mainBox,
-                extra_erg,
-                extra_tokens,
-            );
-            if (txId) {
-                successMessage = `Sacrifice transaction submitted: ${txId}`;
-                showSacrificeForm = false;
-                sacrificeERG = 0;
-                sacrificeTokens = [];
-            }
-        } catch (e: any) {
-            errorMessage = `Error sacrificing assets: ${e.message}`;
-        } finally {
-            isLoading = false;
-        }
-    }
-
-    $: if (showSacrificeForm) {
-        fetchWalletTokens();
-    }
-
-    // --- Received Opinions Logic ---
-    let receivedOpinions: RPBox[] = [];
-    let isFetchingOpinions = false;
-    let issuerReputations = new Map<string, number>();
-
-    async function fetchReceivedOpinions(tokenId: string) {
-        isFetchingOpinions = true;
-        receivedOpinions = [];
-        try {
-            const generator = searchBoxes(
-                explorer_uri,
-                undefined,
-                undefined,
-                tokenId,
-            );
-
-            let allFetched: RPBox[] = [];
-            for await (const apiBoxes of generator) {
-                const parsed = apiBoxes
-                    .map((box) => {
-                        if (box.assets[0].tokenId === tokenId) return null;
-                        return convertToRPBox(
-                            box,
-                            box.assets[0].tokenId,
-                            $types,
-                        );
-                    })
-                    .filter((b) => b !== null) as RPBox[];
-                allFetched = [...allFetched, ...parsed];
-            }
-            receivedOpinions = allFetched;
-
-            // Fetch reputations for all unique issuers
-            const uniqueIssuers = [
-                ...new Set(receivedOpinions.map((o) => o.token_id)),
-            ];
-            await fetchIssuerReputations(uniqueIssuers);
-        } catch (e) {
-            console.error("Error fetching received opinions:", e);
-        } finally {
-            isFetchingOpinions = false;
-        }
-    }
-
-    async function fetchIssuerReputations(issuerIds: string[]) {
-        for (const id of issuerIds) {
-            if (issuerReputations.has(id)) continue;
-            try {
-                const response = await fetch(
-                    `${explorer_uri}/api/v1/boxes/unspent/byTokenId/${id}`,
-                );
-                if (response.ok) {
-                    const data = await response.json();
-                    const totalBurned = data.items.reduce(
-                        (acc: bigint, box: any) => acc + BigInt(box.value),
-                        0n,
-                    );
-                    issuerReputations.set(id, Number(totalBurned));
-                    issuerReputations = issuerReputations; // Trigger reactivity
-                }
-            } catch (e) {
-                console.error(`Error fetching reputation for issuer ${id}:`, e);
-            }
-        }
-    }
-
-    $: profileScore = (() => {
-        if (!reputationProof) return 0;
-        let score = total_burned(reputationProof);
-
-        receivedOpinions.forEach((op) => {
-            const issuerRep = issuerReputations.get(op.token_id) || 0;
-            const weight = issuerRep / 1000000000; // Normalize by 1 ERG
-            const contribution = op.token_amount * weight;
-            if (op.polarization) {
-                score += contribution;
-            } else {
-                score -= contribution;
-            }
-        });
-
-        return score;
-    })();
-
-    $: if (
-        reputationProof &&
-        reputationProof.token_id &&
-        showReceivedOpinions
-    ) {
-        fetchReceivedOpinions(reputationProof.token_id);
-    }
-
-    // --- Auto-Refresh Logic ---
-    let refreshTimer: ReturnType<typeof setInterval> | null = null;
-
-    $: if (autoRefresh && refreshInterval > 0) {
-        if (refreshTimer) clearInterval(refreshTimer);
-        refreshTimer = setInterval(refreshProfile, refreshInterval);
-    } else if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
-
-    onDestroy(() => {
-        if (refreshTimer) clearInterval(refreshTimer);
+      });
     });
+    burnedTokens = Array.from(tokenMap.entries()).map(
+      ([tokenId, amount]) => {
+        const metadata = tokenMetadataCache.get(tokenId);
+        if (!metadata)
+          fetchTokenMetadata(tokenId);
+        return {
+          tokenId,
+          amount,
+          name: metadata?.name || tokenId.substring(0, 8) + "...",
+          decimals: metadata?.decimals || 0
+        };
+      }
+    );
+  }
+const ALL_TYPES = "All";
+let selectedType = ALL_TYPES;
+let showOnlySelf = false;
+let lockedFilter = "all";
+let uniqueTypes = [];
+$:
+  if (reputationProof) {
+    const types2 = /* @__PURE__ */ new Set();
+    reputationProof.current_boxes.forEach((box) => {
+      if (box.type && box.type.typeName) {
+        types2.add(box.type.typeName);
+      } else {
+        types2.add("Unknown");
+      }
+    });
+    uniqueTypes = Array.from(types2).sort();
+  }
+const OTHERS_TYPE = "Others";
+$:
+  displayedTypes = visibleTokenTypes ? uniqueTypes.filter((t) => visibleTokenTypes.includes(t)) : uniqueTypes;
+$:
+  hasOthers = visibleTokenTypes ? uniqueTypes.some((t) => !visibleTokenTypes.includes(t)) : false;
+$:
+  filteredBoxes = reputationProof?.current_boxes.filter((box) => {
+    const typeName = box.type?.typeName || "Unknown";
+    const matchesType = selectedType === ALL_TYPES || selectedType === OTHERS_TYPE && visibleTokenTypes && !visibleTokenTypes.includes(typeName) || typeName === selectedType;
+    const matchesSelf = !showOnlySelf || box.object_pointer === reputationProof?.token_id;
+    const matchesLocked = lockedFilter === "all" || lockedFilter === "locked" && box.is_locked || lockedFilter === "unlocked" && !box.is_locked;
+    return matchesType && matchesSelf && matchesLocked;
+  }) ?? [];
+$:
+  displayedBoxes = maxBoxesVisible ? filteredBoxes.slice(0, maxBoxesVisible) : filteredBoxes;
+$:
+  hasMoreBoxes = maxBoxesVisible && filteredBoxes.length > maxBoxesVisible;
+async function handleCreateProfile() {
+  isLoading = true;
+  errorMessage = "";
+  try {
+    const txId = await create_profile(
+      explorer_uri,
+      PROFILE_TOTAL_SUPPLY,
+      PROFILE_TYPE_NFT_ID,
+      "Anonymous"
+    );
+    if (txId) {
+      successMessage = `Profile creation transaction submitted: ${txId}`;
+    }
+  } catch (e) {
+    errorMessage = `Error creating profile: ${e.message}`;
+  } finally {
+    isLoading = false;
+  }
+}
+async function handleUpdateBox(box) {
+  if (!reputationProof)
+    return;
+  isLoading = true;
+  errorMessage = "";
+  let finalContent = editingContent;
+  if (editorMode === "kv") {
+    syncFromKV();
+    finalContent = JSON.parse(editingContent);
+  } else {
+    try {
+      finalContent = JSON.parse(editingContent);
+    } catch (e) {
+    }
+  }
+  const mainBoxUsed = mainBox && editingAmount !== box.token_amount ? mainBox : void 0;
+  try {
+    const txId = await update_opinion(
+      explorer_uri,
+      box,
+      box.polarization,
+      finalContent,
+      editingAmount - box.token_amount,
+      0n,
+      false,
+      mainBoxUsed
+    );
+    if (txId) {
+      successMessage = `Update box transaction submitted: ${txId}`;
+      showUpdateBox = null;
+    }
+  } catch (e) {
+    errorMessage = `Error updating box: ${e.message}`;
+  } finally {
+    isLoading = false;
+  }
+}
+async function handleDeleteBox(box) {
+  if (!reputationProof || !mainBox)
+    return;
+  isLoading = true;
+  errorMessage = "";
+  try {
+    const txId = await remove_opinion(explorer_uri, box, mainBox);
+    if (txId) {
+      successMessage = `Delete box transaction submitted: ${txId}`;
+    }
+  } catch (e) {
+    errorMessage = `Error deleting box: ${e.message}`;
+  } finally {
+    isLoading = false;
+  }
+}
+function toggleLockedFilter(value) {
+  if (lockedFilter === value) {
+    lockedFilter = "all";
+  } else {
+    lockedFilter = value;
+  }
+}
+let showSacrificeForm = false;
+let sacrificeERG = 0;
+let sacrificeTokens = [];
+let walletTokens = [];
+let showTokenSelector = false;
+async function fetchWalletTokens() {
+  try {
+    const utxos = await ergo.get_utxos();
+    const tokenMap = /* @__PURE__ */ new Map();
+    for (const utxo of utxos) {
+      for (const asset of utxo.assets) {
+        const current = tokenMap.get(asset.tokenId) || {
+          tokenId: asset.tokenId,
+          amount: 0
+        };
+        tokenMap.set(asset.tokenId, {
+          tokenId: asset.tokenId,
+          amount: current.amount + Number(asset.amount)
+        });
+      }
+    }
+    walletTokens = Array.from(tokenMap.values()).map((t) => {
+      const metadata = tokenMetadataCache.get(t.tokenId);
+      if (!metadata)
+        fetchTokenMetadata(t.tokenId);
+      return {
+        ...t,
+        name: metadata?.name || t.tokenId.substring(0, 8) + "..."
+      };
+    });
+  } catch (e) {
+    console.error("Error fetching wallet tokens:", e);
+  }
+}
+function addTokenToSacrifice(token) {
+  if (sacrificeTokens.some((t) => t.tokenId === token.tokenId))
+    return;
+  sacrificeTokens = [
+    ...sacrificeTokens,
+    {
+      tokenId: token.tokenId,
+      amount: 0,
+      name: token.name,
+      maxAmount: token.amount,
+      decimals: token.decimals || 0
+    }
+  ];
+  showTokenSelector = false;
+}
+function removeTokenFromSacrifice(tokenId) {
+  sacrificeTokens = sacrificeTokens.filter((t) => t.tokenId !== tokenId);
+}
+async function handleSacrifice() {
+  if (!reputationProof || !mainBox)
+    return;
+  isLoading = true;
+  errorMessage = "";
+  const extra_erg = BigInt(Math.round(sacrificeERG * 1e9));
+  const extra_tokens = sacrificeTokens.filter((t) => t.amount > 0).map((t) => ({
+    tokenId: t.tokenId,
+    // Tokens can have decimals too, but for now we use raw amount if not specified
+    amount: BigInt(
+      Math.round(t.amount * Math.pow(10, t.decimals || 0))
+    )
+  }));
+  try {
+    const txId = await sacrifice_assets(
+      explorer_uri,
+      mainBox,
+      extra_erg,
+      extra_tokens
+    );
+    if (txId) {
+      successMessage = `Sacrifice transaction submitted: ${txId}`;
+      showSacrificeForm = false;
+      sacrificeERG = 0;
+      sacrificeTokens = [];
+    }
+  } catch (e) {
+    errorMessage = `Error sacrificing assets: ${e.message}`;
+  } finally {
+    isLoading = false;
+  }
+}
+$:
+  if (showSacrificeForm) {
+    fetchWalletTokens();
+  }
+let receivedOpinions = [];
+let isFetchingOpinions = false;
+let issuerReputations = /* @__PURE__ */ new Map();
+async function fetchReceivedOpinions(tokenId) {
+  isFetchingOpinions = true;
+  receivedOpinions = [];
+  try {
+    const generator = searchBoxes(
+      explorer_uri,
+      void 0,
+      void 0,
+      tokenId
+    );
+    let allFetched = [];
+    for await (const apiBoxes of generator) {
+      const parsed = apiBoxes.map((box) => {
+        if (box.assets[0].tokenId === tokenId)
+          return null;
+        return convertToRPBox(
+          box,
+          box.assets[0].tokenId,
+          $types
+        );
+      }).filter((b) => b !== null);
+      allFetched = [...allFetched, ...parsed];
+    }
+    receivedOpinions = allFetched;
+    const uniqueIssuers = [
+      ...new Set(receivedOpinions.map((o) => o.token_id))
+    ];
+    await fetchIssuerReputations(uniqueIssuers);
+  } catch (e) {
+    console.error("Error fetching received opinions:", e);
+  } finally {
+    isFetchingOpinions = false;
+  }
+}
+async function fetchIssuerReputations(issuerIds) {
+  for (const id of issuerIds) {
+    if (issuerReputations.has(id))
+      continue;
+    try {
+      const response = await fetch(
+        `${explorer_uri}/api/v1/boxes/unspent/byTokenId/${id}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const totalBurned = data.items.reduce(
+          (acc, box) => acc + BigInt(box.value),
+          0n
+        );
+        issuerReputations.set(id, Number(totalBurned));
+        issuerReputations = issuerReputations;
+      }
+    } catch (e) {
+      console.error(`Error fetching reputation for issuer ${id}:`, e);
+    }
+  }
+}
+$:
+  profileScore = (() => {
+    if (!reputationProof)
+      return 0;
+    let score = total_burned(reputationProof);
+    receivedOpinions.forEach((op) => {
+      const issuerRep = issuerReputations.get(op.token_id) || 0;
+      const weight = issuerRep / 1e9;
+      const contribution = op.token_amount * weight;
+      if (op.polarization) {
+        score += contribution;
+      } else {
+        score -= contribution;
+      }
+    });
+    return score;
+  })();
+$:
+  if (reputationProof && reputationProof.token_id && showReceivedOpinions) {
+    fetchReceivedOpinions(reputationProof.token_id);
+  }
+let refreshTimer = null;
+$:
+  if (autoRefresh && refreshInterval > 0) {
+    if (refreshTimer)
+      clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshProfile, refreshInterval);
+  } else if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+onDestroy(() => {
+  if (refreshTimer)
+    clearInterval(refreshTimer);
+});
 </script>
 
 <div class="profile-container" class:compact>

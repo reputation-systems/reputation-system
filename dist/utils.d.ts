@@ -60,3 +60,7 @@ export declare function stringToRendered(value: string): string;
 export declare function renderedToString(renderedValue: string): string | null;
 export declare function uint8ArrayToHex(array: Uint8Array): string;
 export declare function parseCollByteToHex(renderedValue: any): string | null;
+import type { ReputationProof } from "./ReputationProof";
+export declare function calculate_reputation(proof: ReputationProof): number;
+export declare function total_burned_string(proof: ReputationProof): string;
+export declare function total_burned(proof: ReputationProof): number;

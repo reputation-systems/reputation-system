@@ -4,7 +4,7 @@ import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
 import {} from './ReputationProof';
 const LIMIT_PER_PAGE = 100;
 // Convert ApiBox to RPBox
-function convertToRPBox(box, token_id, availableTypes) {
+export function convertToRPBox(box, token_id, availableTypes) {
     if (!box.assets?.length || box.assets[0].tokenId !== token_id) {
         console.warn(`convertToRPBox: Box ${box.boxId} has different token ID. Skipping.`);
         return null;

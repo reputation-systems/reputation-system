@@ -7,3 +7,6 @@ export { sacrifice_assets } from './sacrifice_assets';
 export { update_boxes } from './update_boxes';
 export { fetchTypeNfts, searchBoxes, getTimestampFromBlockId } from './fetch';
 export { fetchAllProfiles } from './profileFetch';
+export { calculate_reputation, total_burned_string, total_burned, } from './utils';
+// --- Svelte components ---
+export { default as Profile } from './components/views/Profile.svelte';

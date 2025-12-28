@@ -5,8 +5,7 @@ import { remove_opinion } from "../../remove_opinion";
 import { sacrifice_assets } from "../../sacrifice_assets";
 import {
   PROFILE_TOTAL_SUPPLY,
-  PROFILE_TYPE_NFT_ID,
-  explorer_uri
+  PROFILE_TYPE_NFT_ID
 } from "../../envs";
 import { searchBoxes } from "../../fetch";
 import { types } from "../../store";
@@ -19,6 +18,8 @@ import {
 export let reputationProof;
 export let userProfiles = [];
 export let connected;
+export let explorer_uri = "https://api.ergoplatform.com";
+export let profile_type_nft_id = PROFILE_TYPE_NFT_ID;
 export let title = "Reputation Profile";
 export let showDidacticInfo = true;
 export let visibleTokenTypes = null;
@@ -271,7 +272,7 @@ async function handleCreateProfile() {
     const txId = await create_profile(
       explorer_uri,
       PROFILE_TOTAL_SUPPLY,
-      PROFILE_TYPE_NFT_ID,
+      profile_type_nft_id,
       "Anonymous"
     );
     if (txId) {

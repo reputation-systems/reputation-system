@@ -6,8 +6,7 @@
     import { sacrifice_assets } from "$lib/sacrifice_assets";
     import {
         PROFILE_TOTAL_SUPPLY,
-        PROFILE_TYPE_NFT_ID,
-        explorer_uri,
+        PROFILE_TYPE_NFT_ID
     } from "$lib/envs";
     import type { ReputationProof, RPBox } from "$lib/ReputationProof";
     import { searchBoxes } from "$lib/fetch";
@@ -23,6 +22,8 @@
     export let reputationProof: ReputationProof | null;
     export let userProfiles: ReputationProof[] = [];
     export let connected: boolean;
+    export let explorer_uri: string = "https://api.ergoplatform.com";
+    export let profile_type_nft_id: string = PROFILE_TYPE_NFT_ID;
 
     // --- Existing Customization Props ---
     export let title = "Reputation Profile";
@@ -362,7 +363,7 @@
             const txId = await create_profile(
                 explorer_uri,
                 PROFILE_TOTAL_SUPPLY,
-                PROFILE_TYPE_NFT_ID,
+                profile_type_nft_id,
                 "Anonymous",
             );
             if (txId) {

@@ -5,6 +5,8 @@ declare const __propDef: {
         reputationProof: ReputationProof | null;
         userProfiles?: ReputationProof[] | undefined;
         connected: boolean;
+        explorer_uri?: string | undefined;
+        profile_type_nft_id?: string | undefined;
         title?: string | undefined;
         showDidacticInfo?: boolean | undefined;
         visibleTokenTypes?: string[] | null | undefined;

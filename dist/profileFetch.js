@@ -211,7 +211,7 @@ async function fetchAllBoxesByTokenId(explorerUri, tokenId) {
  * by searching all boxes where R7 matches their wallet address.
  * Profiles are ordered by total ERG burned.
  */
-export async function fetchAllProfiles(explorerUri, is_self_defined = null, types = [], availableTypes) {
+export async function fetchAllUserProfiles(explorerUri, is_self_defined = null, types = [], availableTypes) {
     try {
         const r7Data = await getSerializedR7();
         if (!r7Data) {

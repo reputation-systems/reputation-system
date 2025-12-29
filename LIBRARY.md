@@ -149,10 +149,10 @@ async function update_boxes(
 
 ### Data Fetching
 
-#### `fetchAllProfiles`
+#### `fetchAllUserProfiles`
 Fetches all reputation profiles for the connected user.
 ```typescript
-async function fetchAllProfiles(
+async function fetchAllUserProfiles(
     explorerUri: string,
     is_self_defined: boolean | null = null,
     types: string[] = [],

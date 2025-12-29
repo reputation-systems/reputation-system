@@ -246,7 +246,7 @@ async function fetchAllBoxesByTokenId(explorerUri: string, tokenId: string): Pro
  * by searching all boxes where R7 matches their wallet address.
  * Profiles are ordered by total ERG burned.
  */
-export async function fetchAllProfiles(
+export async function fetchAllUserProfiles(
     explorerUri: string,
     is_self_defined: boolean | null = null,
     types: string[] = [],

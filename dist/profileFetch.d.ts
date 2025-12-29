@@ -5,4 +5,4 @@ export declare function convertToRPBox(box: ApiBox, token_id: string, availableT
  * by searching all boxes where R7 matches their wallet address.
  * Profiles are ordered by total ERG burned.
  */
-export declare function fetchAllProfiles(explorerUri: string, is_self_defined: boolean | null | undefined, types: string[] | undefined, availableTypes: Map<string, TypeNFT>): Promise<ReputationProof[]>;
+export declare function fetchAllUserProfiles(explorerUri: string, is_self_defined: boolean | null | undefined, types: string[] | undefined, availableTypes: Map<string, TypeNFT>): Promise<ReputationProof[]>;

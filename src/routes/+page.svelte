@@ -1,7 +1,7 @@
 <script lang="ts">
     import "../app.css";
     import { onMount } from "svelte";
-    import { fetchAllProfiles } from "$lib/profileFetch";
+    import { fetchAllUserProfiles } from "$lib/profileFetch";
     import { connectNautilus } from "$lib/connect";
     import {
         connected,
@@ -118,7 +118,7 @@
     async function loadProfile() {
         loadingProfiles = true;
         try {
-            const allProfiles = await fetchAllProfiles(
+            const allProfiles = await fetchAllUserProfiles(
                 explorer_uri,
                 true,
                 [],

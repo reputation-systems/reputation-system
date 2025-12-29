@@ -298,39 +298,16 @@ async function _buildReputationProofs(
 
         if (emissionAmount === null) return null;
 
-        // Determine Owner
-        let ownerAddress = knownOwner?.address ?? "";
-        let ownerSerialized = knownOwner?.serialized ?? "";
-
-        // If global fetch (no knownOwner), extract from R7
-        if (!knownOwner && userBoxes.length > 0) {
-            const r7 = userBoxes[0].additionalRegisters.R7;
-            if (r7) {
-                ownerSerialized = r7.serializedValue;
-                try {
-                    // Convert renderedValue (hex) to ErgoAddress if possible, or use ErgoTree
-                    // Note: R7 is usually the ErgoTree.
-                    const ergoTree = r7.renderedValue;
-                    if (ergoTree) {
-                        const addressObj = ErgoAddress.fromErgoTree(ergoTree);
-                        ownerAddress = addressObj.toString();
-                    } else {
-                        ownerAddress = "Unknown Address";
-                    }
-                } catch (e) {
-                    ownerAddress = "Unknown Address";
-                }
-            }
-        }
+        const r7 = userBoxes[0].additionalRegisters.R7;
 
         const proof: ReputationProof = {
             token_id: tokenId,
             types: [],
             data: {},
             total_amount: emissionAmount,
-            owner_ergotree: ownerAddress,
-            owner_serialized: ownerSerialized,
-            can_be_spend: true, // For global view, we might want to calculate this based on if wallet is connected
+            owner_ergotree: r7.renderedValue ?? "",
+            owner_serialized: r7.serializedValue,
+            can_be_spend: true,
             current_boxes: [],
             number_of_boxes: 0,
             network: "ergo"

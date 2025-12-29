@@ -165,7 +165,7 @@ async function fetchReputationBoxes(
     offset: number = 0
 ): Promise<ApiBox[]> {
     const allBoxes: ApiBox[] = [];
-    
+
     // Determine registers to filter by in the API call
     const baseRegisters: any = {};
     if (r7SerializedHex) {
@@ -173,13 +173,13 @@ async function fetchReputationBoxes(
     }
 
     const typesToSearch = types.length > 0 ? types : [null];
-    
+
     // We loop through types (or run once if no types)
     // Note: Pagination across multiple "Types" queries is complex. 
     // Simplified strategy: We fetch potentially more than needed and slice the result.
-    
+
     for (const typeNftId of typesToSearch) {
-        let internalOffset = offset; 
+        let internalOffset = offset;
         let itemsCollected = 0;
         let moreDataAvailable = true;
 
@@ -226,7 +226,7 @@ async function fetchReputationBoxes(
                     const isLocked = box.additionalRegisters.R6.renderedValue === 'true';
 
                     // Standard validity check
-                    if (box.additionalRegisters.R6.renderedValue !== 'false' && box.additionalRegisters.R6.renderedValue !== 'true') return false; 
+                    if (box.additionalRegisters.R6.renderedValue !== 'false' && box.additionalRegisters.R6.renderedValue !== 'true') return false;
                     // Note: original code checked strictly for 'false' in one place but 'true' for locked. 
                     // Usually RepProof boxes are R6=false (spendable) or true (locked). Assuming we want both to show the profile.
                     // If we strictly want only 'false' as per original logic:
@@ -259,7 +259,7 @@ async function fetchReputationBoxes(
 
     // Deduplicate (in case multiple type searches overlap, though unlikely with R4 filter)
     const uniqueBoxes = Array.from(new Map(allBoxes.map(box => [box.boxId, box])).values());
-    
+
     // Sort by creation height (newest first)
     uniqueBoxes.sort((a, b) => b.creationHeight - a.creationHeight);
 
@@ -310,9 +310,13 @@ async function _buildReputationProofs(
                 try {
                     // Convert renderedValue (hex) to ErgoAddress if possible, or use ErgoTree
                     // Note: R7 is usually the ErgoTree.
-                    const ergoTree = r7.renderedValue; 
-                    const addressObj = ErgoAddress.fromErgoTree(ergoTree);
-                    ownerAddress = addressObj.toString();
+                    const ergoTree = r7.renderedValue;
+                    if (ergoTree) {
+                        const addressObj = ErgoAddress.fromErgoTree(ergoTree);
+                        ownerAddress = addressObj.toString();
+                    } else {
+                        ownerAddress = "Unknown Address";
+                    }
                 } catch (e) {
                     ownerAddress = "Unknown Address";
                 }
@@ -390,12 +394,12 @@ export async function fetchAllUserProfiles(
     try {
         const r7Data = await getSerializedR7();
         if (!r7Data) return [];
-        
+
         const { changeAddress, r7SerializedHex } = r7Data;
         console.log(`Fetching profiles for User R7: ${r7SerializedHex}, Limit: ${limit}`);
 
         const userBoxes = await fetchReputationBoxes(explorerUri, r7SerializedHex, is_self_defined, types, limit, offset);
-        
+
         if (userBoxes.length === 0) return [];
 
         const profiles = await _buildReputationProofs(
@@ -433,8 +437,8 @@ export async function fetchAllProfiles(
         if (globalBoxes.length === 0) return [];
 
         const profiles = await _buildReputationProofs(
-            explorerUri, 
-            globalBoxes, 
+            explorerUri,
+            globalBoxes,
             availableTypes
             // No known owner passed
         );
@@ -443,5 +447,29 @@ export async function fetchAllProfiles(
     } catch (error) {
         console.error('Error fetching global profiles:', error);
         return [];
+    }
+}
+
+/**
+ * Fetch a specific ReputationProof by its token ID.
+ */
+export async function fetchProfileById(
+    explorerUri: string,
+    tokenId: string
+): Promise<ReputationProof | null> {
+    try {
+        const boxes = await fetchAllBoxesByTokenId(explorerUri, tokenId);
+        if (boxes.length === 0) return null;
+
+        const profiles = await _buildReputationProofs(
+            explorerUri,
+            boxes,
+            new Map() // No types available in this context
+        );
+
+        return profiles.length > 0 ? profiles[0] : null;
+    } catch (error) {
+        console.error(`Error fetching profile by ID ${tokenId}:`, error);
+        return null;
     }
 }

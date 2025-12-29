@@ -1,7 +1,7 @@
 import { parseCollByteToHex, hexToBytes, hexToUtf8, serializedToRendered } from './utils';
 import { explorer_uri, ergo_tree_hash } from './envs';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
-import { } from './ReputationProof';
+import {} from './ReputationProof';
 const API_BATCH_SIZE = 100; // Max items per request allowed by Explorer usually
 // --- Helper Functions ---
 /**
@@ -141,7 +141,7 @@ async function fetchAllBoxesByTokenId(explorerUri, tokenId) {
  * Handles pagination and client-side filtering.
  */
 async function fetchReputationBoxes(explorerUri, r7SerializedHex, // Pass null for Global fetch
-    is_self_defined = null, types = [], limit = 50, offset = 0) {
+is_self_defined = null, types = [], limit = 50, offset = 0) {
     const allBoxes = [];
     // Determine registers to filter by in the API call
     const baseRegisters = {};
@@ -264,8 +264,13 @@ async function _buildReputationProofs(explorerUri, initialBoxes, availableTypes,
                     // Convert renderedValue (hex) to ErgoAddress if possible, or use ErgoTree
                     // Note: R7 is usually the ErgoTree.
                     const ergoTree = r7.renderedValue;
-                    const addressObj = ErgoAddress.fromErgoTree(ergoTree);
-                    ownerAddress = addressObj.toString();
+                    if (ergoTree) {
+                        const addressObj = ErgoAddress.fromErgoTree(ergoTree);
+                        ownerAddress = addressObj.toString();
+                    }
+                    else {
+                        ownerAddress = "Unknown Address";
+                    }
                 }
                 catch (e) {
                     ownerAddress = "Unknown Address";
@@ -353,12 +358,29 @@ export async function fetchAllProfiles(explorerUri, is_self_defined = null, type
         if (globalBoxes.length === 0)
             return [];
         const profiles = await _buildReputationProofs(explorerUri, globalBoxes, availableTypes
-            // No known owner passed
+        // No known owner passed
         );
         return profiles;
     }
     catch (error) {
         console.error('Error fetching global profiles:', error);
         return [];
+    }
+}
+/**
+ * Fetch a specific ReputationProof by its token ID.
+ */
+export async function fetchProfileById(explorerUri, tokenId) {
+    try {
+        const boxes = await fetchAllBoxesByTokenId(explorerUri, tokenId);
+        if (boxes.length === 0)
+            return null;
+        const profiles = await _buildReputationProofs(explorerUri, boxes, new Map() // No types available in this context
+        );
+        return profiles.length > 0 ? profiles[0] : null;
+    }
+    catch (error) {
+        console.error(`Error fetching profile by ID ${tokenId}:`, error);
+        return null;
     }
 }

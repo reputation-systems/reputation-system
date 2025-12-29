@@ -12,3 +12,7 @@ export declare function fetchAllUserProfiles(explorerUri: string, is_self_define
  * Does not filter by R7.
  */
 export declare function fetchAllProfiles(explorerUri: string, is_self_defined: boolean | null | undefined, types: string[] | undefined, availableTypes: Map<string, TypeNFT>, limit?: number, offset?: number): Promise<ReputationProof[]>;
+/**
+ * Fetch a specific ReputationProof by its token ID.
+ */
+export declare function fetchProfileById(explorerUri: string, tokenId: string): Promise<ReputationProof | null>;

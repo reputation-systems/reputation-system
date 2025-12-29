@@ -46,4 +46,4 @@ export declare function getAllRPBoxesFromProof(proof: ReputationProof): RPBox[];
  * @returns The corresponding ReputationProof or 'undefined' if not found.
  */
 export declare function getReputationProofFromRPBox(box: RPBox, proofs: Map<string, ReputationProof>): ReputationProof | undefined;
-export { };
+export {};

@@ -1,4 +1,4 @@
-import { } from "./ReputationProof";
+import {} from "./ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";

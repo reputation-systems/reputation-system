@@ -1,4 +1,4 @@
-import {} from "./ReputationProof";
+import { } from "./ReputationProof";
 import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils";
 import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
 import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";
@@ -31,7 +31,7 @@ export async function getTimestampFromBlockId(explorerUri, blockId) {
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export async function* searchBoxes(explorerUri, token_id, type_nft_id, object_pointer, is_locked, polarization, content, owner_address, limit, offset = 0) {
+export async function* searchBoxes(explorerUri, token_id, type_nft_id, object_pointer, is_locked, polarization, content, owner_ergotree, limit, offset = 0) {
     const registers = {};
     if (type_nft_id) {
         registers["R4"] = serializedToRendered(SColl(SByte, hexToBytes(type_nft_id) ?? "").toHex());
@@ -42,8 +42,8 @@ export async function* searchBoxes(explorerUri, token_id, type_nft_id, object_po
     if (is_locked !== undefined) {
         registers["R6"] = serializedToRendered(SBool(is_locked).toHex());
     }
-    if (owner_address) {
-        const userAddress = ErgoAddress.fromBase58(owner_address);
+    if (owner_ergotree) {
+        const userAddress = ErgoAddress.fromBase58(owner_ergotree);
         const propositionBytes = hexToBytes(userAddress.ergoTree);
         if (propositionBytes) {
             registers["R7"] = serializedToRendered(SColl(SByte, propositionBytes).toHex());
@@ -245,7 +245,7 @@ export async function updateReputationProofList(explorerUri, connected, availabl
                             token_id: rep_token_id,
                             types: [],
                             total_amount: emissionAmount,
-                            owner_address: serializedToRendered(owner_serialized),
+                            owner_ergotree: serializedToRendered(owner_serialized),
                             owner_serialized: owner_serialized,
                             can_be_spend: userR7SerializedHex ? owner_serialized === userR7SerializedHex : false,
                             current_boxes: [],

@@ -1,7 +1,7 @@
 import { parseCollByteToHex, hexToBytes, hexToUtf8, serializedToRendered } from './utils';
 import { explorer_uri, ergo_tree_hash } from './envs';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
-import {} from './ReputationProof';
+import { } from './ReputationProof';
 const API_BATCH_SIZE = 100; // Max items per request allowed by Explorer usually
 // --- Helper Functions ---
 /**
@@ -141,7 +141,7 @@ async function fetchAllBoxesByTokenId(explorerUri, tokenId) {
  * Handles pagination and client-side filtering.
  */
 async function fetchReputationBoxes(explorerUri, r7SerializedHex, // Pass null for Global fetch
-is_self_defined = null, types = [], limit = 50, offset = 0) {
+    is_self_defined = null, types = [], limit = 50, offset = 0) {
     const allBoxes = [];
     // Determine registers to filter by in the API call
     const baseRegisters = {};
@@ -277,7 +277,7 @@ async function _buildReputationProofs(explorerUri, initialBoxes, availableTypes,
             types: [],
             data: {},
             total_amount: emissionAmount,
-            owner_address: ownerAddress,
+            owner_ergotree: ownerAddress,
             owner_serialized: ownerSerialized,
             can_be_spend: true, // For global view, we might want to calculate this based on if wallet is connected
             current_boxes: [],
@@ -353,7 +353,7 @@ export async function fetchAllProfiles(explorerUri, is_self_defined = null, type
         if (globalBoxes.length === 0)
             return [];
         const profiles = await _buildReputationProofs(explorerUri, globalBoxes, availableTypes
-        // No known owner passed
+            // No known owner passed
         );
         return profiles;
     }

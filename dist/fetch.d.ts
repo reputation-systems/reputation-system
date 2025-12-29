@@ -30,7 +30,7 @@ export declare function getTimestampFromBlockId(explorerUri: string, blockId: st
 /**
  * Generic search function for boxes with specific R4 and R5 values
  */
-export declare function searchBoxes(explorerUri: string, token_id?: string, type_nft_id?: string, object_pointer?: string, is_locked?: boolean, polarization?: boolean, content?: string | object, owner_address?: string, limit?: number, offset?: number): AsyncGenerator<ApiBox[]>;
+export declare function searchBoxes(explorerUri: string, token_id?: string, type_nft_id?: string, object_pointer?: string, is_locked?: boolean, polarization?: boolean, content?: string | object, owner_ergotree?: string, limit?: number, offset?: number): AsyncGenerator<ApiBox[]>;
 export declare function fetchTypeNfts(explorerUri: string): Promise<Map<string, TypeNFT>>;
 export declare function updateReputationProofList(explorerUri: string, connected: boolean, availableTypes: Map<string, TypeNFT>, search: string | null): Promise<Map<string, ReputationProof>>;
 /**
@@ -46,4 +46,4 @@ export declare function getAllRPBoxesFromProof(proof: ReputationProof): RPBox[];
  * @returns The corresponding ReputationProof or 'undefined' if not found.
  */
 export declare function getReputationProofFromRPBox(box: RPBox, proofs: Map<string, ReputationProof>): ReputationProof | undefined;
-export {};
+export { };

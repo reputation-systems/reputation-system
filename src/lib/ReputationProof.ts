@@ -36,7 +36,7 @@ export interface ReputationProof {
     token_id: string;
     types: TypeNFT[];  // SELF identification of the proof types (by Type NFTs)
     total_amount: number;
-    owner_address: string;
+    owner_ergotree: string;
     owner_serialized: string;
     can_be_spend: boolean;
     current_boxes: RPBox[];

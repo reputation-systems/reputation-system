@@ -11,7 +11,7 @@ interface ReputationProof {
     token_id: string;
     types: TypeNFT[];      // SELF identification of the proof types
     total_amount: number;  // Total reputation tokens minted
-    owner_address: string;
+    owner_ergotree: string;
     owner_serialized: string;
     can_be_spend: boolean;
     current_boxes: RPBox[];
@@ -188,7 +188,7 @@ async function* searchBoxes(
     is_locked?: boolean,
     polarization?: boolean,
     content?: string | object,
-    owner_address?: string,
+    owner_ergotree?: string,
     limit?: number,
     offset: number = 0
 ): AsyncGenerator<ApiBox[]>

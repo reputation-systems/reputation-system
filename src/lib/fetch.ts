@@ -53,7 +53,7 @@ export async function* searchBoxes(
     is_locked?: boolean,
     polarization?: boolean,
     content?: string | object,
-    owner_address?: string,
+    owner_ergotree?: string,
     limit?: number,
     offset: number = 0
 ): AsyncGenerator<ApiBox[]> {
@@ -68,8 +68,8 @@ export async function* searchBoxes(
     if (is_locked !== undefined) {
         registers["R6"] = serializedToRendered(SBool(is_locked).toHex());
     }
-    if (owner_address) {
-        const userAddress = ErgoAddress.fromBase58(owner_address);
+    if (owner_ergotree) {
+        const userAddress = ErgoAddress.fromBase58(owner_ergotree);
         const propositionBytes = hexToBytes(userAddress.ergoTree);
         if (propositionBytes) {
             registers["R7"] = serializedToRendered(SColl(SByte, propositionBytes).toHex());
@@ -299,7 +299,7 @@ export async function updateReputationProofList(
                             token_id: rep_token_id,
                             types: [],
                             total_amount: emissionAmount,
-                            owner_address: serializedToRendered(owner_serialized),
+                            owner_ergotree: serializedToRendered(owner_serialized),
                             owner_serialized: owner_serialized,
                             can_be_spend: userR7SerializedHex ? owner_serialized === userR7SerializedHex : false,
                             current_boxes: [],

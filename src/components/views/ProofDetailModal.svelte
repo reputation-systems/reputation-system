@@ -155,8 +155,8 @@
                 <div class="details-grid">
                     <strong>Owner:</strong><span
                         class="breakable"
-                        title={activeProof.owner_address}
-                        >{activeProof.owner_address}</span
+                        title={activeProof.owner_ergotree}
+                        >{activeProof.owner_ergotree}</span
                     >
                     <strong>Description:</strong><span
                         >{activeProof.types
@@ -428,9 +428,9 @@
                                             <strong>Source Owner:</strong><span
                                                 class="breakable"
                                                 title={ref.parentProof
-                                                    .owner_address}
+                                                    .owner_ergotree}
                                                 >{ref.parentProof
-                                                    .owner_address}</span
+                                                    .owner_ergotree}</span
                                             >
                                             <strong>Weight:</strong><span
                                                 >{ref.box.token_amount} / {ref
@@ -514,9 +514,9 @@
                                             <strong>Source Owner:</strong><span
                                                 class="breakable"
                                                 title={ref.parentProof
-                                                    .owner_address}
+                                                    .owner_ergotree}
                                                 >{ref.parentProof
-                                                    .owner_address}</span
+                                                    .owner_ergotree}</span
                                             >
                                             <strong>Weight:</strong><span
                                                 >{ref.box.token_amount} / {ref

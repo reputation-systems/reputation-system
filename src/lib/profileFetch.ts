@@ -328,7 +328,7 @@ async function _buildReputationProofs(
             types: [],
             data: {},
             total_amount: emissionAmount,
-            owner_address: ownerAddress,
+            owner_ergotree: ownerAddress,
             owner_serialized: ownerSerialized,
             can_be_spend: true, // For global view, we might want to calculate this based on if wallet is connected
             current_boxes: [],

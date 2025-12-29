@@ -159,8 +159,8 @@
                   <div class="details-grid">
                     <strong>Owner:</strong><span
                       class="breakable"
-                      title={parentProof.owner_address}
-                      >{parentProof.owner_address}</span
+                      title={parentProof.owner_ergotree}
+                      >{parentProof.owner_ergotree}</span
                     >
                     <strong>Weight:</strong><span
                       >{box.token_amount}/{parentProof.total_amount} ({calculateProportion(
@@ -228,8 +228,8 @@
                   <div class="details-grid">
                     <strong>Owner:</strong><span
                       class="breakable"
-                      title={parentProof.owner_address}
-                      >{parentProof.owner_address}</span
+                      title={parentProof.owner_ergotree}
+                      >{parentProof.owner_ergotree}</span
                     >
                     <strong>Weight:</strong><span
                       >{box.token_amount}/{parentProof.total_amount} ({calculateProportion(

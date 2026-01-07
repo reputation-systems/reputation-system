@@ -10,3 +10,5 @@ export { calculate_reputation, total_burned_string, total_burned, } from './util
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';
 export type { OutputConfig } from './update_boxes';
 export { default as Profile } from './components/views/Profile.svelte';
+export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
+export { default as type_nft_contract } from './contracts/type_nft_contract.es?raw';

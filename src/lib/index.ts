@@ -24,3 +24,7 @@ export type { OutputConfig } from './update_boxes';
 
 // --- Svelte components ---
 export { default as Profile } from './components/views/Profile.svelte';
+
+// --- Contracts ---
+export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
+export { default as type_nft_contract } from './contracts/type_nft_contract.es?raw';

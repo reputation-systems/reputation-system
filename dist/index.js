@@ -10,3 +10,6 @@ export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox } from './profil
 export { calculate_reputation, total_burned_string, total_burned, } from './utils';
 // --- Svelte components ---
 export { default as Profile } from './components/views/Profile.svelte';
+// --- Contracts ---
+export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
+export { default as type_nft_contract } from './contracts/type_nft_contract.es?raw';

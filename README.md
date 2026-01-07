@@ -19,23 +19,10 @@ This contract protects a box containing a **unique NFT** and metadata defining a
 
 | Register | Type | Description |
 | --- | --- | --- |
-| **R4** | `Coll[Byte]` | **Reference Pointer**: Points to the subject of the reputation (see 2.1.1). |
+| **R4** | `Coll[Byte]` | `name`: Name of the type. |
 | **R5** | `Coll[Byte]` | `description`: Purpose and usage notes. |
 | **R6** | `Coll[Byte]` | `schemaURI`: Link to a schema (JSON, IPFS) for proof data. |
 | **R7** | `Boolean` | `isReputationProof`: `true` if this type is used for reputation/opinions. |
-
-#### **2.1.1. R4 Organic Specification (Hierarchical Reference)**
-
-When `R7` is `true`, `R4` follows an organic, length-based hierarchy in segments of 32 bytes to define the scope of the reputation.
-
-| Size | Structure | Interpretation | Scope |
-| --- | --- | --- | --- |
-| **32b** | `[ID]` | **Reputation Token** | Local (Ergo) |
-| **64b** | `[Token][Box]` | **Specific Opinion** | Local (Ergo) |
-| **64b** | `[Net][Token]` | **Reputation Token** | External Network |
-| **96b** | `[Net][Token][Box]` | **Specific Opinion** | External Network |
-
-* **Contextual Resolution**: If 64 bytes are provided, the system determines if it is an *Opinion* or an *External Token* by checking if the first segment matches a known Token ID or a Network ID.
 
 ---
 
@@ -69,6 +56,21 @@ Allows anyone to prevent box destruction by storage rent.
 
 * The successor must be an **identical copy** (script, registers, tokens).
 * The ERG value must be **greater than or equal** to the input.
+
+---
+
+#### **2.3 Reputation Box's R5 Organic Specification (Hierarchical Reference)**
+
+When Type NFT's `R7` is `true`, reputation box's `R5` follows an organic, length-based hierarchy in segments of 32 bytes to define the scope of the reputation.
+
+| Size | Structure | Interpretation | Scope |
+| --- | --- | --- | --- |
+| **32b** | `[ID]` | **Reputation Token** | Local (Ergo) |
+| **64b** | `[Token][Box]` | **Specific Opinion** | Local (Ergo) |
+| **64b** | `[Net][Token]` | **Reputation Token** | External Network |
+| **96b** | `[Net][Token][Box]` | **Specific Opinion** | External Network |
+
+* **Contextual Resolution**: If 64 bytes are provided, the system determines if it is an *Opinion* or an *External Token* by checking if the first segment matches a known Token ID or a Network ID.
 
 ---
 

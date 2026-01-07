@@ -12,4 +12,4 @@ export { calculate_reputation, total_burned_string, total_burned, } from './util
 export { default as Profile } from './components/views/Profile.svelte';
 // --- Contracts ---
 export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
-export { default as type_nft_contract } from './contracts/type_nft_contract.es?raw';
+export { default as digital_public_good } from './contracts/digital_public_good.es?raw';

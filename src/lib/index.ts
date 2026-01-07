@@ -11,7 +11,7 @@ export {
     searchBoxes,
     getTimestampFromBlockId
 } from './fetch'
-export { fetchAllUserProfiles, fetchAllProfiles } from './profileFetch';
+export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox } from './profileFetch';
 export {
     calculate_reputation,
     total_burned_string,

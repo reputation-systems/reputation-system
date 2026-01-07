@@ -8,7 +8,7 @@ const API_BATCH_SIZE = 100; // Max items per request allowed by Explorer usually
  * Converts an ApiBox to an RPBox (Reputation Proof Box).
  */
 export function convertToRPBox(box, token_id, availableTypes) {
-    if (!box.assets?.length || box.assets[0].tokenId !== token_id) {
+    if (!box.assets?.length || token_id && box.assets[0].tokenId !== token_id) {
         return null; // Silent skip for efficiency
     }
     if (!box.additionalRegisters.R4 || !box.additionalRegisters.R5 || !box.additionalRegisters.R6) {

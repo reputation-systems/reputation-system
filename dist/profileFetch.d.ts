@@ -2,7 +2,7 @@ import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './R
 /**
  * Converts an ApiBox to an RPBox (Reputation Proof Box).
  */
-export declare function convertToRPBox(box: ApiBox, token_id: string, availableTypes: Map<string, TypeNFT>): RPBox | null;
+export declare function convertToRPBox(box: ApiBox, token_id: string | null, availableTypes: Map<string, TypeNFT>): RPBox | null;
 /**
  * Fetches all ReputationProof objects for the connected user.
  */

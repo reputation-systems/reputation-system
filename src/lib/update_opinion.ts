@@ -17,20 +17,10 @@ import { type RPBox } from '$lib/ReputationProof';
 declare const ergo: any;
 
 /**
- * Updates an existing opinion box by recreating it with modified parameters.
- * The main_box is optional and only required if token_amount_delta is non-zero.
- * 
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
- * @param opinion_box The existing opinion box to update (must not be locked).
- * @param polarization Optional new polarization value (true = positive, false = negative).
- * @param content Optional new content (text, JSON object, or null). Pass undefined to keep existing.
- * @param token_amount_delta Change in reputation tokens: positive to add, negative to remove. Requires main_box.
- * @param extra_erg Optional extra ERG to add on top of the existing opinion_box value.
- * @param is_locked Optional flag to lock the opinion box (only false -> true transition allowed).
- * @param main_box Optional main box to use for reputation token adjustments. Required if token_amount_delta != 0.
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the update_opinion transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function update_opinion(
+async function _build_update_opinion(
     explorerUri: string,
     opinion_box: RPBox,
     polarization?: boolean,
@@ -39,7 +29,7 @@ export async function update_opinion(
     extra_erg: bigint = 0n,
     is_locked?: boolean,
     main_box?: RPBox
-): Promise<string | null> {
+): Promise<TransactionBuilder> {
 
     // Validate: opinion_box must not be locked
     if (opinion_box.is_locked) {
@@ -208,17 +198,55 @@ export async function update_opinion(
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
 
-    // --- Build and submit the transaction ---
-    try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .withDataFrom(dataInputs)
-            .build()
-            .toEIP12Object();
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .withDataFrom(dataInputs)
+        .build();
 
+    return builder;
+}
+
+/**
+ * Updates an existing opinion box by recreating it with modified parameters.
+ * The main_box is optional and only required if token_amount_delta is non-zero.
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param opinion_box The existing opinion box to update (must not be locked).
+ * @param polarization Optional new polarization value (true = positive, false = negative).
+ * @param content Optional new content (text, JSON object, or null). Pass undefined to keep existing.
+ * @param token_amount_delta Change in reputation tokens: positive to add, negative to remove. Requires main_box.
+ * @param extra_erg Optional extra ERG to add on top of the existing opinion_box value.
+ * @param is_locked Optional flag to lock the opinion box (only false -> true transition allowed).
+ * @param main_box Optional main box to use for reputation token adjustments. Required if token_amount_delta != 0.
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function update_opinion(
+    explorerUri: string,
+    opinion_box: RPBox,
+    polarization?: boolean,
+    content?: object | string | null,
+    token_amount_delta: number = 0,
+    extra_erg: bigint = 0n,
+    is_locked?: boolean,
+    main_box?: RPBox
+): Promise<string | null> {
+    try {
+        const builder = await _build_update_opinion(
+            explorerUri,
+            opinion_box,
+            polarization,
+            content,
+            token_amount_delta,
+            extra_erg,
+            is_locked,
+            main_box
+        );
+
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
 
@@ -230,4 +258,40 @@ export async function update_opinion(
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+
+/**
+ * Updates an existing opinion and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param opinion_box The existing opinion box to update (must not be locked).
+ * @param polarization Optional new polarization value (true = positive, false = negative).
+ * @param content Optional new content (text, JSON object, or null). Pass undefined to keep existing.
+ * @param token_amount_delta Change in reputation tokens: positive to add, negative to remove. Requires main_box.
+ * @param extra_erg Optional extra ERG to add on top of the existing opinion_box value.
+ * @param is_locked Optional flag to lock the opinion box (only false -> true transition allowed).
+ * @param main_box Optional main box to use for reputation token adjustments. Required if token_amount_delta != 0.
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function update_opinion_chained(
+    explorerUri: string,
+    opinion_box: RPBox,
+    polarization?: boolean,
+    content?: object | string | null,
+    token_amount_delta: number = 0,
+    extra_erg: bigint = 0n,
+    is_locked?: boolean,
+    main_box?: RPBox
+): Promise<TransactionBuilder> {
+    return _build_update_opinion(
+        explorerUri,
+        opinion_box,
+        polarization,
+        content,
+        token_amount_delta,
+        extra_erg,
+        is_locked,
+        main_box
+    );
 }

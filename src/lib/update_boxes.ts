@@ -67,72 +67,16 @@ export interface OutputConfig {
 }
 
 /**
- * Generic function to update multiple reputation boxes in a single transaction.
- * Supports merge (N→1), split (1→N), update (1→1), and complex redistributions.
- * 
- * ## Use Cases:
- * 
- * ### 1. Simple Update (1→1)
- * Update content, polarization, or lock state of a single box.
- * ```typescript
- * await update_boxes(
- *     explorer_uri,
- *     [myBox],
- *     [{ token_amount: 100, content: "New content", is_locked: true }]
- * );
- * ```
- * 
- * ### 2. Merge (N→1)
- * Combine multiple boxes into one.
- * ```typescript
- * await update_boxes(
- *     explorer_uri,
- *     [box1, box2, box3],
- *     [{ token_amount: 300 }] // Sum of all input tokens
- * );
- * ```
- * 
- * ### 3. Split (1→N)
- * Divide a box into multiple boxes.
- * ```typescript
- * await update_boxes(
- *     explorer_uri,
- *     [bigBox],
- *     [
- *         { token_amount: 50, content: "Part 1" },
- *         { token_amount: 50, content: "Part 2" }
- *     ]
- * );
- * ```
- * 
- * ### 4. Redistribution (N→M)
- * Complex redistribution of tokens across boxes.
- * ```typescript
- * await update_boxes(
- *     explorer_uri,
- *     [box1, box2],
- *     [
- *         { token_amount: 30, object_pointer: "target1" },
- *         { token_amount: 70, object_pointer: "target2" }
- *     ]
- * );
- * ```
- * 
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
- * @param input_boxes Array of RPBox to consume (must have same token_id, none locked)
- * @param output_configs Array of OutputConfig defining the output boxes
- * @param sacrificed_erg Optional extra ERG to add to the first output box
- * @param sacrificed_tokens Optional extra tokens to add (distributed based on receive_non_reputation_tokens flag)
- * @returns Transaction ID if successful
- * @throws Error if validation fails or transaction cannot be built/submitted
+ * Internal function that builds the update_boxes transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function update_boxes(
+async function _build_update_boxes(
     explorerUri: string,
     input_boxes: RPBox[],
     output_configs: OutputConfig[],
     sacrificed_erg: bigint = 0n,
     sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
-): Promise<string> {
+): Promise<TransactionBuilder> {
 
     // === VALIDATIONS ===
 
@@ -321,20 +265,124 @@ export async function update_boxes(
 
     console.log("Inputs:", inputs.length, "Outputs:", outputs.length);
 
-    // === BUILD AND SUBMIT TRANSACTION ===
-
-    const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
         .from(inputs)
         .to(outputs)
         .sendChangeTo(creatorP2PKAddress)
         .payFee(RECOMMENDED_MIN_FEE_VALUE)
         .withDataFrom(dataInputs)
-        .build()
-        .toEIP12Object();
+        .build();
 
+    return builder;
+}
+
+/**
+ * Generic function to update multiple reputation boxes in a single transaction.
+ * Supports merge (N→1), split (1→N), update (1→1), and complex redistributions.
+ * 
+ * ## Use Cases:
+ * 
+ * ### 1. Simple Update (1→1)
+ * Update content, polarization, or lock state of a single box.
+ * ```typescript
+ * await update_boxes(
+ *     explorer_uri,
+ *     [myBox],
+ *     [{ token_amount: 100, content: "New content", is_locked: true }]
+ * );
+ * ```
+ * 
+ * ### 2. Merge (N→1)
+ * Combine multiple boxes into one.
+ * ```typescript
+ * await update_boxes(
+ *     explorer_uri,
+ *     [box1, box2, box3],
+ *     [{ token_amount: 300 }] // Sum of all input tokens
+ * );
+ * ```
+ * 
+ * ### 3. Split (1→N)
+ * Divide a box into multiple boxes.
+ * ```typescript
+ * await update_boxes(
+ *     explorer_uri,
+ *     [bigBox],
+ *     [
+ *         { token_amount: 50, content: "Part 1" },
+ *         { token_amount: 50, content: "Part 2" }
+ *     ]
+ * );
+ * ```
+ * 
+ * ### 4. Redistribution (N→M)
+ * Complex redistribution of tokens across boxes.
+ * ```typescript
+ * await update_boxes(
+ *     explorer_uri,
+ *     [box1, box2],
+ *     [
+ *         { token_amount: 30, object_pointer: "target1" },
+ *         { token_amount: 70, object_pointer: "target2" }
+ *     ]
+ * );
+ * ```
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes (defaults to explorer_uri from envs)
+ * @param input_boxes Array of RPBox to consume (must have same token_id, none locked)
+ * @param output_configs Array of OutputConfig defining the output boxes
+ * @param sacrificed_erg Optional extra ERG to add to the first output box
+ * @param sacrificed_tokens Optional extra tokens to add (distributed based on receive_non_reputation_tokens flag)
+ * @returns Transaction ID if successful
+ * @throws Error if validation fails or transaction cannot be built/submitted
+ */
+export async function update_boxes(
+    explorerUri: string,
+    input_boxes: RPBox[],
+    output_configs: OutputConfig[],
+    sacrificed_erg: bigint = 0n,
+    sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<string> {
+    const builder = await _build_update_boxes(
+        explorerUri,
+        input_boxes,
+        output_configs,
+        sacrificed_erg,
+        sacrificed_tokens
+    );
+
+    const unsignedTransaction = builder.toEIP12Object();
     const signedTransaction = await ergo.sign_tx(unsignedTransaction);
     const transactionId = await ergo.submit_tx(signedTransaction);
 
     console.log("Transaction ID -> ", transactionId);
     return transactionId;
+}
+
+/**
+ * Updates multiple reputation boxes and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param input_boxes Array of RPBox to consume (must have same token_id, none locked).
+ * @param output_configs Array of OutputConfig defining the output boxes.
+ * @param sacrificed_erg Optional extra ERG to add to the first output box.
+ * @param sacrificed_tokens Optional extra tokens to add.
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function update_boxes_chained(
+    explorerUri: string,
+    input_boxes: RPBox[],
+    output_configs: OutputConfig[],
+    sacrificed_erg: bigint = 0n,
+    sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<TransactionBuilder> {
+    return _build_update_boxes(
+        explorerUri,
+        input_boxes,
+        output_configs,
+        sacrificed_erg,
+        sacrificed_tokens
+    );
 }

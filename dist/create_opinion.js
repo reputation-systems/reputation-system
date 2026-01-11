@@ -4,18 +4,10 @@ import { hexToBytes, hexOrUtf8ToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
 import {} from './ReputationProof';
 /**
- * Generates or modifies a reputation proof by building and submitting a transaction.
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
- * @param token_amount The amount of the token for the new proof box.
- * @param type_nft_id The Type NFT ID associated with the proof.
- * @param object_pointer An optional pointer to the object being evaluated.
- * @param polarization A boolean indicating the polarization of the opinion.
- * @param content The content associated with the opinion, can be an object or string.
- * @param is_locked A boolean indicating if the opinion is locked.
- * @param main_box The main RPBox containing the reputation tokens to spend.
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the create_opinion transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
+async function _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
     console.log("Generating reputation proof with parameters:", {
         token_amount,
         type_nft_id,
@@ -85,16 +77,32 @@ export async function create_opinion(explorerUri, token_amount, type_nft_id, obj
     outputs.push(opinion_box_output);
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
-    // --- Build and submit the transaction ---
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .withDataFrom(dataInputs)
+        .build();
+    return builder;
+}
+/**
+ * Generates or modifies a reputation proof by building and submitting a transaction.
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
+ * @param token_amount The amount of the token for the new proof box.
+ * @param type_nft_id The Type NFT ID associated with the proof.
+ * @param object_pointer An optional pointer to the object being evaluated.
+ * @param polarization A boolean indicating the polarization of the opinion.
+ * @param content The content associated with the opinion, can be an object or string.
+ * @param is_locked A boolean indicating if the opinion is locked.
+ * @param main_box The main RPBox containing the reputation tokens to spend.
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
     try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .withDataFrom(dataInputs)
-            .build()
-            .toEIP12Object();
+        const builder = await _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
         console.log("Transaction ID -> ", transactionId);
@@ -105,4 +113,21 @@ export async function create_opinion(explorerUri, token_amount, type_nft_id, obj
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+/**
+ * Creates a new opinion and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ *
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
+ * @param token_amount The amount of the token for the new proof box.
+ * @param type_nft_id The Type NFT ID associated with the proof.
+ * @param object_pointer An optional pointer to the object being evaluated.
+ * @param polarization A boolean indicating the polarization of the opinion.
+ * @param content The content associated with the opinion, can be an object or string.
+ * @param is_locked A boolean indicating if the opinion is locked.
+ * @param main_box The main RPBox containing the reputation tokens to spend.
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function create_opinion_chained(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
+    return _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
 }

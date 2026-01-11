@@ -17,33 +17,23 @@ import { stringToBytes } from '@scure/base';
 declare const ergo: any;
 
 /**
- * Creates a new reputation profile by minting a new reputation token.
- * This creates a "SELF" box where R5 points to its own token ID (the minted token).
- * 
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
- * @param total_supply The total amount of reputation tokens to mint.
- * @param type_nft_id The Type NFT ID that defines the category/type for this profile.
- * @param content Optional content for the profile (text, JSON object, or null).
- * @param sacrified_erg Optional extra ERG to add to the profile box (sacrificed).
- * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the create_profile transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function create_profile(
-    explorerUri: string,
+async function _build_create_profile(
     total_supply: number,
     type_nft_id: string,
     content: object | string | null = null,
     sacrified_erg: bigint = 0n,
     sacrified_tokens: { tokenId: string; amount: bigint }[] = []
-): Promise<string | null> {
+): Promise<TransactionBuilder> {
 
     console.log("Creating profile with parameters:", {
         total_supply,
         type_nft_id,
         content,
         sacrified_erg,
-        sacrified_tokens,
-        explorerUri
+        sacrified_tokens
     });
 
     console.log("Ergo Tree Address:", ergo_tree_address);
@@ -108,16 +98,47 @@ export async function create_profile(
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
 
-    // --- Build and submit the transaction ---
-    try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .build()
-            .toEIP12Object();
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .build();
 
+    return builder;
+}
+
+/**
+ * Creates a new reputation profile by minting a new reputation token.
+ * This creates a "SELF" box where R5 points to its own token ID (the minted token).
+ * 
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
+ * @param total_supply The total amount of reputation tokens to mint.
+ * @param type_nft_id The Type NFT ID that defines the category/type for this profile.
+ * @param content Optional content for the profile (text, JSON object, or null).
+ * @param sacrified_erg Optional extra ERG to add to the profile box (sacrificed).
+ * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function create_profile(
+    explorerUri: string,
+    total_supply: number,
+    type_nft_id: string,
+    content: object | string | null = null,
+    sacrified_erg: bigint = 0n,
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<string | null> {
+    try {
+        const builder = await _build_create_profile(
+            total_supply,
+            type_nft_id,
+            content,
+            sacrified_erg,
+            sacrified_tokens
+        );
+
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
 
@@ -129,4 +150,31 @@ export async function create_profile(
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+
+/**
+ * Creates a new reputation profile and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ * 
+ * @param total_supply The total amount of reputation tokens to mint.
+ * @param type_nft_id The Type NFT ID that defines the category/type for this profile.
+ * @param content Optional content for the profile (text, JSON object, or null).
+ * @param sacrified_erg Optional extra ERG to add to the profile box (sacrificed).
+ * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function create_profile_chained(
+    total_supply: number,
+    type_nft_id: string,
+    content: object | string | null = null,
+    sacrified_erg: bigint = 0n,
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<TransactionBuilder> {
+    return _build_create_profile(
+        total_supply,
+        type_nft_id,
+        content,
+        sacrified_erg,
+        sacrified_tokens
+    );
 }

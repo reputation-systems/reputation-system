@@ -1,10 +1,10 @@
 // --- Functions ---
-export { create_profile } from './create_profile';
-export { create_opinion } from './create_opinion';
-export { update_opinion } from './update_opinion';
-export { remove_opinion } from './remove_opinion';
-export { sacrifice_assets } from './sacrifice_assets';
-export { update_boxes } from './update_boxes';
+export { create_profile, create_profile_chained } from './create_profile';
+export { create_opinion, create_opinion_chained } from './create_opinion';
+export { update_opinion, update_opinion_chained } from './update_opinion';
+export { remove_opinion, remove_opinion_chained } from './remove_opinion';
+export { sacrifice_assets, sacrifice_assets_chained } from './sacrifice_assets';
+export { update_boxes, update_boxes_chained } from './update_boxes';
 export { fetchTypeNfts, searchBoxes, getTimestampFromBlockId } from './fetch';
 export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox } from './profileFetch';
 export { calculate_reputation, total_burned_string, total_burned, } from './utils';

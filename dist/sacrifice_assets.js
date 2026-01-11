@@ -2,16 +2,10 @@ import { OutputBuilder, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddre
 import { ergo_tree_address } from './envs';
 import {} from './ReputationProof';
 /**
- * Sacrifices ERG and tokens by adding them to an existing reputation box.
- * The target box is recreated with the additional assets permanently locked inside.
- *
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
- * @param target_box The reputation box to receive the sacrificed assets.
- * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
- * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the sacrifice_assets transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function sacrifice_assets(explorerUri, target_box, sacrificed_erg = 0n, sacrificed_tokens = []) {
+async function _build_sacrifice_assets(explorerUri, target_box, sacrificed_erg = 0n, sacrificed_tokens = []) {
     // Validate: target_box must not be locked
     if (target_box.is_locked) {
         throw new Error("Cannot sacrifice to a locked box. Locked boxes are immutable.");
@@ -69,16 +63,30 @@ export async function sacrifice_assets(explorerUri, target_box, sacrificed_erg =
     const outputs = [target_box_output];
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
-    // --- Build and submit the transaction ---
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .withDataFrom(dataInputs)
+        .build();
+    return builder;
+}
+/**
+ * Sacrifices ERG and tokens by adding them to an existing reputation box.
+ * The target box is recreated with the additional assets permanently locked inside.
+ *
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param target_box The reputation box to receive the sacrificed assets.
+ * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
+ * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function sacrifice_assets(explorerUri, target_box, sacrificed_erg = 0n, sacrificed_tokens = []) {
     try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .withDataFrom(dataInputs)
-            .build()
-            .toEIP12Object();
+        const builder = await _build_sacrifice_assets(explorerUri, target_box, sacrificed_erg, sacrificed_tokens);
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
         console.log("Transaction ID -> ", transactionId);
@@ -89,4 +97,17 @@ export async function sacrifice_assets(explorerUri, target_box, sacrificed_erg =
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+/**
+ * Sacrifices assets and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ *
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param target_box The reputation box to receive the sacrificed assets.
+ * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
+ * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function sacrifice_assets_chained(explorerUri, target_box, sacrificed_erg = 0n, sacrificed_tokens = []) {
+    return _build_sacrifice_assets(explorerUri, target_box, sacrificed_erg, sacrificed_tokens);
 }

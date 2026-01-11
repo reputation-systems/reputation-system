@@ -1,3 +1,4 @@
+import { TransactionBuilder } from '@fleet-sdk/core';
 import { type RPBox } from './ReputationProof';
 /**
  * Configuration for a single output box in the update_boxes transaction.
@@ -104,3 +105,18 @@ export declare function update_boxes(explorerUri: string, input_boxes: RPBox[], 
     tokenId: string;
     amount: bigint;
 }[]): Promise<string>;
+/**
+ * Updates multiple reputation boxes and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ *
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param input_boxes Array of RPBox to consume (must have same token_id, none locked).
+ * @param output_configs Array of OutputConfig defining the output boxes.
+ * @param sacrificed_erg Optional extra ERG to add to the first output box.
+ * @param sacrificed_tokens Optional extra tokens to add.
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export declare function update_boxes_chained(explorerUri: string, input_boxes: RPBox[], output_configs: OutputConfig[], sacrificed_erg?: bigint, sacrificed_tokens?: {
+    tokenId: string;
+    amount: bigint;
+}[]): Promise<TransactionBuilder>;

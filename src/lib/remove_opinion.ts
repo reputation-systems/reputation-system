@@ -12,20 +12,14 @@ import { type RPBox } from '$lib/ReputationProof';
 declare const ergo: any;
 
 /**
- * Removes an opinion box by merging all its assets (ERG + tokens) into the main box.
- * The opinion box is consumed and not recreated, effectively deleting it.
- * The main box is recreated with the combined assets.
- * 
- * @param explorerUri The URI of the Ergo explorer to fetch box data.
- * @param opinion_box The opinion box to remove (must not be locked).
- * @param main_box The main box to receive all assets from the opinion box.
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the remove_opinion transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function remove_opinion(
+async function _build_remove_opinion(
     explorerUri: string,
     opinion_box: RPBox,
     main_box: RPBox
-): Promise<string | null> {
+): Promise<TransactionBuilder> {
 
     // Validate: opinion_box must not be locked
     if (opinion_box.is_locked) {
@@ -105,17 +99,41 @@ export async function remove_opinion(
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
 
-    // --- Build and submit the transaction ---
-    try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .withDataFrom(dataInputs)
-            .build()
-            .toEIP12Object();
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .withDataFrom(dataInputs)
+        .build();
 
+    return builder;
+}
+
+/**
+ * Removes an opinion box by merging all its assets (ERG + tokens) into the main box.
+ * The opinion box is consumed and not recreated, effectively deleting it.
+ * The main box is recreated with the combined assets.
+ * 
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
+ * @param opinion_box The opinion box to remove (must not be locked).
+ * @param main_box The main box to receive all assets from the opinion box.
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function remove_opinion(
+    explorerUri: string,
+    opinion_box: RPBox,
+    main_box: RPBox
+): Promise<string | null> {
+    try {
+        const builder = await _build_remove_opinion(
+            explorerUri,
+            opinion_box,
+            main_box
+        );
+
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
 
@@ -127,4 +145,25 @@ export async function remove_opinion(
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+
+/**
+ * Removes an opinion box and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ * 
+ * @param explorerUri The URI of the Ergo explorer to fetch box data.
+ * @param opinion_box The opinion box to remove (must not be locked).
+ * @param main_box The main box to receive all assets from the opinion box.
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function remove_opinion_chained(
+    explorerUri: string,
+    opinion_box: RPBox,
+    main_box: RPBox
+): Promise<TransactionBuilder> {
+    return _build_remove_opinion(
+        explorerUri,
+        opinion_box,
+        main_box
+    );
 }

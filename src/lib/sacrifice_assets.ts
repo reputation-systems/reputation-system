@@ -12,21 +12,15 @@ import { type RPBox } from '$lib/ReputationProof';
 declare const ergo: any;
 
 /**
- * Sacrifices ERG and tokens by adding them to an existing reputation box.
- * The target box is recreated with the additional assets permanently locked inside.
- * 
- * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
- * @param target_box The reputation box to receive the sacrificed assets.
- * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
- * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
- * @returns The transaction ID if successful, otherwise null.
+ * Internal function that builds the sacrifice_assets transaction.
+ * Returns the built TransactionBuilder for chaining or execution.
  */
-export async function sacrifice_assets(
+async function _build_sacrifice_assets(
     explorerUri: string,
     target_box: RPBox,
     sacrificed_erg: bigint = 0n,
     sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
-): Promise<string | null> {
+): Promise<TransactionBuilder> {
 
     // Validate: target_box must not be locked
     if (target_box.is_locked) {
@@ -101,17 +95,43 @@ export async function sacrifice_assets(
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
 
-    // --- Build and submit the transaction ---
-    try {
-        const unsignedTransaction = await new TransactionBuilder(await ergo.get_current_height())
-            .from(inputs)
-            .to(outputs)
-            .sendChangeTo(creatorP2PKAddress)
-            .payFee(RECOMMENDED_MIN_FEE_VALUE)
-            .withDataFrom(dataInputs)
-            .build()
-            .toEIP12Object();
+    // Build the transaction
+    const builder = new TransactionBuilder(await ergo.get_current_height())
+        .from(inputs)
+        .to(outputs)
+        .sendChangeTo(creatorP2PKAddress)
+        .payFee(RECOMMENDED_MIN_FEE_VALUE)
+        .withDataFrom(dataInputs)
+        .build();
 
+    return builder;
+}
+
+/**
+ * Sacrifices ERG and tokens by adding them to an existing reputation box.
+ * The target box is recreated with the additional assets permanently locked inside.
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param target_box The reputation box to receive the sacrificed assets.
+ * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
+ * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
+ * @returns The transaction ID if successful, otherwise null.
+ */
+export async function sacrifice_assets(
+    explorerUri: string,
+    target_box: RPBox,
+    sacrificed_erg: bigint = 0n,
+    sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<string | null> {
+    try {
+        const builder = await _build_sacrifice_assets(
+            explorerUri,
+            target_box,
+            sacrificed_erg,
+            sacrificed_tokens
+        );
+
+        const unsignedTransaction = builder.toEIP12Object();
         const signedTransaction = await ergo.sign_tx(unsignedTransaction);
         const transactionId = await ergo.submit_tx(signedTransaction);
 
@@ -123,4 +143,28 @@ export async function sacrifice_assets(
         alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+
+/**
+ * Sacrifices assets and returns the TransactionBuilder for chaining.
+ * Use this when you need to chain multiple transactions together.
+ * 
+ * @param explorerUri Optional explorer URI for fetching Type NFT boxes.
+ * @param target_box The reputation box to receive the sacrificed assets.
+ * @param sacrificed_erg Amount of ERG to sacrifice (added to existing box value).
+ * @param sacrificed_tokens Array of tokens to sacrifice (added to existing box tokens).
+ * @returns The TransactionBuilder after .build() for chaining.
+ */
+export async function sacrifice_assets_chained(
+    explorerUri: string,
+    target_box: RPBox,
+    sacrificed_erg: bigint = 0n,
+    sacrificed_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<TransactionBuilder> {
+    return _build_sacrifice_assets(
+        explorerUri,
+        target_box,
+        sacrificed_erg,
+        sacrificed_tokens
+    );
 }

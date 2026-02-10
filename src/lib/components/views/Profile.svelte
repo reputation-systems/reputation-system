@@ -69,6 +69,7 @@
         `--rp-text-muted: ${theme.textMuted ?? "#94a3b8"}`,
         `--rp-bg-card: ${theme.bgCard ?? "#262626"}`,
         `--rp-bg-input: ${theme.bgInput ?? "#171717"}`,
+        `--rp-bg-page: ${theme.bgPage ?? "transparent"}`,
         `--rp-bg-hover: ${theme.bgHover ?? "rgba(255,255,255,0.05)"}`,
         `--rp-border-color: ${theme.borderColor ?? "#404040"}`,
         `--rp-border-subtle: ${theme.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
@@ -1539,6 +1540,7 @@
         margin: 0 auto;
         padding: 2rem 1rem 4rem;
         color: var(--rp-text-primary);
+        background-color: var(--rp-bg-page);
         font-family: "Inter", sans-serif;
     }
 

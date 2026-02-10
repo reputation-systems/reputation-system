@@ -4,6 +4,7 @@ export interface ProfileTheme {
     textMuted?: string;
     bgCard?: string;
     bgInput?: string;
+    bgPage?: string;
     bgHover?: string;
     borderColor?: string;
     borderSubtle?: string;

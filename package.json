@@ -28,7 +28,8 @@
 		"svelte": "^4"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"LIBRARY.md"
 	],
 	"svelte": "./dist/index.js",
 	"types": "./dist/index.d.ts",

@@ -21,6 +21,7 @@ export {
 // --- Types ---
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';
 export type { OutputConfig } from './update_boxes';
+export type { ProfileTheme } from './components/types';
 
 // --- Svelte components ---
 export { default as Profile } from './components/views/Profile.svelte';

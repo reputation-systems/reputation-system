@@ -257,4 +257,45 @@ A comprehensive view component for displaying and managing a reputation profile.
 - `allowEditBox`: Enable/disable editing existing boxes.
 - `allowDeleteBox`: Enable/disable deleting boxes.
 - `allowSetMainBox`: Enable/disable setting a box as the main profile box.
+- `theme`: Optional `ProfileTheme` object for color customization (see below).
+
+#### Theme Customization
+
+The `theme` prop accepts a partial `ProfileTheme` object. Any omitted keys default to dark mode colors. Available keys:
+
+| Key                | Description              | Dark Default          |
+|--------------------|--------------------------|-----------------------|
+| `textPrimary`      | Main text color          | `#f0f0f0`             |
+| `textSecondary`    | Secondary text color     | `#e2e8f0`             |
+| `textMuted`        | Muted/label text color   | `#94a3b8`             |
+| `bgCard`           | Card/panel background    | `#262626`             |
+| `bgInput`          | Input field background   | `#171717`             |
+| `bgHover`          | Hover/subtle background  | `rgba(255,255,255,0.05)` |
+| `borderColor`      | Primary border color     | `#404040`             |
+| `borderSubtle`     | Subtle border color      | `rgba(255,255,255,0.1)` |
+| `accentPrimary`    | Primary accent color     | `#fbbf24`             |
+| `accentSecondary`  | Secondary accent color   | `#f59e0b`             |
+| `scoreGlow`        | Score glow effect color  | `rgba(251,191,36,0.3)` |
+
+**Light Mode Example:**
+```svelte
+<Profile
+    {reputationProof}
+    {userProfiles}
+    {connected}
+    theme={{
+        textPrimary: '#1a1a2e',
+        textSecondary: '#334155',
+        textMuted: '#64748b',
+        bgCard: '#ffffff',
+        bgInput: '#f8fafc',
+        bgHover: 'rgba(0,0,0,0.04)',
+        borderColor: '#e2e8f0',
+        borderSubtle: 'rgba(0,0,0,0.08)',
+        accentPrimary: '#f59e0b',
+        accentSecondary: '#d97706',
+        scoreGlow: 'rgba(245,158,11,0.2)',
+    }}
+/>
+```
 

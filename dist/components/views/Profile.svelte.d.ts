@@ -1,5 +1,6 @@
 import { SvelteComponent } from "svelte";
 import type { ReputationProof } from "../../ReputationProof";
+import type { ProfileTheme } from "../types";
 declare const __propDef: {
     props: {
         reputationProof: ReputationProof | null;
@@ -24,6 +25,7 @@ declare const __propDef: {
         subtitle?: string | null | undefined;
         compact?: boolean | undefined;
         maxBoxesVisible?: number | null | undefined;
+        theme?: ProfileTheme | undefined;
         readOnly?: boolean | undefined;
         autoRefresh?: boolean | undefined;
         refreshInterval?: number | undefined;

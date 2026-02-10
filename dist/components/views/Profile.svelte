@@ -3,10 +3,7 @@ import { create_profile } from "../../create_profile";
 import { update_opinion } from "../../update_opinion";
 import { remove_opinion } from "../../remove_opinion";
 import { sacrifice_assets } from "../../sacrifice_assets";
-import {
-  PROFILE_TOTAL_SUPPLY,
-  PROFILE_TYPE_NFT_ID
-} from "../../envs";
+import { PROFILE_TOTAL_SUPPLY, PROFILE_TYPE_NFT_ID } from "../../envs";
 import { searchBoxes } from "../../fetch";
 import { types } from "../../store";
 import { convertToRPBox } from "../../profileFetch";
@@ -46,6 +43,22 @@ $:
 export let subtitle = null;
 export let compact = false;
 export let maxBoxesVisible = null;
+export let theme = {};
+$:
+  cssVars = [
+    `--rp-text-primary: ${theme.textPrimary ?? "#f0f0f0"}`,
+    `--rp-text-secondary: ${theme.textSecondary ?? "#e2e8f0"}`,
+    `--rp-text-muted: ${theme.textMuted ?? "#94a3b8"}`,
+    `--rp-bg-card: ${theme.bgCard ?? "#262626"}`,
+    `--rp-bg-input: ${theme.bgInput ?? "#171717"}`,
+    `--rp-bg-page: ${theme.bgPage ?? "transparent"}`,
+    `--rp-bg-hover: ${theme.bgHover ?? "rgba(255,255,255,0.05)"}`,
+    `--rp-border-color: ${theme.borderColor ?? "#404040"}`,
+    `--rp-border-subtle: ${theme.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+    `--rp-accent-primary: ${theme.accentPrimary ?? "#fbbf24"}`,
+    `--rp-accent-secondary: ${theme.accentSecondary ?? "#f59e0b"}`,
+    `--rp-score-glow: ${theme.scoreGlow ?? "rgba(251,191,36,0.3)"}`
+  ].join(";");
 export let readOnly = false;
 export let autoRefresh = false;
 export let refreshInterval = 3e4;
@@ -528,7 +541,7 @@ onDestroy(() => {
 });
 </script>
 
-<div class="profile-container" class:compact>
+<div class="profile-container" class:compact style={cssVars}>
     <div class="hero-section">
         <h2 class="project-title">{title}</h2>
         {#if reputationProof}
@@ -1388,7 +1401,8 @@ onDestroy(() => {
         max-width: 1200px;
         margin: 0 auto;
         padding: 2rem 1rem 4rem;
-        color: #f0f0f0;
+        color: var(--rp-text-primary);
+        background-color: var(--rp-bg-page);
         font-family: "Inter", sans-serif;
     }
 
@@ -1433,10 +1447,10 @@ onDestroy(() => {
     /* --- More Boxes Hint --- */
     .more-boxes-hint {
         text-align: center;
-        color: #64748b;
+        color: var(--rp-text-muted);
         font-size: 0.875rem;
         padding: 1rem;
-        background: rgba(255, 255, 255, 0.02);
+        background: var(--rp-bg-hover);
         border-radius: 0.5rem;
         margin-top: 1rem;
     }
@@ -1446,16 +1460,16 @@ onDestroy(() => {
         margin-bottom: 2.5rem;
         position: relative;
         z-index: 100;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--rp-bg-hover);
+        border: 1px solid var(--rp-border-subtle);
         border-radius: 1.25rem;
         backdrop-filter: blur(12px);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .profile-switcher-v2.expanded {
-        background: rgba(255, 255, 255, 0.05);
-        border-color: rgba(251, 191, 36, 0.3);
+        background: var(--rp-bg-hover);
+        border-color: var(--rp-accent-primary);
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     }
 
@@ -1485,7 +1499,7 @@ onDestroy(() => {
     }
 
     .current-profile-info:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--rp-bg-hover);
     }
 
     .profile-avatar {
@@ -1519,7 +1533,7 @@ onDestroy(() => {
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: #000;
-        background: #fbbf24;
+        background: var(--rp-accent-primary);
         padding: 0.1rem 0.4rem;
         border-radius: 4px;
     }
@@ -1527,13 +1541,13 @@ onDestroy(() => {
     .profile-id-main {
         font-size: 1rem;
         font-weight: 600;
-        color: #f1f5f9;
+        color: var(--rp-text-secondary);
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
             monospace;
     }
 
     .chevron-icon {
-        color: #64748b;
+        color: var(--rp-text-muted);
         font-size: 0.875rem;
         transition: transform 0.3s;
     }
@@ -1546,9 +1560,9 @@ onDestroy(() => {
         width: 2.5rem;
         height: 2.5rem;
         border-radius: 0.75rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #94a3b8;
+        background: var(--rp-bg-hover);
+        border: 1px solid var(--rp-border-subtle);
+        color: var(--rp-text-muted);
         cursor: pointer;
         transition: all 0.2s;
         display: flex;
@@ -1558,13 +1572,13 @@ onDestroy(() => {
 
     .create-profile-btn-v2:hover {
         background: rgba(251, 191, 36, 0.1);
-        border-color: #fbbf24;
-        color: #fbbf24;
+        border-color: var(--rp-accent-primary);
+        color: var(--rp-accent-primary);
     }
 
     /* --- Dropdown --- */
     .profiles-dropdown {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--rp-border-subtle);
         padding: 1rem;
         max-height: 300px;
         overflow-y: auto;
@@ -1573,7 +1587,7 @@ onDestroy(() => {
     .dropdown-header {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #64748b;
+        color: var(--rp-text-muted);
         text-transform: uppercase;
         margin-bottom: 0.75rem;
         padding-left: 0.5rem;
@@ -1600,28 +1614,28 @@ onDestroy(() => {
     }
 
     .dropdown-item:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--rp-bg-hover);
     }
 
     .dropdown-item.active {
-        background: rgba(251, 191, 36, 0.05);
-        border-color: rgba(251, 191, 36, 0.2);
+        background: var(--rp-bg-hover);
+        border-color: var(--rp-accent-primary);
     }
 
     .item-icon {
         width: 2rem;
         height: 2rem;
         border-radius: 0.5rem;
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--rp-bg-hover);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        color: var(--rp-text-muted);
     }
 
     .active .item-icon {
         background: rgba(251, 191, 36, 0.1);
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     .item-content {
@@ -1646,7 +1660,7 @@ onDestroy(() => {
     .item-type {
         font-size: 0.75rem;
         font-weight: 600;
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
         background: rgba(251, 191, 36, 0.1);
         padding: 0.05rem 0.3rem;
         border-radius: 3px;
@@ -1654,29 +1668,29 @@ onDestroy(() => {
 
     .item-id {
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--rp-text-muted);
         font-family: ui-monospace, monospace;
     }
 
     .item-erg {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
     }
 
     .check-icon {
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
         font-size: 0.875rem;
     }
 
     .terminology-tip {
         margin-left: 0.5rem;
-        color: #64748b;
+        color: var(--rp-text-muted);
         cursor: help;
         font-size: 0.875rem;
     }
 
     .terminology-tip:hover {
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     /* --- Hero Section --- */
@@ -1698,7 +1712,7 @@ onDestroy(() => {
 
     .subtitle {
         font-size: 1.125rem;
-        color: #a1a1aa;
+        color: var(--rp-text-muted);
         max-width: 42rem;
         margin: 0 auto;
     }
@@ -1715,35 +1729,35 @@ onDestroy(() => {
         font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         font-weight: 600;
     }
 
     .score-value {
         font-size: 3rem;
         font-weight: 800;
-        color: #fbbf24;
-        text-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+        color: var(--rp-accent-primary);
+        text-shadow: 0 0 20px var(--rp-score-glow);
     }
 
     .score-value .unit {
         font-size: 1.5rem;
         margin-left: 0.25rem;
-        color: #f59e0b;
+        color: var(--rp-accent-secondary);
     }
 
     .main-tabs-container {
         display: flex;
         gap: 1rem;
         margin-bottom: 2rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid var(--rp-border-subtle);
         padding-bottom: 1rem;
     }
 
     .main-tab-btn {
         background: transparent;
         border: none;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         padding: 0.75rem 1.25rem;
         font-size: 1rem;
         font-weight: 600;
@@ -1756,30 +1770,30 @@ onDestroy(() => {
     }
 
     .main-tab-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #f1f5f9;
+        background: var(--rp-bg-hover);
+        color: var(--rp-text-secondary);
     }
 
     .main-tab-btn.active {
         background: rgba(251, 191, 36, 0.1);
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     .tab-count {
         font-size: 0.75rem;
-        background: rgba(255, 255, 255, 0.1);
-        color: #cbd5e1;
+        background: var(--rp-border-subtle);
+        color: var(--rp-text-secondary);
         padding: 0.1rem 0.5rem;
         border-radius: 1rem;
     }
 
     .main-tab-btn.active .tab-count {
         background: rgba(251, 191, 36, 0.2);
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     .issuer-rep {
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
         font-weight: 600;
         margin-left: 0.25rem;
     }
@@ -1826,7 +1840,7 @@ onDestroy(() => {
     .boxes-section h3 {
         font-size: 1.5rem;
         font-weight: 700;
-        color: #e2e8f0;
+        color: var(--rp-text-secondary);
         margin: 0;
     }
 
@@ -1871,8 +1885,8 @@ onDestroy(() => {
     }
 
     .asset-card.dark-card {
-        background-color: #1e1e1e; /* bg-card */
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: var(--rp-bg-card);
+        border: 1px solid var(--rp-border-subtle);
         transition: border-color 0.2s;
     }
     .asset-card.dark-card:hover {
@@ -1917,21 +1931,21 @@ onDestroy(() => {
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         margin-bottom: 0.25rem;
     }
 
     .asset-amount {
         font-size: 1.875rem;
         font-weight: 700;
-        color: #f1f5f9;
+        color: var(--rp-text-secondary);
         line-height: 1;
     }
 
     .unit {
         font-size: 1.125rem;
         font-weight: 400;
-        color: #64748b;
+        color: var(--rp-text-muted);
     }
 
     /* --- Liquid Fire Animation --- */
@@ -1982,7 +1996,7 @@ onDestroy(() => {
 
     /* --- Divider --- */
     .divider {
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid var(--rp-border-subtle);
         margin: 2rem 0;
     }
 
@@ -2006,14 +2020,14 @@ onDestroy(() => {
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: #a1a1aa;
+        color: var(--rp-text-muted);
         margin-bottom: 0.25rem;
     }
 
     .token-id-display .value {
         font-size: 1.25rem;
         font-weight: 500;
-        color: #e2e8f0;
+        color: var(--rp-text-secondary);
     }
 
     .mono {
@@ -2032,8 +2046,8 @@ onDestroy(() => {
 
     .filter-badge {
         background: transparent;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #a1a1aa;
+        border: 1px solid var(--rp-border-subtle);
+        color: var(--rp-text-muted);
         padding: 0.5rem 1rem;
         border-radius: 9999px;
         font-size: 0.875rem;
@@ -2042,14 +2056,14 @@ onDestroy(() => {
     }
 
     .filter-badge:hover {
-        background: rgba(255, 255, 255, 0.05);
-        color: #fff;
+        background: var(--rp-bg-hover);
+        color: var(--rp-text-primary);
     }
 
     .filter-badge.active {
-        background: #fbbf24;
+        background: var(--rp-accent-primary);
         color: #1a1a1a;
-        border-color: #fbbf24;
+        border-color: var(--rp-accent-primary);
         font-weight: 600;
     }
 
@@ -2061,8 +2075,8 @@ onDestroy(() => {
     }
 
     .box-card {
-        background: rgba(255, 255, 255, 0.02);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--rp-bg-hover);
+        border: 1px solid var(--rp-border-subtle);
         border-left-width: 4px;
         border-radius: 0.5rem;
         padding: 1rem;
@@ -2070,7 +2084,7 @@ onDestroy(() => {
     }
 
     .box-card:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--rp-bg-hover);
     }
 
     .box-card.positive {
@@ -2091,8 +2105,8 @@ onDestroy(() => {
     .box-type {
         font-size: 0.875rem;
         font-weight: 600;
-        color: #e2e8f0;
-        background: rgba(255, 255, 255, 0.1);
+        color: var(--rp-text-secondary);
+        background: var(--rp-border-subtle);
         padding: 0.125rem 0.5rem;
         border-radius: 0.25rem;
     }
@@ -2110,7 +2124,7 @@ onDestroy(() => {
 
     .box-body {
         font-size: 0.875rem;
-        color: #cbd5e1;
+        color: var(--rp-text-secondary);
     }
 
     .info-row {
@@ -2120,12 +2134,12 @@ onDestroy(() => {
     }
 
     .info-row .label {
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         min-width: 60px;
     }
 
     .info-row .value {
-        color: #f1f5f9;
+        color: var(--rp-text-secondary);
         word-break: break-all;
     }
 
@@ -2135,7 +2149,7 @@ onDestroy(() => {
 
     .content-text {
         font-style: italic;
-        color: #a1a1aa;
+        color: var(--rp-text-muted);
     }
 
     .box-actions {
@@ -2143,14 +2157,14 @@ onDestroy(() => {
         justify-content: flex-end;
         gap: 0.5rem;
         margin-top: 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid var(--rp-border-subtle);
         padding-top: 1rem;
     }
 
     .locked-badge {
         font-size: 0.75rem;
-        color: #94a3b8;
-        background: rgba(255, 255, 255, 0.05);
+        color: var(--rp-text-muted);
+        background: var(--rp-bg-hover);
         padding: 0.25rem 0.6rem;
         border-radius: 2rem;
         display: flex;
@@ -2162,14 +2176,14 @@ onDestroy(() => {
     .icon-button {
         background: transparent;
         border: none;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         cursor: pointer;
         padding: 0.25rem;
         transition: color 0.2s;
     }
 
     .icon-button:hover {
-        color: #fff;
+        color: var(--rp-text-primary);
     }
     .icon-button.delete:hover {
         color: #ef4444;
@@ -2177,7 +2191,7 @@ onDestroy(() => {
 
     /* --- Forms & Buttons --- */
     .primary-button {
-        background: #fbbf24;
+        background: var(--rp-accent-primary);
         color: #1a1a1a;
         border: none;
         padding: 0.75rem 1.5rem;
@@ -2187,7 +2201,7 @@ onDestroy(() => {
         transition: background 0.2s;
     }
     .primary-button:hover {
-        background: #f59e0b;
+        background: var(--rp-accent-secondary);
     }
     .primary-button:disabled {
         opacity: 0.5;
@@ -2195,8 +2209,8 @@ onDestroy(() => {
     }
 
     .secondary-button {
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
+        background: var(--rp-border-subtle);
+        color: var(--rp-text-primary);
         border: none;
         padding: 0.5rem 1rem;
         border-radius: 0.375rem;
@@ -2204,25 +2218,25 @@ onDestroy(() => {
         transition: background 0.2s;
     }
     .secondary-button:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: var(--rp-bg-hover);
     }
 
     .cancel-button {
         background: transparent;
-        border: 1px solid #4b5563;
-        color: #9ca3af;
+        border: 1px solid var(--rp-border-color);
+        color: var(--rp-text-muted);
         padding: 0.5rem 1rem;
         border-radius: 0.375rem;
         cursor: pointer;
     }
     .cancel-button:hover {
-        border-color: #d1d5db;
-        color: #d1d5db;
+        border-color: var(--rp-text-secondary);
+        color: var(--rp-text-secondary);
     }
 
     .form-card {
-        background: #262626;
-        border: 1px solid #404040;
+        background: var(--rp-bg-card);
+        border: 1px solid var(--rp-border-color);
         padding: 1.5rem;
         border-radius: 0.5rem;
         margin-top: 1rem;
@@ -2234,14 +2248,14 @@ onDestroy(() => {
     .form-group label {
         display: block;
         margin-bottom: 0.5rem;
-        color: #d4d4d8;
+        color: var(--rp-text-secondary);
         font-size: 0.875rem;
     }
     .form-group textarea {
         width: 100%;
-        background: #171717;
-        border: 1px solid #404040;
-        color: #fff;
+        background: var(--rp-bg-input);
+        border: 1px solid var(--rp-border-color);
+        color: var(--rp-text-primary);
         padding: 0.5rem;
         border-radius: 0.25rem;
         min-height: 100px;
@@ -2274,14 +2288,14 @@ onDestroy(() => {
         text-align: center;
     }
     .info-card {
-        background: #262626;
+        background: var(--rp-bg-card);
         padding: 2rem;
         border-radius: 0.5rem;
-        border: 1px solid #404040;
+        border: 1px solid var(--rp-border-color);
     }
     .no-results {
         text-align: center;
-        color: #71717a;
+        color: var(--rp-text-muted);
         margin-top: 2rem;
         font-style: italic;
     }
@@ -2336,14 +2350,14 @@ onDestroy(() => {
     }
 
     .info-tooltip {
-        color: #64748b;
+        color: var(--rp-text-muted);
         cursor: help;
         font-size: 1.1rem;
         transition: color 0.2s;
     }
 
     .info-tooltip:hover {
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     .main-action-label {
@@ -2371,7 +2385,7 @@ onDestroy(() => {
     }
 
     .main-selector {
-        color: #64748b;
+        color: var(--rp-text-muted);
     }
 
     .main-selector:hover {
@@ -2394,22 +2408,22 @@ onDestroy(() => {
     .toggle-btn {
         padding: 0.4rem 0.8rem;
         border-radius: 0.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: #94a3b8;
+        background: var(--rp-bg-hover);
+        border: 1px solid var(--rp-border-subtle);
+        color: var(--rp-text-muted);
         font-size: 0.75rem;
         cursor: pointer;
         transition: all 0.2s;
     }
 
     .toggle-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: var(--rp-bg-hover);
     }
 
     .toggle-btn.active {
-        background: #fbbf24;
+        background: var(--rp-accent-primary);
         color: #000;
-        border-color: #fbbf24;
+        border-color: var(--rp-accent-primary);
     }
 
     /* --- KV Editor --- */
@@ -2427,18 +2441,18 @@ onDestroy(() => {
 
     .kv-row input {
         flex: 1;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--rp-bg-input);
+        border: 1px solid var(--rp-border-subtle);
         border-radius: 0.5rem;
         padding: 0.5rem;
-        color: #fff;
+        color: var(--rp-text-primary);
         font-size: 0.875rem;
     }
 
     .remove-kv {
         background: transparent;
         border: none;
-        color: #64748b;
+        color: var(--rp-text-muted);
         cursor: pointer;
         padding: 0.25rem;
         transition: color 0.2s;
@@ -2450,9 +2464,9 @@ onDestroy(() => {
 
     .add-kv-btn {
         margin-top: 0.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px dashed rgba(255, 255, 255, 0.2);
-        color: #94a3b8;
+        background: var(--rp-bg-hover);
+        border: 1px dashed var(--rp-border-subtle);
+        color: var(--rp-text-muted);
         padding: 0.5rem;
         border-radius: 0.5rem;
         cursor: pointer;
@@ -2461,9 +2475,9 @@ onDestroy(() => {
     }
 
     .add-kv-btn:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-color: #fbbf24;
-        color: #fbbf24;
+        background: var(--rp-bg-hover);
+        border-color: var(--rp-accent-primary);
+        color: var(--rp-accent-primary);
     }
 
     textarea.mono {
@@ -2474,7 +2488,7 @@ onDestroy(() => {
     /* --- Sacrifice Form --- */
     .sacrifice-toggle-btn {
         background: rgba(251, 191, 36, 0.1);
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
         border: 1px solid rgba(251, 191, 36, 0.3);
         padding: 0.4rem 0.8rem;
         border-radius: 0.5rem;
@@ -2486,7 +2500,7 @@ onDestroy(() => {
 
     .sacrifice-toggle-btn:hover {
         background: rgba(251, 191, 36, 0.2);
-        border-color: #fbbf24;
+        border-color: var(--rp-accent-primary);
     }
 
     .sacrifice-form {
@@ -2508,20 +2522,20 @@ onDestroy(() => {
     .sacrifice-form h4 {
         margin-top: 0;
         margin-bottom: 0.5rem;
-        color: #fbbf24;
+        color: var(--rp-accent-primary);
     }
 
     .small-text {
         font-size: 0.875rem;
-        color: #94a3b8;
+        color: var(--rp-text-muted);
         margin-bottom: 1.5rem;
     }
 
     .sacrifice-form .form-group input {
         width: 100%;
-        background: #171717;
-        border: 1px solid #404040;
-        color: #fff;
+        background: var(--rp-bg-input);
+        border: 1px solid var(--rp-border-color);
+        color: var(--rp-text-primary);
         padding: 0.6rem;
         border-radius: 0.375rem;
         font-family: inherit;
@@ -2529,7 +2543,7 @@ onDestroy(() => {
 
     .sacrifice-form .form-group input:focus {
         outline: none;
-        border-color: #fbbf24;
+        border-color: var(--rp-accent-primary);
         box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
     }
 
@@ -2545,10 +2559,10 @@ onDestroy(() => {
         display: flex;
         align-items: center;
         gap: 1rem;
-        background: rgba(255, 255, 255, 0.03);
+        background: var(--rp-bg-hover);
         padding: 0.5rem 0.75rem;
         border-radius: 0.5rem;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--rp-border-subtle);
     }
 
     .token-info-mini {
@@ -2559,13 +2573,13 @@ onDestroy(() => {
 
     .token-info-mini .token-name {
         font-weight: 600;
-        color: #f1f5f9;
+        color: var(--rp-text-secondary);
         font-size: 0.875rem;
     }
 
     .token-info-mini .token-max {
         font-size: 0.7rem;
-        color: #64748b;
+        color: var(--rp-text-muted);
     }
 
     .selected-token-item input {
@@ -2577,7 +2591,7 @@ onDestroy(() => {
     .remove-token-btn {
         background: transparent;
         border: none;
-        color: #64748b;
+        color: var(--rp-text-muted);
         cursor: pointer;
         transition: color 0.2s;
     }
@@ -2592,9 +2606,9 @@ onDestroy(() => {
 
     .add-token-trigger {
         width: 100%;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px dashed rgba(255, 255, 255, 0.2);
-        color: #94a3b8;
+        background: var(--rp-bg-hover);
+        border: 1px dashed var(--rp-border-subtle);
+        color: var(--rp-text-muted);
         padding: 0.75rem;
         border-radius: 0.5rem;
         cursor: pointer;
@@ -2608,8 +2622,8 @@ onDestroy(() => {
 
     .add-token-trigger:hover {
         background: rgba(251, 191, 36, 0.05);
-        border-color: #fbbf24;
-        color: #fbbf24;
+        border-color: var(--rp-accent-primary);
+        color: var(--rp-accent-primary);
     }
 
     .token-dropdown {
@@ -2617,8 +2631,8 @@ onDestroy(() => {
         top: calc(100% + 0.5rem);
         left: 0;
         width: 100%;
-        background: #262626;
-        border: 1px solid #404040;
+        background: var(--rp-bg-card);
+        border: 1px solid var(--rp-border-color);
         border-radius: 0.5rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
         z-index: 50;
@@ -2634,7 +2648,7 @@ onDestroy(() => {
         padding: 0.6rem 0.75rem;
         background: transparent;
         border: none;
-        color: #e2e8f0;
+        color: var(--rp-text-secondary);
         cursor: pointer;
         border-radius: 0.375rem;
         font-size: 0.875rem;
@@ -2642,7 +2656,7 @@ onDestroy(() => {
     }
 
     .dropdown-option:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.05);
+        background: var(--rp-bg-hover);
     }
 
     .dropdown-option:disabled {
@@ -2651,13 +2665,13 @@ onDestroy(() => {
     }
 
     .opt-amount {
-        color: #64748b;
+        color: var(--rp-text-muted);
         font-family: ui-monospace, monospace;
     }
 
     .dropdown-empty {
         text-align: center;
-        color: #64748b;
+        color: var(--rp-text-muted);
         font-size: 0.875rem;
         padding: 1rem;
     }

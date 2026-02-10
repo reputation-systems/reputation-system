@@ -9,6 +9,7 @@ export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox } from './profil
 export { calculate_reputation, total_burned_string, total_burned, } from './utils';
 export type { ReputationProof, RPBox, TypeNFT, ApiBox } from './ReputationProof';
 export type { OutputConfig } from './update_boxes';
+export type { ProfileTheme } from './components/types';
 export { default as Profile } from './components/views/Profile.svelte';
 export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
 export { default as digital_public_good } from './contracts/digital_public_good.es?raw';

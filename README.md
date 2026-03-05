@@ -39,6 +39,8 @@ This contract governs a **reputation proof box**, representing part of a distrib
 | **R5** | `Coll[Byte]` | `uniqueObjectData`: Data identifying the rated object. |
 | **R6** | `Boolean` | `isLocked`: If `true`, the box becomes immutable. |
 | **R7** | `Coll[Byte]` | `blake2b256(propositionBytes)` of the **owner script**. |
+| **R8** | `Boolean` | `positive/negative` |
+| **R9** | `Coll[Byte]` | `content` Any custom data: utf-8, json, plain text, raw bytes, ... |
 
 ---
 

@@ -1505,7 +1505,7 @@ onDestroy(() => {
     .profile-avatar {
         width: 2.5rem;
         height: 2.5rem;
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        background: linear-gradient(135deg, var(--rp-accent-primary), var(--rp-accent-secondary));
         border-radius: 0.75rem;
         display: flex;
         align-items: center;
@@ -1703,7 +1703,7 @@ onDestroy(() => {
         font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 1rem;
-        background: linear-gradient(to right, #f97316, #dc2626);
+        background: linear-gradient(to right, var(--rp-accent-primary), var(--rp-accent-secondary));
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -1816,13 +1816,8 @@ onDestroy(() => {
     }
 
     .icon-circle.orange {
-        background-color: rgba(
-            255,
-            237,
-            213,
-            0.1
-        ); /* orange-100 equivalent with opacity */
-        color: #ea580c; /* orange-600 */
+        background-color: color-mix(in srgb, var(--rp-accent-primary) 15%, transparent);
+        color: var(--rp-accent-primary);
     }
 
     .icon-circle.blue {
@@ -1878,10 +1873,10 @@ onDestroy(() => {
     .asset-card.orange-gradient {
         background: linear-gradient(
             to bottom right,
-            rgba(255, 247, 237, 0.05),
-            rgba(254, 242, 242, 0.05)
+            color-mix(in srgb, var(--rp-accent-primary) 8%, transparent),
+            color-mix(in srgb, var(--rp-accent-secondary) 5%, transparent)
         );
-        border: 1px solid rgba(253, 186, 116, 0.2);
+        border: 1px solid color-mix(in srgb, var(--rp-accent-primary) 25%, transparent);
     }
 
     .asset-card.dark-card {
@@ -1890,7 +1885,7 @@ onDestroy(() => {
         transition: border-color 0.2s;
     }
     .asset-card.dark-card:hover {
-        border-color: rgba(253, 186, 116, 0.5);
+        border-color: color-mix(in srgb, var(--rp-accent-primary) 50%, transparent);
     }
 
     .card-content {
@@ -1917,9 +1912,9 @@ onDestroy(() => {
     }
 
     .badge.orange {
-        background-color: rgba(255, 237, 213, 0.1);
-        color: #fdba74;
-        border: 1px solid rgba(154, 52, 18, 0.3);
+        background-color: color-mix(in srgb, var(--rp-accent-primary) 15%, transparent);
+        color: var(--rp-accent-primary);
+        border: 1px solid color-mix(in srgb, var(--rp-accent-primary) 35%, transparent);
     }
 
     .asset-info {

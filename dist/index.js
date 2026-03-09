@@ -11,5 +11,5 @@ export { calculate_reputation, total_burned_string, total_burned, } from './util
 // --- Svelte components ---
 export { default as Profile } from './components/views/Profile.svelte';
 // --- Contracts ---
-export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
-export { default as digital_public_good } from './contracts/digital_public_good.es?raw';
+export { default as reputation_proof_contract } from './contracts/reputation_proof.es.js';
+export { default as digital_public_good } from './contracts/digital_public_good.es.js';

@@ -9,4 +9,10 @@ declare global {
 	}
 }
 
+// Treat .es files as text modules
+declare module '*.es' {
+	const content: string;
+	export default content;
+}
+
 export {};

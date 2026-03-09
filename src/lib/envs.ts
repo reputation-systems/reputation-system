@@ -14,7 +14,7 @@ export const min_erg_value = "1000000"; // 0.001 ERG
 
 // --- Digital Public Good (for Type NFTs) ---
 // This contract protects the Type NFT boxes, making them immutable public records.
-import DIGITAL_PUBLIC_GOOD_SCRIPT from './contracts/digital_public_good.es?raw';
+import DIGITAL_PUBLIC_GOOD_SCRIPT from './contracts/digital_public_good.es';
 
 // Compile the Digital Public Good contract
 const digitalPublicGoodErgoTree = compile(DIGITAL_PUBLIC_GOOD_SCRIPT, { version: 1 });
@@ -27,7 +27,7 @@ export const digital_public_good_contract_hash = digitalPublicGoodHash;
 
 // --- Reputation Proof ---
 // This is the main contract for creating comments, replies, etc.
-import REPUTATION_PROOF_SCRIPT from './contracts/reputation_proof.es?raw';
+import REPUTATION_PROOF_SCRIPT from './contracts/reputation_proof.es';
 
 // Compile the Reputation Proof contract
 const reputationProofErgoTree = compile(REPUTATION_PROOF_SCRIPT.replace(/`\+DIGITAL_PUBLIC_GOOD_SCRIPT_HASH\+`/g, uint8ArrayToHex(blake2b256(digitalPublicGoodErgoTree.bytes))), { version: 1 });

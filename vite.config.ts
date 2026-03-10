@@ -1,10 +1,22 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
 import path from "path";
 
+function esRawPlugin() {
+	return {
+		name: 'es-raw',
+		enforce: 'pre',
+		load(id: string) {
+			if (!id.endsWith('.es')) return null;
+			const source = readFileSync(id, 'utf-8');
+			return `export default ${JSON.stringify(source)};`;
+		},
+	};
+}
+
 export default defineConfig({
-	plugins: [sveltekit()],
-	assetsInclude: ['**/*.es'],
+	plugins: [esRawPlugin(), sveltekit()],
 	test: {
 		globals: true,
 		environment: 'node',

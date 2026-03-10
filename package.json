@@ -10,7 +10,8 @@
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"package": "svelte-package"
+		"package": "svelte-package",
+		"postpackage": "node scripts/inline-contracts.js"
 	},
 	"devDependencies": {
 		"@fleet-sdk/mock-chain": "^0.12.0",

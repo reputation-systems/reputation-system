@@ -27,5 +27,5 @@ export type { ProfileTheme } from './components/types';
 export { default as Profile } from './components/views/Profile.svelte';
 
 // --- Contracts ---
-export { default as reputation_proof_contract } from './contracts/reputation_proof.es?raw';
-export { default as digital_public_good } from './contracts/digital_public_good.es?raw';
+export { default as reputation_proof_contract } from './contracts/reputation_proof.es';
+export { default as digital_public_good } from './contracts/digital_public_good.es';

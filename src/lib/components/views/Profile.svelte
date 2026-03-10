@@ -63,6 +63,62 @@
 
     export let theme: ProfileTheme = {};
 
+    type Rgb = { r: number; g: number; b: number };
+
+    function hexToRgb(value: string): Rgb | null {
+        const trimmed = value.trim();
+        if (!trimmed.startsWith("#")) return null;
+
+        const hex = trimmed.slice(1);
+        if (![3, 4, 6, 8].includes(hex.length)) return null;
+
+        const isShort = hex.length === 3 || hex.length === 4;
+        const r = parseInt(
+            isShort ? hex[0] + hex[0] : hex.slice(0, 2),
+            16
+        );
+        const g = parseInt(
+            isShort ? hex[1] + hex[1] : hex.slice(2, 4),
+            16
+        );
+        const b = parseInt(
+            isShort ? hex[2] + hex[2] : hex.slice(4, 6),
+            16
+        );
+
+        if ([r, g, b].some((channel) => Number.isNaN(channel))) return null;
+
+        return { r, g, b };
+    }
+
+    let accentPrimary = "#fbbf24";
+    let accentSecondary = "#f59e0b";
+    let accentPrimary05 = "rgba(251, 191, 36, 0.05)";
+    let accentPrimary10 = "rgba(251, 191, 36, 0.1)";
+    let accentPrimary20 = "rgba(251, 191, 36, 0.2)";
+    let accentPrimary30 = "rgba(251, 191, 36, 0.3)";
+    let scoreGlow = "rgba(251, 191, 36, 0.3)";
+
+    $: {
+        accentPrimary = theme.accentPrimary ?? "#fbbf24";
+        accentSecondary = theme.accentSecondary ?? "#f59e0b";
+
+        const rgb = hexToRgb(accentPrimary);
+        if (rgb) {
+            accentPrimary05 = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.05)`;
+            accentPrimary10 = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1)`;
+            accentPrimary20 = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.2)`;
+            accentPrimary30 = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3)`;
+        } else {
+            accentPrimary05 = `color-mix(in srgb, ${accentPrimary} 5%, transparent)`;
+            accentPrimary10 = `color-mix(in srgb, ${accentPrimary} 10%, transparent)`;
+            accentPrimary20 = `color-mix(in srgb, ${accentPrimary} 20%, transparent)`;
+            accentPrimary30 = `color-mix(in srgb, ${accentPrimary} 30%, transparent)`;
+        }
+
+        scoreGlow = theme.scoreGlow ?? accentPrimary30;
+    }
+
     $: cssVars = [
         `--rp-text-primary: ${theme.textPrimary ?? "#f0f0f0"}`,
         `--rp-text-secondary: ${theme.textSecondary ?? "#e2e8f0"}`,
@@ -73,9 +129,13 @@
         `--rp-bg-hover: ${theme.bgHover ?? "rgba(255,255,255,0.05)"}`,
         `--rp-border-color: ${theme.borderColor ?? "#404040"}`,
         `--rp-border-subtle: ${theme.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
-        `--rp-accent-primary: ${theme.accentPrimary ?? "#fbbf24"}`,
-        `--rp-accent-secondary: ${theme.accentSecondary ?? "#f59e0b"}`,
-        `--rp-score-glow: ${theme.scoreGlow ?? "rgba(251,191,36,0.3)"}`,
+        `--rp-accent-primary: ${accentPrimary}`,
+        `--rp-accent-secondary: ${accentSecondary}`,
+        `--rp-accent-primary-05: ${accentPrimary05}`,
+        `--rp-accent-primary-10: ${accentPrimary10}`,
+        `--rp-accent-primary-20: ${accentPrimary20}`,
+        `--rp-accent-primary-30: ${accentPrimary30}`,
+        `--rp-score-glow: ${scoreGlow}`,
     ].join(";");
 
     // --- Behavior Props ---
@@ -851,7 +911,7 @@
                 <!-- Sacrificed Assets Section -->
                 <section class="sacrificed-assets">
                     <div class="section-title-row">
-                        <div class="icon-circle orange">
+                        <div class="icon-circle">
                             <i class="fas fa-fire"></i>
                         </div>
                         <h3>Sacrificed Assets</h3>
@@ -997,7 +1057,7 @@
 
                     <div class="assets-grid">
                         <!-- ERG Card -->
-                        <div class="asset-card orange-gradient">
+                        <div class="asset-card color-gradient">
                             <div class="liquid-fire-container">
                                 <div class="wave-box"></div>
                                 <div class="wave-box"></div>
@@ -1005,7 +1065,7 @@
                             </div>
                             <div class="card-content">
                                 <div class="badge-row">
-                                    <span class="badge orange">Burned</span>
+                                    <span class="badge color">Burned</span>
                                 </div>
                                 <div class="asset-info">
                                     <p class="asset-label">Native Currency</p>
@@ -1027,7 +1087,7 @@
                                 </div>
                                 <div class="card-content">
                                     <div class="badge-row">
-                                        <span class="badge orange">Burned</span>
+                                        <span class="badge">Burned</span>
                                     </div>
                                     <div class="asset-info">
                                         <p
@@ -1643,14 +1703,18 @@
     .profile-avatar {
         width: 2.5rem;
         height: 2.5rem;
-        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        background: linear-gradient(
+            135deg,
+            var(--rp-accent-primary),
+            var(--rp-accent-secondary)
+        );
         border-radius: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #000;
         font-size: 1.25rem;
-        box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+        box-shadow: 0 4px 12px var(--rp-accent-primary-20);
     }
 
     .profile-meta {
@@ -1709,7 +1773,7 @@
     }
 
     .create-profile-btn-v2:hover {
-        background: rgba(251, 191, 36, 0.1);
+        background: var(--rp-accent-primary-10);
         border-color: var(--rp-accent-primary);
         color: var(--rp-accent-primary);
     }
@@ -1772,7 +1836,7 @@
     }
 
     .active .item-icon {
-        background: rgba(251, 191, 36, 0.1);
+        background: var(--rp-accent-primary-10);
         color: var(--rp-accent-primary);
     }
 
@@ -1799,7 +1863,7 @@
         font-size: 0.75rem;
         font-weight: 600;
         color: var(--rp-accent-primary);
-        background: rgba(251, 191, 36, 0.1);
+        background: var(--rp-accent-primary-10);
         padding: 0.05rem 0.3rem;
         border-radius: 3px;
     }
@@ -1841,7 +1905,11 @@
         font-size: 2.5rem;
         font-weight: 800;
         margin-bottom: 1rem;
-        background: linear-gradient(to right, #f97316, #dc2626);
+        background: linear-gradient(
+            to right,
+            var(--rp-accent-primary),
+            var(--rp-accent-secondary)
+        );
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
@@ -1913,7 +1981,7 @@
     }
 
     .main-tab-btn.active {
-        background: rgba(251, 191, 36, 0.1);
+        background: var(--rp-accent-primary-10);
         color: var(--rp-accent-primary);
     }
 
@@ -1926,7 +1994,7 @@
     }
 
     .main-tab-btn.active .tab-count {
-        background: rgba(251, 191, 36, 0.2);
+        background: var(--rp-accent-primary-20);
         color: var(--rp-accent-primary);
     }
 
@@ -1951,26 +2019,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-    }
-
-    .icon-circle.orange {
-        background-color: rgba(
-            255,
-            237,
-            213,
-            0.1
-        ); /* orange-100 equivalent with opacity */
-        color: #ea580c; /* orange-600 */
-    }
-
-    .icon-circle.blue {
-        background-color: rgba(
-            219,
-            234,
-            254,
-            0.1
-        ); /* blue-100 equivalent with opacity */
-        color: #2563eb; /* blue-600 */
+        background-color: var(--rp-accent-primary-10);
+        color: var(--rp-accent-primary);
     }
 
     .sacrificed-assets h3,
@@ -2013,13 +2063,13 @@
         flex-direction: column;
     }
 
-    .asset-card.orange-gradient {
+    .asset-card.color-gradient {
         background: linear-gradient(
             to bottom right,
-            rgba(255, 247, 237, 0.05),
-            rgba(254, 242, 242, 0.05)
+            var(--rp-accent-primary-05),
+            var(--rp-accent-primary-10)
         );
-        border: 1px solid rgba(253, 186, 116, 0.2);
+        border: 1px solid var(--rp-accent-primary-20);
     }
 
     .asset-card.dark-card {
@@ -2028,7 +2078,7 @@
         transition: border-color 0.2s;
     }
     .asset-card.dark-card:hover {
-        border-color: rgba(253, 186, 116, 0.5);
+        border-color: var(--rp-accent-primary-30);
     }
 
     .card-content {
@@ -2054,10 +2104,10 @@
         letter-spacing: 0.05em;
     }
 
-    .badge.orange {
-        background-color: rgba(255, 237, 213, 0.1);
-        color: #fdba74;
-        border: 1px solid rgba(154, 52, 18, 0.3);
+    .badge.color {
+        background-color: var(--rp-accent-primary-10);
+        color: var(--rp-accent-primary);
+        border: 1px solid var(--rp-accent-primary-30);
     }
 
     .asset-info {
@@ -2625,9 +2675,9 @@
 
     /* --- Sacrifice Form --- */
     .sacrifice-toggle-btn {
-        background: rgba(251, 191, 36, 0.1);
+        background: var(--rp-accent-primary-10);
         color: var(--rp-accent-primary);
-        border: 1px solid rgba(251, 191, 36, 0.3);
+        border: 1px solid var(--rp-accent-primary-30);
         padding: 0.4rem 0.8rem;
         border-radius: 0.5rem;
         font-size: 0.875rem;
@@ -2637,7 +2687,7 @@
     }
 
     .sacrifice-toggle-btn:hover {
-        background: rgba(251, 191, 36, 0.2);
+        background: var(--rp-accent-primary-20);
         border-color: var(--rp-accent-primary);
     }
 
@@ -2682,7 +2732,7 @@
     .sacrifice-form .form-group input:focus {
         outline: none;
         border-color: var(--rp-accent-primary);
-        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.1);
+        box-shadow: 0 0 0 2px var(--rp-accent-primary-10);
     }
 
     /* --- Multi-Token Sacrifice --- */
@@ -2759,7 +2809,7 @@
     }
 
     .add-token-trigger:hover {
-        background: rgba(251, 191, 36, 0.05);
+        background: var(--rp-accent-primary-05);
         border-color: var(--rp-accent-primary);
         color: var(--rp-accent-primary);
     }

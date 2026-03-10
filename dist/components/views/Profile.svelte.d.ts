@@ -14,6 +14,7 @@ declare const __propDef: {
         showProfileSwitcher?: boolean | undefined;
         showSacrificedAssets?: boolean | undefined;
         showTechnicalDetails?: boolean | undefined;
+        showRefreshButton?: boolean | undefined;
         showFilters?: boolean | undefined;
         showBoxesSection?: boolean | undefined;
         showReceivedOpinions?: boolean | undefined;

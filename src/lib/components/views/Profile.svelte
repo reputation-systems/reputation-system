@@ -31,6 +31,7 @@
     export let showProfileSwitcher = true;
     export let showSacrificedAssets = true;
     export let showTechnicalDetails = true;
+    export let showRefreshButton = true;
     export let showFilters = true;
 
     // --- Action Control Props ---
@@ -1116,14 +1117,16 @@
                         <span class="label">Profile Token ID</span>
                         <div class="value mono">{reputationProof.token_id}</div>
                     </div>
-                    <button
-                        class="secondary-button refresh-btn"
-                        on:click={refreshProfile}
-                        disabled={isLoading}
-                    >
-                        <i class="fas fa-sync"></i> Refresh
-                    </button>
                 </div>
+            {/if}
+            {#if showRefreshButton}
+                <button
+                    class="secondary-button refresh-btn"
+                    on:click={refreshProfile}
+                    disabled={isLoading}
+                >
+                    <i class="fas fa-sync"></i> Refresh
+                </button>
             {/if}
 
             {#if successMessage}
@@ -2154,21 +2157,21 @@
         height: 300%;
         left: -100%;
         bottom: -285%;
-        background-color: rgba(239, 68, 68, 0.05);
+        background-color: rgba(167, 167, 167, 0.05);
         border-radius: 45%;
         animation: rotate 12s linear infinite;
     }
 
     .wave-box:nth-child(2) {
         bottom: -290%;
-        background-color: rgba(239, 68, 68, 0.08);
+        background-color: rgba(167, 167, 167, 0.08);
         border-radius: 40% 45% 40% 45% / 40% 40% 45% 45%;
         animation: rotate 18s linear infinite reverse;
     }
 
     .wave-box:nth-child(3) {
         bottom: -295%;
-        background-color: rgba(239, 68, 68, 0.05);
+        background-color: rgba(167, 167, 167, 0.05);
         border-radius: 42% 38% 45% 40% / 40% 45% 40% 38%;
         animation: rotate 25s linear infinite;
     }

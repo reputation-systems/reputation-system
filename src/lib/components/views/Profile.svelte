@@ -120,16 +120,24 @@
         scoreGlow = theme.scoreGlow ?? accentPrimary30;
     }
 
+    $: themeStyles = Object.entries(theme)
+        .map(
+            ([key, value]) =>
+                `--rp-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${value};`,
+        )
+        .join(" ");
+
     $: cssVars = [
-        `--rp-text-primary: ${theme.textPrimary ?? "#f0f0f0"}`,
-        `--rp-text-secondary: ${theme.textSecondary ?? "#e2e8f0"}`,
-        `--rp-text-muted: ${theme.textMuted ?? "#94a3b8"}`,
-        `--rp-bg-card: ${theme.bgCard ?? "#262626"}`,
-        `--rp-bg-input: ${theme.bgInput ?? "#171717"}`,
-        `--rp-bg-page: ${theme.bgPage ?? "transparent"}`,
-        `--rp-bg-hover: ${theme.bgHover ?? "rgba(255,255,255,0.05)"}`,
-        `--rp-border-color: ${theme.borderColor ?? "#404040"}`,
-        `--rp-border-subtle: ${theme.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+        themeStyles,
+        `--rp-text-primary: var(--rp-text-primary, #f0f0f0)`,
+        `--rp-text-secondary: var(--rp-text-secondary, #e2e8f0)`,
+        `--rp-text-muted: var(--rp-text-muted, #94a3b8)`,
+        `--rp-bg-card: var(--rp-bg-card, #262626)`,
+        `--rp-bg-input: var(--rp-bg-input, #171717)`,
+        `--rp-bg-page: var(--rp-bg-page, transparent)`,
+        `--rp-bg-hover: var(--rp-bg-hover, rgba(255,255,255,0.05))`,
+        `--rp-border-color: var(--rp-border-color, #404040)`,
+        `--rp-border-subtle: var(--rp-border-subtle, rgba(255,255,255,0.1))`,
         `--rp-accent-primary: ${accentPrimary}`,
         `--rp-accent-secondary: ${accentSecondary}`,
         `--rp-accent-primary-05: ${accentPrimary05}`,
@@ -137,6 +145,17 @@
         `--rp-accent-primary-20: ${accentPrimary20}`,
         `--rp-accent-primary-30: ${accentPrimary30}`,
         `--rp-score-glow: ${scoreGlow}`,
+        `--rp-positive-color: var(--rp-positive-color, #22c55e)`,
+        `--rp-main-accent: var(--rp-main-accent, #3b82f6)`,
+        `--rp-main-accent-soft: var(--rp-main-accent-soft, rgba(59, 130, 246, 0.1))`,
+        `--rp-danger-color: var(--rp-danger-color, #ef4444)`,
+        `--rp-danger-soft: var(--rp-danger-soft, rgba(239, 68, 68, 0.1))`,
+        `--rp-danger-border: var(--rp-danger-border, rgba(239, 68, 68, 0.2))`,
+        `--rp-success-color: var(--rp-success-color, #22c55e)`,
+        `--rp-success-soft: var(--rp-success-soft, rgba(34, 197, 94, 0.1))`,
+        `--rp-success-border: var(--rp-success-border, rgba(34, 197, 94, 0.2))`,
+        `--rp-self-filter-color: var(--rp-self-filter-color, #10b981)`,
+        `--rp-self-filter-soft: var(--rp-self-filter-soft, rgba(16, 185, 129, 0.1))`,
     ].join(";");
 
     // --- Behavior Props ---
@@ -956,7 +975,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label>Tokens to Sacrifice</label>
+                                <div class="field-label">Tokens to Sacrifice</div>
                                 <div class="selected-tokens-list">
                                     {#each sacrificeTokens as token}
                                         <div class="selected-token-item">
@@ -1605,6 +1624,7 @@
         color: var(--rp-text-primary);
         background-color: var(--rp-bg-page);
         font-family: "Inter", sans-serif;
+        min-height: 100vh;
     }
 
     /* --- Compact Mode --- */
@@ -1910,8 +1930,8 @@
         margin-bottom: 1rem;
         background: linear-gradient(
             to right,
-            var(--rp-accent-primary),
-            var(--rp-accent-secondary)
+            #fff,
+            var(--rp-accent-primary)
         );
         -webkit-background-clip: text;
         background-clip: text;
@@ -1947,6 +1967,7 @@
         font-weight: 800;
         color: var(--rp-accent-primary);
         text-shadow: 0 0 20px var(--rp-score-glow);
+        line-height: 1;
     }
 
     .score-value .unit {
@@ -2279,11 +2300,11 @@
     }
 
     .box-card.positive {
-        border-left-color: #22c55e; /* green-500 */
+        border-left-color: var(--rp-positive-color);
     }
 
     .box-card.negative {
-        border-left-color: #ef4444; /* red-500 */
+        border-left-color: var(--rp-danger-color);
     }
 
     .box-header {
@@ -2307,10 +2328,10 @@
     }
 
     .positive .polarization-icon {
-        color: #22c55e;
+        color: var(--rp-positive-color);
     }
     .negative .polarization-icon {
-        color: #ef4444;
+        color: var(--rp-danger-color);
     }
 
     .box-body {
@@ -2377,7 +2398,7 @@
         color: var(--rp-text-primary);
     }
     .icon-button.delete:hover {
-        color: #ef4444;
+        color: var(--rp-danger-color);
     }
 
     /* --- Forms & Buttons --- */
@@ -2436,7 +2457,8 @@
     .form-group {
         margin-bottom: 1rem;
     }
-    .form-group label {
+    .form-group label,
+    .field-label {
         display: block;
         margin-bottom: 0.5rem;
         color: var(--rp-text-secondary);
@@ -2465,14 +2487,14 @@
         text-align: center;
     }
     .feedback.success {
-        background: rgba(34, 197, 94, 0.1);
-        color: #22c55e;
-        border: 1px solid rgba(34, 197, 94, 0.2);
+        background: var(--rp-success-soft);
+        color: var(--rp-success-color);
+        border: 1px solid var(--rp-success-border);
     }
     .feedback.error {
-        background: rgba(239, 68, 68, 0.1);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.2);
+        background: var(--rp-danger-soft);
+        color: var(--rp-danger-color);
+        border: 1px solid var(--rp-danger-border);
     }
 
     .center-text {
@@ -2535,9 +2557,9 @@
     }
 
     .self-filter.active {
-        background: rgba(16, 185, 129, 0.1);
-        border-color: #10b981;
-        color: #10b981;
+        background: var(--rp-self-filter-soft);
+        border-color: var(--rp-self-filter-color);
+        color: var(--rp-self-filter-color);
     }
 
     .info-tooltip {
@@ -2554,25 +2576,13 @@
     .main-action-label {
         font-size: 0.75rem;
         font-weight: 700;
-        color: #3b82f6;
+        color: var(--rp-main-accent);
         display: flex;
         align-items: center;
         gap: 0.35rem;
         padding: 0.25rem 0.5rem;
-        background: rgba(59, 130, 246, 0.1);
+        background: var(--rp-main-accent-soft);
         border-radius: 6px;
-    }
-
-    .main-badge {
-        font-size: 0.6rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        color: #fff;
-        background: #3b82f6;
-        padding: 0.1rem 0.4rem;
-        border-radius: 4px;
-        margin-left: 0.5rem;
-        box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
     }
 
     .main-selector {
@@ -2580,11 +2590,11 @@
     }
 
     .main-selector:hover {
-        color: #3b82f6 !important;
-        background: rgba(59, 130, 246, 0.1) !important;
+        color: var(--rp-main-accent) !important;
+        background: var(--rp-main-accent-soft) !important;
     }
     .warning-text {
-        color: #ef4444;
+        color: var(--rp-danger-color);
         font-size: 0.75rem;
         margin-top: 0.25rem;
     }
@@ -2650,7 +2660,7 @@
     }
 
     .remove-kv:hover {
-        color: #ef4444;
+        color: var(--rp-danger-color);
     }
 
     .add-kv-btn {
@@ -2788,7 +2798,7 @@
     }
 
     .remove-token-btn:hover {
-        color: #ef4444;
+        color: var(--rp-danger-color);
     }
 
     .token-selector-container {

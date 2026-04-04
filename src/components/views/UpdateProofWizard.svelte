@@ -1,6 +1,6 @@
 <script lang="ts">
     import { create_opinion } from "$lib/create_opinion";
-    import { explorer_uri } from "$lib/envs";
+    import { explorer_uri } from "$lib/store";
     import type { RPBox, ReputationProof } from "$lib/ReputationProof";
 
     export let proofs: Map<string, ReputationProof>;
@@ -76,7 +76,7 @@
 
         try {
             const txId = await create_opinion(
-                explorer_uri,
+                $explorer_uri,
                 token_amount,
                 selectedProof.types[0].tokenId,
                 object_to_assign,

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { updateReputationProofList } from "$lib/fetch";
-    import { explorer_uri } from "$lib/envs";
+    import { explorer_uri } from "$lib/store";
     import { type ReputationProof, type TypeNFT } from "$lib/ReputationProof";
 
     export let types: Map<string, TypeNFT>;
@@ -36,7 +36,7 @@
             if (searchMode === "text") {
                 if (searchMode === "text") {
                     const proofsFromApi = await updateReputationProofList(
-                        explorer_uri,
+                        $explorer_uri,
                         connected,
                         types,
                         null,
@@ -71,7 +71,7 @@
             } else {
                 // searchMode === 'type'
                 const proofsFromApi = await updateReputationProofList(
-                    explorer_uri,
+                    $explorer_uri,
                     connected,
                     types,
                     null,

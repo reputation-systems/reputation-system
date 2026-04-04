@@ -1,5 +1,6 @@
 <script lang="ts">
     import "../app.css";
+    import { browser } from "$app/environment";
     import { onMount } from "svelte";
     import { fetchAllUserProfiles } from "$lib/profileFetch";
     import { connectNautilus } from "$lib/connect";
@@ -13,13 +14,12 @@
         network,
         fetch_all,
         compute_deep_level,
+        explorer_uri,
     } from "$lib/store";
     import {
         updateReputationProofList,
         fetchTypeNfts,
     } from "$lib/fetch";
-    import { explorer_uri } from "$lib/envs";
-
     import MasterGraphView from "$components/graph/MasterGraphView.svelte";
     import Submit from "$components/views/Submit.svelte";
     import Search from "$components/views/Search.svelte";
@@ -96,22 +96,37 @@
 
     let randomPhrase = "";
     let loadingProfiles = false;
+    let lastLoadedExplorerUri = "";
+    let wasConnected = false;
 
     onMount(async () => {
-        await loadTypes();
         randomPhrase =
             educationalPhrases[
                 Math.floor(Math.random() * educationalPhrases.length)
             ];
     });
 
-    $: if ($connected) {
+    $: if (browser && $explorer_uri && $explorer_uri !== lastLoadedExplorerUri) {
+        lastLoadedExplorerUri = $explorer_uri;
+        loadTypes();
+        if ($connected) {
+            loadProfile();
+            loadProofs();
+        }
+    }
+
+    $: if (browser && $connected && !wasConnected) {
+        wasConnected = true;
         loadProfile();
         loadProofs();
     }
 
+    $: if (!$connected && wasConnected) {
+        wasConnected = false;
+    }
+
     async function loadTypes() {
-        const typesMap = await fetchTypeNfts(explorer_uri);
+        const typesMap = await fetchTypeNfts($explorer_uri);
         types.set(typesMap);
     }
 
@@ -119,7 +134,7 @@
         loadingProfiles = true;
         try {
             const allProfiles = await fetchAllUserProfiles(
-                explorer_uri,
+                $explorer_uri,
                 true,
                 [],
                 $types,
@@ -139,7 +154,7 @@
         // updateReputationProofList returns Map<string, ReputationProof>
         // We pass $connected and $types (value of store)
         const proofsMap = await updateReputationProofList(
-            explorer_uri,
+            $explorer_uri,
             $connected,
             $types,
             null,
@@ -315,6 +330,7 @@
                 <Settings
                     address={$address}
                     network={$network}
+                    bind:explorerUri={$explorer_uri}
                     bind:fetchAll={$fetch_all}
                     bind:computeDeepLevel={$compute_deep_level}
                 />
@@ -323,6 +339,7 @@
                     reputationProof={$reputation_proof}
                     userProfiles={$user_profiles}
                     connected={$connected}
+                    explorer_uri={$explorer_uri}
                     on:refresh={handleProfileRefresh}
                     on:switchProfile={(e) => reputation_proof.set(e.detail)}
                 />

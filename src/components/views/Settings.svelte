@@ -1,10 +1,15 @@
 <script lang="ts">
+    import { explorer_uri as defaultExplorerUri } from "$lib/envs";
+
     export let address: string;
     export let network: string;
+    export let explorerUri: string;
     export let fetchAll: boolean;
     export let computeDeepLevel: number;
 
     let copyButtonText = "Copy";
+    let draftExplorerUri = "";
+    let syncedExplorerUri = "";
     function copyAddress() {
         const textToCopy = address;
         if (!textToCopy) return;
@@ -27,6 +32,19 @@
         setTimeout(() => {
             copyButtonText = "Copy";
         }, 2000);
+    }
+
+    function resetExplorerUri() {
+        draftExplorerUri = defaultExplorerUri;
+    }
+
+    function applyExplorerUri() {
+        explorerUri = draftExplorerUri.trim() || defaultExplorerUri;
+    }
+
+    $: if (explorerUri !== syncedExplorerUri) {
+        draftExplorerUri = explorerUri;
+        syncedExplorerUri = explorerUri;
     }
 </script>
 
@@ -62,6 +80,30 @@
                     <select id="network-select" disabled bind:value={network}>
                         <option value={"ergo"}>Ergo Mainnet</option>
                     </select>
+                </div>
+            </div>
+            <div class="setting-item setting-item-stacked">
+                <label for="explorer-uri-input">Explorer URI</label>
+                <div class="stacked-control">
+                    <input
+                        id="explorer-uri-input"
+                        type="text"
+                        bind:value={draftExplorerUri}
+                        placeholder={defaultExplorerUri}
+                        spellcheck="false"
+                    />
+                    <div class="button-row">
+                        <button
+                            class="secondary-button"
+                            type="button"
+                            on:click={resetExplorerUri}>Reset default</button
+                        >
+                        <button
+                            class="primary-button"
+                            type="button"
+                            on:click={applyExplorerUri}>Apply</button
+                        >
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,6 +193,10 @@
         padding: 1rem 0;
         border-bottom: 1px solid #444;
     }
+    .setting-item-stacked {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
     .settings-section .setting-item:last-child {
         border-bottom: none;
     }
@@ -191,9 +237,54 @@
         display: flex;
         width: 100%;
     }
+    .stacked-control {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+    .stacked-control input {
+        flex: 1;
+    }
+    .button-row {
+        display: flex;
+        gap: 0.75rem;
+    }
     .input-group input[type="text"] {
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
+    }
+    .secondary-button {
+        padding: 0.75rem 1rem;
+        border: 1px solid #666;
+        background-color: #333;
+        color: #f0f0f0;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+            border-color 0.2s,
+            background-color 0.2s;
+    }
+    .secondary-button:hover {
+        background-color: #3b3b3b;
+        border-color: #888;
+    }
+    .primary-button {
+        padding: 0.75rem 1rem;
+        border: 1px solid #fbbf24;
+        background-color: #fbbf24;
+        color: #2a2a2a;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        white-space: nowrap;
+        transition:
+            background-color 0.2s,
+            border-color 0.2s;
+    }
+    .primary-button:hover {
+        background-color: #fde047;
+        border-color: #fde047;
     }
     .switch {
         position: relative;
@@ -236,5 +327,18 @@
     }
     input:checked + .slider:before {
         transform: translateX(22px);
+    }
+    @media (max-width: 640px) {
+        .setting-item {
+            grid-template-columns: 1fr;
+            align-items: stretch;
+        }
+        .stacked-control {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .button-row {
+            flex-direction: column;
+        }
     }
 </style>

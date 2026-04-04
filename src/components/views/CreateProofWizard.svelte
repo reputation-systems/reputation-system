@@ -1,6 +1,6 @@
 <script lang="ts">
     import { create_profile } from "$lib/create_profile";
-    import { explorer_uri } from "$lib/envs";
+    import { explorer_uri } from "$lib/store";
     import type { ReputationProof, TypeNFT } from "$lib/ReputationProof";
 
     export let connected: boolean;
@@ -39,7 +39,7 @@
 
         try {
             const txId = await create_profile(
-                explorer_uri,
+                $explorer_uri,
                 token_amount,
                 type_nft_id,
                 data,

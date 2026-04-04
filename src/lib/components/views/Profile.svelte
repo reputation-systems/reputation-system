@@ -347,9 +347,7 @@
     async function fetchTokenMetadata(tokenId: string) {
         if (tokenMetadataCache.has(tokenId)) return;
         try {
-            const response = await fetch(
-                `https://api.ergoplatform.com/api/v1/tokens/${tokenId}`,
-            );
+            const response = await fetch(`${explorer_uri}/api/v1/tokens/${tokenId}`);
             if (response.ok) {
                 const data = await response.json();
                 if (data.name) {
@@ -1717,6 +1715,7 @@
         font: inherit;
         text-align: left;
         width: 100%;
+        min-width: 0;
     }
 
     .current-profile-info:hover {
@@ -1741,6 +1740,8 @@
     }
 
     .profile-meta {
+        flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
@@ -1750,6 +1751,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
+        min-width: 0;
     }
 
     .profile-type-badge {
@@ -1769,6 +1771,11 @@
         color: var(--rp-text-secondary);
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
             monospace;
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .chevron-icon {
@@ -1865,21 +1872,25 @@
 
     .item-content {
         flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
+        gap: 0.25rem;
     }
 
     .item-top {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-width: 0;
     }
 
     .item-types {
         display: flex;
         flex-wrap: wrap;
         gap: 0.25rem;
+        min-width: 0;
     }
 
     .item-type {
@@ -1895,16 +1906,24 @@
         font-size: 0.75rem;
         color: var(--rp-text-muted);
         font-family: ui-monospace, monospace;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .item-erg {
         font-size: 0.75rem;
         color: var(--rp-text-muted);
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .check-icon {
         color: var(--rp-accent-primary);
         font-size: 0.875rem;
+        flex-shrink: 0;
+        margin-left: auto;
     }
 
     .terminology-tip {
@@ -1974,6 +1993,31 @@
         font-size: 1.5rem;
         margin-left: 0.25rem;
         color: var(--rp-accent-secondary);
+    }
+
+    @media (max-width: 640px) {
+        .switcher-main-row {
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .current-profile-info {
+            gap: 0.75rem;
+            padding: 0.25rem;
+        }
+
+        .item-top {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .item-id {
+            flex-shrink: 1;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     .main-tabs-container {
@@ -2828,15 +2872,13 @@
     }
 
     .token-dropdown {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        left: 0;
+        position: relative;
+        margin-top: 0.5rem;
         width: 100%;
         background: var(--rp-bg-card);
         border: 1px solid var(--rp-border-color);
         border-radius: 0.5rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-        z-index: 50;
         max-height: 200px;
         overflow-y: auto;
         padding: 0.5rem;

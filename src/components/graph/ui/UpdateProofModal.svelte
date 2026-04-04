@@ -1,6 +1,6 @@
 <script lang="ts">
     import { create_opinion } from "$lib/create_opinion";
-    import { explorer_uri } from "$lib/envs";
+    import { explorer_uri } from "$lib/store";
     import { type RPBox, type ReputationProof } from "$lib/ReputationProof";
     import JsonInput from "./JsonInput.svelte";
 
@@ -52,7 +52,7 @@
         if (token_amount > 0 && input_proof_box && object_to_assign) {
             // Call the updated transaction generation function with the correct parameters.
             const txId = await create_opinion(
-                explorer_uri,
+                $explorer_uri,
                 token_amount,
                 proof.types[0].tokenId,
                 object_to_assign,

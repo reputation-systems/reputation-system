@@ -15,7 +15,6 @@
 
   import "@xyflow/svelte/dist/style.css";
   import { updateReputationProofList } from "$lib/fetch";
-  import { explorer_uri } from "$lib/envs";
   import { type ReputationProof } from "$lib/ReputationProof";
   import dagre from "@dagrejs/dagre";
 
@@ -27,6 +26,7 @@
     proofs,
     types,
     searchStore,
+    explorer_uri,
   } from "$lib/store";
   import { onMount } from "svelte";
 
@@ -150,7 +150,7 @@
       if (!get(connected)) fetch_all.set(true);
       proofs.set(
         await updateReputationProofList(
-          explorer_uri,
+          get(explorer_uri),
           get(connected),
           get(types),
           get(searchStore),
@@ -165,11 +165,12 @@
   }
 
   const combinedStore = derived(
-    [connected, searchStore, fetch_all],
-    ([$connected, $searchStore, $fetch_all]) => ({
+    [connected, searchStore, fetch_all, explorer_uri],
+    ([$connected, $searchStore, $fetch_all, $explorer_uri]) => ({
       $connected,
       $searchStore,
       $fetch_all,
+      $explorer_uri,
     }),
   );
 

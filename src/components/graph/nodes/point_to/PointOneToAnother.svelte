@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { RPBox, ReputationProof } from "$lib/ReputationProof";
   import { create_opinion } from "$lib/create_opinion";
-  import { explorer_uri } from "$lib/envs";
+  import { explorer_uri } from "$lib/store";
   import JsonInput from "../../ui/JsonInput.svelte";
 
   // --- Component Props ---
@@ -59,7 +59,7 @@
     if (token_amount > 0 && input_proof_box && object_to_assign) {
       // Call the updated transaction generation function with the correct parameters.
       const txId = await create_opinion(
-        explorer_uri,
+        $explorer_uri,
         token_amount,
         source_proof.types[0].tokenId, // Pass the Type NFT ID from the source proof.
         object_to_assign,

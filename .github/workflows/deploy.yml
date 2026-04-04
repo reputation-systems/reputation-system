@@ -51,18 +51,22 @@ jobs:
 
       - name: Create npm tarball
         run: |
-          mkdir -p .release
-          npm pack --pack-destination .release
+          mkdir -p release-artifacts
+          npm pack --pack-destination release-artifacts
 
       - name: Capture tarball name
         id: package_name
-        run: echo "value=$(basename .release/*.tgz)" >> "$GITHUB_OUTPUT"
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarball="$(basename release-artifacts/*.tgz)"
+          echo "value=${tarball}" >> "$GITHUB_OUTPUT"
 
       - name: Upload library artifact
         uses: actions/upload-artifact@v4
         with:
           name: library-package
-          path: .release/*.tgz
+          path: release-artifacts/*.tgz
           if-no-files-found: error
 
   deploy-pages:
@@ -86,16 +90,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: library-package
-          path: .release
+          path: release-artifacts
 
       - name: Publish GitHub release asset
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" .release/"${{ needs.build.outputs.package_name }}" --clobber
+            gh release upload "${GITHUB_REF_NAME}" release-artifacts/"${{ needs.build.outputs.package_name }}" --clobber
           else
-            gh release create "${GITHUB_REF_NAME}" .release/"${{ needs.build.outputs.package_name }}" \
+            gh release create "${GITHUB_REF_NAME}" release-artifacts/"${{ needs.build.outputs.package_name }}" \
               --title "${GITHUB_REF_NAME}" \
               --generate-notes
           fi

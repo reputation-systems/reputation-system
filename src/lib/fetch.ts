@@ -16,6 +16,18 @@ type ApiBox = {
     index: number; transactionId: string;
 };
 
+function parseTypeReputationFlag(value: unknown): boolean {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true" || normalized === "1";
+    }
+
+    return false;
+}
+
 /**
  * Gets the timestamp of a block given its block ID.
  */
@@ -171,7 +183,7 @@ export async function fetchTypeNfts(explorerUri: string): Promise<Map<string, Ty
                     typeName: hexToUtf8(box.additionalRegisters.R4?.renderedValue || '') ?? "",
                     description: hexToUtf8(box.additionalRegisters.R5?.renderedValue || '') ?? "",
                     schemaURI: hexToUtf8(box.additionalRegisters.R6?.renderedValue || '') ?? "",
-                    isRepProof: box.additionalRegisters.R7?.renderedValue ?? false,
+                    isRepProof: parseTypeReputationFlag(box.additionalRegisters.R7?.renderedValue),
                 };
             }).filter((t: TypeNFT | null): t is TypeNFT => t !== null);
 

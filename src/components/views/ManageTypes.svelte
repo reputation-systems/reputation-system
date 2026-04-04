@@ -7,7 +7,7 @@
         OutputBuilder,
         SAFE_MIN_BOX_VALUE,
         RECOMMENDED_MIN_FEE_VALUE,
-        SInt,
+        SBool,
     } from "@fleet-sdk/core";
     import type { TypeNFT } from "$lib/ReputationProof";
 
@@ -71,7 +71,7 @@
                 R4: SString(newTypeName),
                 R5: SString(newTypeDescription),
                 R6: SString(newTypeSchema),
-                R7: SInt(isReputationProof ? 1 : 0),
+                R7: SBool(isReputationProof),
             });
             const unsignedTransaction = await new TransactionBuilder(height)
                 .from(inputs)
@@ -138,7 +138,7 @@
             Create a New Type
             <div
                 class="info-tooltip"
-                title="A Type NFT is a unique, immutable standard on the blockchain. It defines the rules and meaning for reputation boxes that reference it."
+                title="A Type NFT is a unique, immutable standard on the blockchain. It defines the rules and meaning for profiles or other reputation boxes that reference it."
             >
                 <i class="fas fa-question-circle"></i>
             </div>
@@ -172,7 +172,7 @@
                 />
                 <div
                     class="info-tooltip"
-                    title="The Schema URI links to a machine-readable definition (like JSON-LD or IPFS) of the data structure expected in boxes of this type."
+                    title="The Schema URI links to a machine-readable definition (like JSON-LD or IPFS) of the data structure expected in profiles or boxes of this type."
                 >
                     <i class="fas fa-question-circle"></i>
                 </div>
@@ -187,10 +187,10 @@
                     disabled={isCreating}
                 />
                 <label for="is-reputation-proof"
-                    >Is this type for a Reputation Proof?
+                    >Is this type for a Profile?
                     <div
                         class="info-tooltip"
-                        title="If checked, this type can be used to create reputation boxes (opinions/claims). If unchecked, it's a general-purpose standard NFT."
+                        title="If checked, this type identifies a profile. If unchecked, it's a general-purpose standard NFT."
                     >
                         <i class="fas fa-question-circle"></i>
                     </div>
@@ -226,9 +226,7 @@
                                 <span class="type-name">{type.typeName}</span>
                                 <div class="version-wrapper">
                                     {#if type.isRepProof}
-                                        <span class="proof-tag"
-                                            >Reputation Proof</span
-                                        >
+                                        <span class="proof-tag">Profile</span>
                                     {/if}
                                 </div>
                             </div>

@@ -1,12 +1,14 @@
-name: Deploy to GitHub Pages & Package
+name: Pages and Library
 
 on:
   push:
-    branches: [master]
+    branches: master
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,11 +17,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      package_name: ${{ steps.package_name.outputs.value }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,19 +34,68 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Package library
+        run: npm run package
+
       - name: Build site
         run: npm run build
         env:
           NODE_ENV: production
-
-      - name: Package library
-        run: npm run package
+          BASE_PATH: /${{ github.event.repository.name }}
 
       - name: Upload Pages artifact
+        if: github.ref_type == 'branch'
         uses: actions/upload-pages-artifact@v3
         with:
           path: build
 
+      - name: Create npm tarball
+        run: |
+          mkdir -p .release
+          npm pack --pack-destination .release
+
+      - name: Capture tarball name
+        id: package_name
+        run: echo "value=$(basename .release/*.tgz)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload library artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: library-package
+          path: .release/*.tgz
+          if-no-files-found: error
+
+  deploy-pages:
+    if: github.ref_type == 'branch'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download packaged library
+        uses: actions/download-artifact@v4
+        with:
+          name: library-package
+          path: .release
+
+      - name: Publish GitHub release asset
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" .release/"${{ needs.build.outputs.package_name }}" --clobber
+          else
+            gh release create "${GITHUB_REF_NAME}" .release/"${{ needs.build.outputs.package_name }}" \
+              --title "${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi

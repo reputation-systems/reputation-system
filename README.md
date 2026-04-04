@@ -1,5 +1,28 @@
 # **Decentralized Reputation System on Ergo**
 
+## GitHub distribution
+
+The repository is configured for two outputs:
+
+- `npm run build` generates the static site in `build/` for GitHub Pages.
+- `npm run package` generates the library in `dist/` for external consumption.
+
+### Install directly from GitHub
+
+You can consume the library without publishing to the npm registry:
+
+```bash
+npm install github:reputation-systems/reputation-system
+```
+
+For versioned installs, use a tag:
+
+```bash
+npm install github:reputation-systems/reputation-system#v0.0.1
+```
+
+The GitHub Actions workflow also creates a `.tgz` package on every run and attaches it to GitHub Releases for tags like `v0.0.1`.
+
 ## 1. Summary
 
 This document describes a decentralized reputation system built on the Ergo blockchain. The system enables the creation, management, and verification of reputation proofs in an atomic, secure, and transparent way. Its architecture is based on two interdependent ErgoScript contracts:

@@ -135,7 +135,7 @@
         try {
             const allProfiles = await fetchAllUserProfiles(
                 $explorer_uri,
-                true,
+                null,
                 [],
                 $types,
             );

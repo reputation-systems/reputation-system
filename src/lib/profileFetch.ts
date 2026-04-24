@@ -227,10 +227,6 @@ async function fetchReputationBoxes(
 
                     // Standard validity check
                     if (box.additionalRegisters.R6.renderedValue !== 'false' && box.additionalRegisters.R6.renderedValue !== 'true') return false;
-                    // Note: original code checked strictly for 'false' in one place but 'true' for locked. 
-                    // Usually RepProof boxes are R6=false (spendable) or true (locked). Assuming we want both to show the profile.
-                    // If we strictly want only 'false' as per original logic:
-                    if (box.additionalRegisters.R6.renderedValue !== 'false') return false;
 
 
                     // Self-defined logic

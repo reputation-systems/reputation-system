@@ -9,6 +9,7 @@ export declare const building_graph: import("svelte/store").Writable<boolean | n
 export declare const address: import("svelte/store").Writable<string | null>;
 export declare const network: import("svelte/store").Writable<string | null>;
 export declare const connected: import("svelte/store").Writable<boolean>;
+export declare const explorer_uri: import("svelte/store").Writable<string>;
 export declare const compute_deep_level: import("svelte/store").Writable<number>;
 export declare const searchStore: import("svelte/store").Writable<string | null>;
 export declare const data_store: import("svelte/store").Writable<any>;

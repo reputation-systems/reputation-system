@@ -5,6 +5,17 @@ import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";
 import { hexOrUtf8ToBytes } from "./utils";
 import { stringToBytes } from "@scure/base";
 const LIMIT_PER_PAGE = 100;
+function parseTypeReputationFlag(value) {
+    if (typeof value === "boolean")
+        return value;
+    if (typeof value === "number")
+        return value !== 0;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        return normalized === "true" || normalized === "1";
+    }
+    return false;
+}
 /**
  * Gets the timestamp of a block given its block ID.
  */
@@ -132,7 +143,7 @@ export async function fetchTypeNfts(explorerUri) {
                     typeName: hexToUtf8(box.additionalRegisters.R4?.renderedValue || '') ?? "",
                     description: hexToUtf8(box.additionalRegisters.R5?.renderedValue || '') ?? "",
                     schemaURI: hexToUtf8(box.additionalRegisters.R6?.renderedValue || '') ?? "",
-                    isRepProof: box.additionalRegisters.R7?.renderedValue ?? false,
+                    isRepProof: parseTypeReputationFlag(box.additionalRegisters.R7?.renderedValue),
                 };
             }).filter((t) => t !== null);
             fetchedTypesArray.push(...pageTypes);

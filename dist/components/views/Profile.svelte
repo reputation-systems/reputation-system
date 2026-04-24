@@ -221,6 +221,15 @@ function switchProfile(profile) {
   dispatch("switchProfile", profile);
   isSwitcherExpanded = false;
 }
+let openInfoTooltip = null;
+function toggleInfoTooltip(id) {
+  openInfoTooltip = openInfoTooltip === id ? null : id;
+}
+function closeInfoTooltip(id) {
+  if (!id || openInfoTooltip === id) {
+    openInfoTooltip = null;
+  }
+}
 function clickOutside(node, callback) {
   const handleClick = (event) => {
     if (node && !node.contains(event.target) && !event.defaultPrevented) {
@@ -266,9 +275,7 @@ async function fetchTokenMetadata(tokenId) {
   if (tokenMetadataCache.has(tokenId))
     return;
   try {
-    const response = await fetch(
-      `https://api.ergoplatform.com/api/v1/tokens/${tokenId}`
-    );
+    const response = await fetch(`${explorer_uri}/api/v1/tokens/${tokenId}`);
     if (response.ok) {
       const data = await response.json();
       if (data.name) {
@@ -625,10 +632,28 @@ onDestroy(() => {
                 {subtitle || "Manage your reputation and view your sacrifices."}
                 {#if showDidacticInfo}
                     <span
-                        class="terminology-tip"
-                        title="Every Reputation Profile is technically a Reputation Proof. A Profile is a Proof used for identity."
+                        class="info-tooltip-wrap info-tooltip-wrap-inline info-tooltip-wrap-top"
+                        use:clickOutside={() =>
+                            closeInfoTooltip("profile-terminology")}
                     >
-                        <i class="fas fa-info-circle"></i>
+                        <button
+                            type="button"
+                            class="info-tooltip terminology-tip"
+                            aria-label="About reputation profile terminology"
+                            aria-expanded={openInfoTooltip ===
+                                "profile-terminology"}
+                            on:click|stopPropagation={() =>
+                                toggleInfoTooltip("profile-terminology")}
+                        >
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        {#if openInfoTooltip === "profile-terminology"}
+                            <div class="info-tooltip-bubble" role="tooltip">
+                                Every Reputation Profile is technically a
+                                Reputation Proof. A Profile is a Proof used for
+                                identity.
+                            </div>
+                        {/if}
                     </span>
                 {/if}
             </p>
@@ -787,12 +812,38 @@ onDestroy(() => {
                         </div>
                         <h3>Sacrificed Assets</h3>
                         {#if showDidacticInfo}
-                            <div
-                                class="info-tooltip"
-                                title="Sacrificed assets (burned ERG and tokens) demonstrate your commitment and responsibility. By locking value into your reputation boxes, you provide a tangible backing for your decentralized identity. These assets are permanent and can never be withdrawn (except for storage rent/demurrage)."
+                            <span
+                                class="info-tooltip-wrap"
+                                use:clickOutside={() =>
+                                    closeInfoTooltip("sacrificed-assets")}
                             >
-                                <i class="fas fa-question-circle"></i>
-                            </div>
+                                <button
+                                    type="button"
+                                    class="info-tooltip"
+                                    aria-label="About sacrificed assets"
+                                    aria-expanded={openInfoTooltip ===
+                                        "sacrificed-assets"}
+                                    on:click|stopPropagation={() =>
+                                        toggleInfoTooltip("sacrificed-assets")}
+                                >
+                                    <i class="fas fa-question-circle"></i>
+                                </button>
+                                {#if openInfoTooltip === "sacrificed-assets"}
+                                    <div
+                                        class="info-tooltip-bubble"
+                                        role="tooltip"
+                                    >
+                                        Sacrificed assets (burned ERG and
+                                        tokens) demonstrate your commitment and
+                                        responsibility. By locking value into
+                                        your reputation boxes, you provide a
+                                        tangible backing for your decentralized
+                                        identity. These assets are permanent and
+                                        can never be withdrawn (except for
+                                        storage rent/demurrage).
+                                    </div>
+                                {/if}
+                            </span>
                         {/if}
                         {#if effectiveAllowSacrifice}
                             <button
@@ -1035,12 +1086,34 @@ onDestroy(() => {
                     <div class="section-title-row">
                         <h3>Opinions Received</h3>
                         {#if showDidacticInfo}
-                            <div
-                                class="info-tooltip"
-                                title="These are opinions issued by other profiles about this profile. They represent what the community says about this identity."
+                            <span
+                                class="info-tooltip-wrap"
+                                use:clickOutside={() =>
+                                    closeInfoTooltip("received-opinions")}
                             >
-                                <i class="fas fa-question-circle"></i>
-                            </div>
+                                <button
+                                    type="button"
+                                    class="info-tooltip"
+                                    aria-label="About received opinions"
+                                    aria-expanded={openInfoTooltip ===
+                                        "received-opinions"}
+                                    on:click|stopPropagation={() =>
+                                        toggleInfoTooltip("received-opinions")}
+                                >
+                                    <i class="fas fa-question-circle"></i>
+                                </button>
+                                {#if openInfoTooltip === "received-opinions"}
+                                    <div
+                                        class="info-tooltip-bubble"
+                                        role="tooltip"
+                                    >
+                                        These are opinions issued by other
+                                        profiles about this profile. They
+                                        represent what the community says about
+                                        this identity.
+                                    </div>
+                                {/if}
+                            </span>
                         {/if}
                     </div>
 
@@ -1122,12 +1195,34 @@ onDestroy(() => {
                     <div class="section-title-row">
                         <h3>Reputation Boxes</h3>
                         {#if showDidacticInfo}
-                            <div
-                                class="info-tooltip"
-                                title="Reputation is modular. Each box represents a specific piece of information, an opinion, or a claim, linked to a specific Type standard."
+                            <span
+                                class="info-tooltip-wrap"
+                                use:clickOutside={() =>
+                                    closeInfoTooltip("reputation-boxes")}
                             >
-                                <i class="fas fa-question-circle"></i>
-                            </div>
+                                <button
+                                    type="button"
+                                    class="info-tooltip"
+                                    aria-label="About reputation boxes"
+                                    aria-expanded={openInfoTooltip ===
+                                        "reputation-boxes"}
+                                    on:click|stopPropagation={() =>
+                                        toggleInfoTooltip("reputation-boxes")}
+                                >
+                                    <i class="fas fa-question-circle"></i>
+                                </button>
+                                {#if openInfoTooltip === "reputation-boxes"}
+                                    <div
+                                        class="info-tooltip-bubble"
+                                        role="tooltip"
+                                    >
+                                        Reputation is modular. Each box
+                                        represents a specific piece of
+                                        information, an opinion, or a claim,
+                                        linked to a specific Type standard.
+                                    </div>
+                                {/if}
+                            </span>
                         {/if}
                     </div>
 
@@ -1177,14 +1272,52 @@ onDestroy(() => {
                                             Only
                                         </button>
                                         {#if showDidacticInfo}
-                                            <div
-                                                class="info-tooltip"
-                                                title="SELF boxes are reputation boxes that point back to your own profile. They represent your core reputation and serve as containers for your reputation tokens, allowing you to issue new reputation boxes by distributing tokens from them. When you delete other boxes, their tokens are merged into your selected Main SELF box."
+                                            <span
+                                                class="info-tooltip-wrap"
+                                                use:clickOutside={() =>
+                                                    closeInfoTooltip(
+                                                        "self-boxes",
+                                                    )}
                                             >
-                                                <i
-                                                    class="fas fa-question-circle"
-                                                ></i>
-                                            </div>
+                                                <button
+                                                    type="button"
+                                                    class="info-tooltip"
+                                                    aria-label="About SELF boxes"
+                                                    aria-expanded={openInfoTooltip ===
+                                                        "self-boxes"}
+                                                    on:click|stopPropagation={() =>
+                                                        toggleInfoTooltip(
+                                                            "self-boxes",
+                                                        )}
+                                                >
+                                                    <i
+                                                        class="fas fa-question-circle"
+                                                    ></i>
+                                                </button>
+                                                {#if openInfoTooltip ===
+                                                    "self-boxes"}
+                                                    <div
+                                                        class="info-tooltip-bubble"
+                                                        role="tooltip"
+                                                    >
+                                                        SELF boxes are reputation
+                                                        boxes that point back to
+                                                        your own profile. They
+                                                        represent your core
+                                                        reputation and serve as
+                                                        containers for your
+                                                        reputation tokens,
+                                                        allowing you to issue
+                                                        new reputation boxes by
+                                                        distributing tokens from
+                                                        them. When you delete
+                                                        other boxes, their
+                                                        tokens are merged into
+                                                        your selected Main SELF
+                                                        box.
+                                                    </div>
+                                                {/if}
+                                            </span>
                                         {/if}
                                     </div>
                                 </div>
@@ -1217,14 +1350,50 @@ onDestroy(() => {
                                             </button>
                                         </div>
                                         {#if showDidacticInfo}
-                                            <div
-                                                class="info-tooltip"
-                                                title="Locked boxes are those that cannot be modified or deleted, often used as a guarantee. Unlocked boxes can be updated or deleted, but tokens (reputation and sacrificed assets) can only be moved to other boxes within the same profile. They can never leave the reputation proof system."
+                                            <span
+                                                class="info-tooltip-wrap"
+                                                use:clickOutside={() =>
+                                                    closeInfoTooltip(
+                                                        "locked-boxes",
+                                                    )}
                                             >
-                                                <i
-                                                    class="fas fa-question-circle"
-                                                ></i>
-                                            </div>
+                                                <button
+                                                    type="button"
+                                                    class="info-tooltip"
+                                                    aria-label="About locked and unlocked boxes"
+                                                    aria-expanded={openInfoTooltip ===
+                                                        "locked-boxes"}
+                                                    on:click|stopPropagation={() =>
+                                                        toggleInfoTooltip(
+                                                            "locked-boxes",
+                                                        )}
+                                                >
+                                                    <i
+                                                        class="fas fa-question-circle"
+                                                    ></i>
+                                                </button>
+                                                {#if openInfoTooltip ===
+                                                    "locked-boxes"}
+                                                    <div
+                                                        class="info-tooltip-bubble"
+                                                        role="tooltip"
+                                                    >
+                                                        Locked boxes are those
+                                                        that cannot be modified
+                                                        or deleted, often used
+                                                        as a guarantee.
+                                                        Unlocked boxes can be
+                                                        updated or deleted, but
+                                                        tokens (reputation and
+                                                        sacrificed assets) can
+                                                        only be moved to other
+                                                        boxes within the same
+                                                        profile. They can never
+                                                        leave the reputation
+                                                        proof system.
+                                                    </div>
+                                                {/if}
+                                            </span>
                                         {/if}
                                     </div>
                                 </div>
@@ -1568,6 +1737,7 @@ onDestroy(() => {
         font: inherit;
         text-align: left;
         width: 100%;
+        min-width: 0;
     }
 
     .current-profile-info:hover {
@@ -1592,6 +1762,8 @@ onDestroy(() => {
     }
 
     .profile-meta {
+        flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
@@ -1601,6 +1773,7 @@ onDestroy(() => {
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
+        min-width: 0;
     }
 
     .profile-type-badge {
@@ -1620,6 +1793,11 @@ onDestroy(() => {
         color: var(--rp-text-secondary);
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
             monospace;
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .chevron-icon {
@@ -1716,21 +1894,25 @@ onDestroy(() => {
 
     .item-content {
         flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
+        gap: 0.25rem;
     }
 
     .item-top {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.75rem;
+        min-width: 0;
     }
 
     .item-types {
         display: flex;
         flex-wrap: wrap;
         gap: 0.25rem;
+        min-width: 0;
     }
 
     .item-type {
@@ -1746,27 +1928,29 @@ onDestroy(() => {
         font-size: 0.75rem;
         color: var(--rp-text-muted);
         font-family: ui-monospace, monospace;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .item-erg {
         font-size: 0.75rem;
         color: var(--rp-text-muted);
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .check-icon {
         color: var(--rp-accent-primary);
         font-size: 0.875rem;
+        flex-shrink: 0;
+        margin-left: auto;
     }
 
     .terminology-tip {
         margin-left: 0.5rem;
-        color: var(--rp-text-muted);
-        cursor: help;
         font-size: 0.875rem;
-    }
-
-    .terminology-tip:hover {
-        color: var(--rp-accent-primary);
     }
 
     /* --- Hero Section --- */
@@ -1825,6 +2009,31 @@ onDestroy(() => {
         font-size: 1.5rem;
         margin-left: 0.25rem;
         color: var(--rp-accent-secondary);
+    }
+
+    @media (max-width: 640px) {
+        .switcher-main-row {
+            gap: 0.75rem;
+            padding: 0.75rem;
+        }
+
+        .current-profile-info {
+            gap: 0.75rem;
+            padding: 0.25rem;
+        }
+
+        .item-top {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .item-id {
+            flex-shrink: 1;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     }
 
     .main-tabs-container {
@@ -2413,15 +2622,62 @@ onDestroy(() => {
         color: var(--rp-self-filter-color);
     }
 
-    .info-tooltip {
-        color: var(--rp-text-muted);
-        cursor: help;
-        font-size: 1.1rem;
-        transition: color 0.2s;
+    .info-tooltip-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
     }
 
-    .info-tooltip:hover {
+    .info-tooltip-wrap-inline {
+        vertical-align: middle;
+    }
+
+    .info-tooltip-wrap-top .info-tooltip-bubble {
+        top: auto;
+        bottom: calc(100% + 0.65rem);
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    .info-tooltip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--rp-text-muted);
+        cursor: pointer;
+        font-size: 1.1rem;
+        transition: color 0.2s;
+        background: transparent;
+        border: 0;
+        padding: 0;
+    }
+
+    .info-tooltip:hover,
+    .info-tooltip[aria-expanded="true"] {
         color: var(--rp-accent-primary);
+    }
+
+    .info-tooltip-bubble {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        right: 0;
+        width: min(20rem, calc(100vw - 2rem));
+        padding: 0.75rem 0.9rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--rp-border-subtle);
+        background: color-mix(
+            in srgb,
+            var(--rp-bg-card) 92%,
+            rgba(0, 0, 0, 0.65)
+        );
+        color: var(--rp-text-secondary);
+        font-size: 0.85rem;
+        line-height: 1.45;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+        z-index: 20;
+        backdrop-filter: blur(10px);
     }
 
     .main-action-label {
@@ -2679,15 +2935,13 @@ onDestroy(() => {
     }
 
     .token-dropdown {
-        position: absolute;
-        top: calc(100% + 0.5rem);
-        left: 0;
+        position: relative;
+        margin-top: 0.5rem;
         width: 100%;
         background: var(--rp-bg-card);
         border: 1px solid var(--rp-border-color);
         border-radius: 0.5rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-        z-index: 50;
         max-height: 200px;
         overflow-y: auto;
         padding: 0.5rem;

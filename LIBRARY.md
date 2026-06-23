@@ -160,6 +160,46 @@ async function fetchAllUserProfiles(
 ): Promise<ReputationProof[]>
 ```
 
+#### `fetchProfileById`
+Fetches a complete `ReputationProof` by its token ID.
+
+This function retrieves all unspent boxes associated with the specified reputation token, reconstructs the full profile, and returns it as a `ReputationProof` object.
+
+```typescript
+async function fetchProfileById(
+    explorerUri: string,
+    tokenId: string
+): Promise<ReputationProof | null>
+```
+
+**Parameters:**
+- `explorerUri`: Base URL of the Ergo Explorer API.
+- `tokenId`: The reputation profile token ID.
+
+**Returns:**
+- A fully reconstructed `ReputationProof` object if the profile exists.
+- `null` if no profile is found or an error occurs.
+
+**Example:**
+```typescript
+const profile = await fetchProfileById(
+    explorer_uri,
+    "9f8b6e2a4d7c..."
+);
+
+if (profile) {
+    console.log("Profile owner:", profile.owner_ergotree);
+    console.log("Reputation boxes:", profile.current_boxes.length);
+    console.log("Total supply:", profile.total_amount);
+}
+```
+
+**Notes:**
+- Fetches all unspent boxes associated with the provided token ID.
+- Reconstructs the profile using the same logic as `fetchAllUserProfiles` and `fetchAllProfiles`.
+- Type metadata will only be available if the corresponding `TypeNFT` information can be resolved; otherwise, unknown types are returned with placeholder values.
+- Returns the first reconstructed profile, since all boxes associated with a token belong to the same reputation proof.
+
 #### `updateReputationProofList`
 Searches and updates a list of reputation proofs based on a search term.
 ```typescript

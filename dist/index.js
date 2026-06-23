@@ -6,7 +6,7 @@ export { remove_opinion, remove_opinion_chained } from './remove_opinion';
 export { sacrifice_assets, sacrifice_assets_chained } from './sacrifice_assets';
 export { update_boxes, update_boxes_chained } from './update_boxes';
 export { fetchTypeNfts, searchBoxes, getTimestampFromBlockId } from './fetch';
-export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox } from './profileFetch';
+export { fetchAllUserProfiles, fetchAllProfiles, convertToRPBox, fetchProfileById, } from './profileFetch';
 export { calculate_reputation, total_burned_string, total_burned, } from './utils';
 // --- Svelte components ---
 export { default as Profile } from './components/views/Profile.svelte';

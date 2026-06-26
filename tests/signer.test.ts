@@ -29,6 +29,9 @@ import {
 import { SByte, SColl, SBool } from "@fleet-sdk/serializer";
 import { blake2b256 } from "@fleet-sdk/crypto";
 import { ErgoHDKey, Prover, ERGO_CHANGE_PATH, generateMnemonic } from "@fleet-sdk/wallet";
+import { mnemonicToSeedSync } from "@scure/bip39";
+import { HDKey } from "@scure/bip32";
+import { Network } from "@fleet-sdk/core";
 import * as fs from "fs";
 import * as path from "path";
 import { stringToBytes } from "@scure/base";
@@ -215,17 +218,25 @@ describe("SeedSigner", () => {
   const MNEMONIC =
     "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
-  it("derives a deterministic mainnet address from the mnemonic", async () => {
+  it("derives a deterministic mainnet address via standard BIP-39/BIP-32 (Nautilus-compatible)", async () => {
     const signer = new SeedSigner({ mnemonic: MNEMONIC });
     const addr1 = await signer.getChangeAddress();
     const addr2 = await signer.getChangeAddress();
     expect(addr1).to.equal(addr2); // cached + stable
 
-    // Independently derive the same address to confirm the derivation path.
-    const root = await ErgoHDKey.fromMnemonic(MNEMONIC);
-    const child = root.derive(`${ERGO_CHANGE_PATH}/0`);
-    expect(addr1).to.equal(child.address.toString());
+    // Independently derive via the STANDARD path (@scure), which Nautilus and
+    // other standard wallets use. NB: fleet's ErgoHDKey.fromMnemonic uses a
+    // non-standard seed step and would derive a DIFFERENT address — that mismatch
+    // is exactly the bug SeedSigner now avoids.
+    const seed = mnemonicToSeedSync(MNEMONIC);
+    const child = HDKey.fromMasterSeed(seed).derive(`${ERGO_CHANGE_PATH}/0`);
+    const expected = ErgoAddress.fromPublicKey(child.publicKey, Network.Mainnet).toString();
+    expect(addr1).to.equal(expected);
     expect(addr1.startsWith("9")).to.be.true; // mainnet P2PK
+
+    // And it must NOT equal fleet's non-standard derivation (guards the fix).
+    const wrong = (await ErgoHDKey.fromMnemonic(MNEMONIC)).derive(`${ERGO_CHANGE_PATH}/0`);
+    expect(addr1).to.not.equal(wrong.address.toString());
   });
 
   it("signs a transaction over its own inputs (real key derivation + Prover)", async () => {

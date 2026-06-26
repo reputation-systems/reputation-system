@@ -1,4 +1,4 @@
-import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './ReputationProof';
+import { type RPBox, type TypeNFT, type ReputationProof, type ApiBox } from './ReputationProof.js';
 /**
  * Converts an ApiBox to an RPBox (Reputation Proof Box).
  */

@@ -1,5 +1,5 @@
 /// <reference types="svelte" />
-import type { ReputationProof, TypeNFT } from './ReputationProof';
+import type { ReputationProof, TypeNFT } from './ReputationProof.js';
 export declare const proofs: import("svelte/store").Writable<Map<string, ReputationProof>>;
 export declare const reputation_proof: import("svelte/store").Writable<ReputationProof | null>;
 export declare const user_profiles: import("svelte/store").Writable<ReputationProof[]>;

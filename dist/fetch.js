@@ -1,8 +1,8 @@
-import {} from "./ReputationProof";
-import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils";
-import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs";
+import {} from "./ReputationProof.js";
+import { hexToBytes, hexToUtf8, serializedToRendered, SString, parseCollByteToHex } from "./utils.js";
+import { digital_public_good_contract_hash, ergo_tree, ergo_tree_hash, explorer_uri } from "./envs.js";
 import { ErgoAddress, SByte, SColl, SBool } from "@fleet-sdk/core";
-import { hexOrUtf8ToBytes } from "./utils";
+import { hexOrUtf8ToBytes } from "./utils.js";
 import { stringToBytes } from "@scure/base";
 const LIMIT_PER_PAGE = 100;
 function parseTypeReputationFlag(value) {

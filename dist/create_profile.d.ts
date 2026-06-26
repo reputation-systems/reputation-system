@@ -1,4 +1,5 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
+import { type Signer, type SignerResult } from './signer.js';
 /**
  * Creates a new reputation profile by minting a new reputation token.
  * This creates a "SELF" box where R5 points to its own token ID (the minted token).
@@ -14,7 +15,16 @@ import { TransactionBuilder } from '@fleet-sdk/core';
 export declare function create_profile(explorerUri: string, total_supply: number, type_nft_id: string, content?: object | string | null, sacrified_erg?: bigint, sacrified_tokens?: {
     tokenId: string;
     amount: bigint;
-}[]): Promise<string | null>;
+}[], signer?: Signer): Promise<string | null>;
+/**
+ * Signer-aware variant of {@link create_profile} for non-browser callers.
+ * Takes an explicit {@link Signer} and returns the full {@link SignerResult}.
+ * Throws on failure instead of using a browser `alert`.
+ */
+export declare function create_profile_with_signer(signer: Signer, explorerUri: string, total_supply: number, type_nft_id: string, content?: object | string | null, sacrified_erg?: bigint, sacrified_tokens?: {
+    tokenId: string;
+    amount: bigint;
+}[]): Promise<SignerResult>;
 /**
  * Creates a new reputation profile and returns the TransactionBuilder for chaining.
  * Use this when you need to chain multiple transactions together.
@@ -29,4 +39,4 @@ export declare function create_profile(explorerUri: string, total_supply: number
 export declare function create_profile_chained(total_supply: number, type_nft_id: string, content?: object | string | null, sacrified_erg?: bigint, sacrified_tokens?: {
     tokenId: string;
     amount: bigint;
-}[]): Promise<TransactionBuilder>;
+}[], signer?: Signer): Promise<TransactionBuilder>;

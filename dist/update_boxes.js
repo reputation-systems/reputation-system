@@ -1,8 +1,8 @@
 import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress, SColl, SByte, SBool } from '@fleet-sdk/core';
-import { ergo_tree_address } from './envs';
-import { hexToBytes, hexOrUtf8ToBytes } from './utils';
+import { ergo_tree_address } from './envs.js';
+import { hexToBytes, hexOrUtf8ToBytes } from './utils.js';
 import { stringToBytes } from '@scure/base';
-import {} from './ReputationProof';
+import {} from './ReputationProof.js';
 /**
  * Internal function that builds the update_boxes transaction.
  * Returns the built TransactionBuilder for chaining or execution.

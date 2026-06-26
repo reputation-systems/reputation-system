@@ -1,5 +1,5 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
-import { type RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof.js';
 /**
  * Removes an opinion box by merging all its assets (ERG + tokens) into the main box.
  * The opinion box is consumed and not recreated, effectively deleting it.

@@ -1,6 +1,6 @@
 import { SvelteComponent } from "svelte";
-import type { ReputationProof } from "../../ReputationProof";
-import type { ProfileTheme } from "../types";
+import type { ReputationProof } from "../../ReputationProof.js";
+import type { ProfileTheme } from "../types.js";
 declare const __propDef: {
     props: {
         reputationProof: ReputationProof | null;

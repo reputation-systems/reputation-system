@@ -1,6 +1,6 @@
 import { OutputBuilder, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress } from '@fleet-sdk/core';
-import { ergo_tree_address } from './envs';
-import {} from './ReputationProof';
+import { ergo_tree_address } from './envs.js';
+import {} from './ReputationProof.js';
 /**
  * Internal function that builds the sacrifice_assets transaction.
  * Returns the built TransactionBuilder for chaining or execution.

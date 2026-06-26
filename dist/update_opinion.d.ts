@@ -1,5 +1,5 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
-import { type RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof.js';
 /**
  * Updates an existing opinion box by recreating it with modified parameters.
  * The main_box is optional and only required if token_amount_delta is non-zero.

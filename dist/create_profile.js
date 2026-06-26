@@ -1,12 +1,14 @@
 import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress, SColl, SByte, SBool } from '@fleet-sdk/core';
-import { ergo_tree_address } from './envs';
-import { hexToBytes } from './utils';
+import { ergo_tree_address } from './envs.js';
+import { hexToBytes } from './utils.js';
 import { stringToBytes } from '@scure/base';
+import { NautilusSigner } from './signer.js';
 /**
  * Internal function that builds the create_profile transaction.
  * Returns the built TransactionBuilder for chaining or execution.
+ * Reads wallet address / UTXOs / height through the supplied `signer`.
  */
-async function _build_create_profile(total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
+async function _build_create_profile(signer, total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
     console.log("Creating profile with parameters:", {
         total_supply,
         type_nft_id,
@@ -15,13 +17,13 @@ async function _build_create_profile(total_supply, type_nft_id, content = null, 
         sacrified_tokens
     });
     console.log("Ergo Tree Address:", ergo_tree_address);
-    const creatorAddressString = await ergo.get_change_address();
+    const creatorAddressString = await signer.getChangeAddress();
     if (!creatorAddressString) {
         throw new Error("Could not get the creator's address from the wallet.");
     }
     const creatorP2PKAddress = ErgoAddress.fromBase58(creatorAddressString);
     // Inputs for the transaction (wallet UTXOs)
-    const utxos = await ergo.get_utxos();
+    const utxos = await signer.getUtxos();
     const inputs = [...utxos];
     // The token ID will be the box ID of the first input (this is how Ergo minting works)
     // R5 will point to this same ID, making it a "SELF" box
@@ -65,7 +67,7 @@ async function _build_create_profile(total_supply, type_nft_id, content = null, 
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
     // Build the transaction
-    const builder = new TransactionBuilder(await ergo.get_current_height())
+    const builder = new TransactionBuilder(await signer.getCurrentHeight())
         .from(inputs)
         .to(outputs)
         .sendChangeTo(creatorP2PKAddress)
@@ -85,20 +87,31 @@ async function _build_create_profile(total_supply, type_nft_id, content = null, 
  * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function create_profile(explorerUri, total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
+export async function create_profile(explorerUri, total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = [], signer = new NautilusSigner()) {
     try {
-        const builder = await _build_create_profile(total_supply, type_nft_id, content, sacrified_erg, sacrified_tokens);
-        const unsignedTransaction = builder.toEIP12Object();
-        const signedTransaction = await ergo.sign_tx(unsignedTransaction);
-        const transactionId = await ergo.submit_tx(signedTransaction);
-        console.log("Transaction ID -> ", transactionId);
-        return transactionId;
+        const builder = await _build_create_profile(signer, total_supply, type_nft_id, content, sacrified_erg, sacrified_tokens);
+        const result = await signer.finalize(builder);
+        if (result.kind === 'submitted') {
+            console.log("Transaction ID -> ", result.txId);
+            return result.txId;
+        }
+        return null;
     }
     catch (e) {
         console.error("Error building or submitting transaction:", e);
-        alert(`Transaction failed: ${e.message}`);
+        if (typeof alert !== 'undefined')
+            alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+/**
+ * Signer-aware variant of {@link create_profile} for non-browser callers.
+ * Takes an explicit {@link Signer} and returns the full {@link SignerResult}.
+ * Throws on failure instead of using a browser `alert`.
+ */
+export async function create_profile_with_signer(signer, explorerUri, total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
+    const builder = await _build_create_profile(signer, total_supply, type_nft_id, content, sacrified_erg, sacrified_tokens);
+    return signer.finalize(builder);
 }
 /**
  * Creates a new reputation profile and returns the TransactionBuilder for chaining.
@@ -111,6 +124,6 @@ export async function create_profile(explorerUri, total_supply, type_nft_id, con
  * @param sacrified_tokens Optional extra tokens to add to the profile box (sacrificed).
  * @returns The TransactionBuilder after .build() for chaining.
  */
-export async function create_profile_chained(total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = []) {
-    return _build_create_profile(total_supply, type_nft_id, content, sacrified_erg, sacrified_tokens);
+export async function create_profile_chained(total_supply, type_nft_id, content = null, sacrified_erg = 0n, sacrified_tokens = [], signer = new NautilusSigner()) {
+    return _build_create_profile(signer, total_supply, type_nft_id, content, sacrified_erg, sacrified_tokens);
 }

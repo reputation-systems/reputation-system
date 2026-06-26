@@ -13,14 +13,15 @@ import {
 import { ergo_tree_address } from './envs';
 import { hexToBytes } from './utils';
 import { stringToBytes } from '@scure/base';
-
-declare const ergo: any;
+import { type Signer, type SignerResult, NautilusSigner } from './signer';
 
 /**
  * Internal function that builds the create_profile transaction.
  * Returns the built TransactionBuilder for chaining or execution.
+ * Reads wallet address / UTXOs / height through the supplied `signer`.
  */
 async function _build_create_profile(
+    signer: Signer,
     total_supply: number,
     type_nft_id: string,
     content: object | string | null = null,
@@ -38,14 +39,14 @@ async function _build_create_profile(
 
     console.log("Ergo Tree Address:", ergo_tree_address);
 
-    const creatorAddressString = await ergo.get_change_address();
+    const creatorAddressString = await signer.getChangeAddress();
     if (!creatorAddressString) {
         throw new Error("Could not get the creator's address from the wallet.");
     }
     const creatorP2PKAddress = ErgoAddress.fromBase58(creatorAddressString);
 
     // Inputs for the transaction (wallet UTXOs)
-    const utxos = await ergo.get_utxos();
+    const utxos = await signer.getUtxos();
     const inputs: Box<Amount>[] = [...utxos];
 
     // The token ID will be the box ID of the first input (this is how Ergo minting works)
@@ -99,7 +100,7 @@ async function _build_create_profile(
     console.log("Outputs:", outputs);
 
     // Build the transaction
-    const builder = new TransactionBuilder(await ergo.get_current_height())
+    const builder = new TransactionBuilder(await signer.getCurrentHeight())
         .from(inputs)
         .to(outputs)
         .sendChangeTo(creatorP2PKAddress)
@@ -127,10 +128,12 @@ export async function create_profile(
     type_nft_id: string,
     content: object | string | null = null,
     sacrified_erg: bigint = 0n,
-    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = [],
+    signer: Signer = new NautilusSigner()
 ): Promise<string | null> {
     try {
         const builder = await _build_create_profile(
+            signer,
             total_supply,
             type_nft_id,
             content,
@@ -138,18 +141,43 @@ export async function create_profile(
             sacrified_tokens
         );
 
-        const unsignedTransaction = builder.toEIP12Object();
-        const signedTransaction = await ergo.sign_tx(unsignedTransaction);
-        const transactionId = await ergo.submit_tx(signedTransaction);
-
-        console.log("Transaction ID -> ", transactionId);
-        return transactionId;
+        const result = await signer.finalize(builder);
+        if (result.kind === 'submitted') {
+            console.log("Transaction ID -> ", result.txId);
+            return result.txId;
+        }
+        return null;
 
     } catch (e: any) {
         console.error("Error building or submitting transaction:", e);
-        alert(`Transaction failed: ${e.message}`);
+        if (typeof alert !== 'undefined') alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+
+/**
+ * Signer-aware variant of {@link create_profile} for non-browser callers.
+ * Takes an explicit {@link Signer} and returns the full {@link SignerResult}.
+ * Throws on failure instead of using a browser `alert`.
+ */
+export async function create_profile_with_signer(
+    signer: Signer,
+    explorerUri: string,
+    total_supply: number,
+    type_nft_id: string,
+    content: object | string | null = null,
+    sacrified_erg: bigint = 0n,
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
+): Promise<SignerResult> {
+    const builder = await _build_create_profile(
+        signer,
+        total_supply,
+        type_nft_id,
+        content,
+        sacrified_erg,
+        sacrified_tokens
+    );
+    return signer.finalize(builder);
 }
 
 /**
@@ -168,9 +196,11 @@ export async function create_profile_chained(
     type_nft_id: string,
     content: object | string | null = null,
     sacrified_erg: bigint = 0n,
-    sacrified_tokens: { tokenId: string; amount: bigint }[] = []
+    sacrified_tokens: { tokenId: string; amount: bigint }[] = [],
+    signer: Signer = new NautilusSigner()
 ): Promise<TransactionBuilder> {
     return _build_create_profile(
+        signer,
         total_supply,
         type_nft_id,
         content,

@@ -1,7 +1,7 @@
-import { parseCollByteToHex, hexToBytes, hexToUtf8, serializedToRendered } from './utils';
-import { explorer_uri, ergo_tree_hash } from './envs';
+import { parseCollByteToHex, hexToBytes, hexToUtf8, serializedToRendered } from './utils.js';
+import { explorer_uri, ergo_tree_hash } from './envs.js';
 import { ErgoAddress, SByte, SColl } from '@fleet-sdk/core';
-import {} from './ReputationProof';
+import {} from './ReputationProof.js';
 const API_BATCH_SIZE = 100; // Max items per request allowed by Explorer usually
 // --- Helper Functions ---
 /**

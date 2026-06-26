@@ -1,5 +1,5 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
-import { type RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof.js';
 /**
  * Configuration for a single output box in the update_boxes transaction.
  *

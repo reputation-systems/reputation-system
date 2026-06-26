@@ -1,7 +1,7 @@
 import { ErgoAddress, SSigmaProp, SGroupElement, SConstant } from "@fleet-sdk/core";
 import { SBool, SByte, SColl, SPair, SLong } from "@fleet-sdk/serializer";
 import { stringToBytes } from "@scure/base";
-import { connected } from "./store";
+import { connected } from "./store.js";
 import { get } from "svelte/store";
 /**
  * Converts a hex string from a serialized value to a UTF-8 string.

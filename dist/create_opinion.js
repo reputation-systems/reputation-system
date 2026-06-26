@@ -1,13 +1,15 @@
 import { OutputBuilder, SAFE_MIN_BOX_VALUE, RECOMMENDED_MIN_FEE_VALUE, TransactionBuilder, ErgoAddress, SColl, SByte, SBool } from '@fleet-sdk/core';
-import { ergo_tree_address } from './envs';
-import { hexToBytes, hexOrUtf8ToBytes } from './utils';
+import { ergo_tree_address } from './envs.js';
+import { hexToBytes, hexOrUtf8ToBytes } from './utils.js';
 import { stringToBytes } from '@scure/base';
-import {} from './ReputationProof';
+import {} from './ReputationProof.js';
+import { NautilusSigner } from './signer.js';
 /**
  * Internal function that builds the create_opinion transaction.
  * Returns the built TransactionBuilder for chaining or execution.
+ * Reads wallet address / UTXOs / height through the supplied `signer`.
  */
-async function _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
+async function _build_create_opinion(signer, explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
     console.log("Generating reputation proof with parameters:", {
         token_amount,
         type_nft_id,
@@ -19,7 +21,7 @@ async function _build_create_opinion(explorerUri, token_amount, type_nft_id, obj
         explorerUri
     });
     console.log("Ergo Tree Address:", ergo_tree_address);
-    const creatorAddressString = await ergo.get_change_address();
+    const creatorAddressString = await signer.getChangeAddress();
     if (!creatorAddressString) {
         throw new Error("Could not get the creator's address from the wallet.");
     }
@@ -38,7 +40,7 @@ async function _build_create_opinion(explorerUri, token_amount, type_nft_id, obj
     }
     console.log("Data Inputs (Type NFTs):", dataInputs);
     // Inputs for the transaction
-    const utxos = await ergo.get_utxos();
+    const utxos = await signer.getUtxos();
     const inputs = [main_box.box, ...utxos];
     const outputs = [];
     // MAIN BOX
@@ -78,7 +80,7 @@ async function _build_create_opinion(explorerUri, token_amount, type_nft_id, obj
     console.log("Inputs:", inputs);
     console.log("Outputs:", outputs);
     // Build the transaction
-    const builder = new TransactionBuilder(await ergo.get_current_height())
+    const builder = new TransactionBuilder(await signer.getCurrentHeight())
         .from(inputs)
         .to(outputs)
         .sendChangeTo(creatorP2PKAddress)
@@ -99,20 +101,34 @@ async function _build_create_opinion(explorerUri, token_amount, type_nft_id, obj
  * @param main_box The main RPBox containing the reputation tokens to spend.
  * @returns The transaction ID if successful, otherwise null.
  */
-export async function create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
+export async function create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box, signer = new NautilusSigner()) {
     try {
-        const builder = await _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
-        const unsignedTransaction = builder.toEIP12Object();
-        const signedTransaction = await ergo.sign_tx(unsignedTransaction);
-        const transactionId = await ergo.submit_tx(signedTransaction);
-        console.log("Transaction ID -> ", transactionId);
-        return transactionId;
+        const builder = await _build_create_opinion(signer, explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
+        const result = await signer.finalize(builder);
+        if (result.kind === 'submitted') {
+            console.log("Transaction ID -> ", result.txId);
+            return result.txId;
+        }
+        // An unsigned-only signer can't return a txId from this browser-shaped API.
+        return null;
     }
     catch (e) {
         console.error("Error building or submitting transaction:", e);
-        alert(`Transaction failed: ${e.message}`);
+        if (typeof alert !== 'undefined')
+            alert(`Transaction failed: ${e.message}`);
         return null;
     }
+}
+/**
+ * Signer-aware variant of {@link create_opinion} for non-browser callers
+ * (Node, MCP servers, agents). Takes an explicit {@link Signer} and returns the
+ * full {@link SignerResult} — either a submitted txId or, for an
+ * {@link UnsignedSigner}, the unsigned EIP-12 transaction for external signing.
+ * Throws on failure instead of swallowing the error with a browser `alert`.
+ */
+export async function create_opinion_with_signer(signer, explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
+    const builder = await _build_create_opinion(signer, explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
+    return signer.finalize(builder);
 }
 /**
  * Creates a new opinion and returns the TransactionBuilder for chaining.
@@ -128,6 +144,6 @@ export async function create_opinion(explorerUri, token_amount, type_nft_id, obj
  * @param main_box The main RPBox containing the reputation tokens to spend.
  * @returns The TransactionBuilder after .build() for chaining.
  */
-export async function create_opinion_chained(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box) {
-    return _build_create_opinion(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
+export async function create_opinion_chained(explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked = false, main_box, signer = new NautilusSigner()) {
+    return _build_create_opinion(signer, explorerUri, token_amount, type_nft_id, object_pointer, polarization, content, is_locked, main_box);
 }

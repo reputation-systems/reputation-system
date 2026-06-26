@@ -1,5 +1,9 @@
-import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
+// Node-safe browser detection. Previously `import { browser } from '$app/environment'`,
+// but that SvelteKit virtual module does not resolve under plain Node, which
+// broke the `reputation-system/node` entry point (the store is in its graph via
+// utils/ReputationProof). `typeof window` is equivalent for the localStorage guard.
+const browser = typeof window !== 'undefined';
 import type { ReputationProof, TypeNFT } from './ReputationProof';
 import { explorer_uri as defaultExplorerUri } from './envs';
 

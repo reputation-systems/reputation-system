@@ -15,12 +15,14 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"package": "svelte-package",
-		"postpackage": "node scripts/inline-contracts.js",
+		"postpackage": "node scripts/inline-contracts.js && node scripts/fix-node-imports.js",
 		"prepare": "npm run package",
-		"pack:tarball": "npm pack --pack-destination .release"
+		"pack:tarball": "npm pack --pack-destination .release",
+		"mcp": "node mcp/server.mjs"
 	},
 	"devDependencies": {
 		"@fleet-sdk/mock-chain": "^0.12.0",
+		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@sveltejs/kit": "^1.20.4",
 		"@sveltejs/adapter-static": "^2.0.3",
 		"svelte": "^4.0.5",
@@ -46,12 +48,18 @@
 			"svelte": "./dist/index.js",
 			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
+		},
+		"./node": {
+			"types": "./dist/node.d.ts",
+			"import": "./dist/node.js",
+			"default": "./dist/node.js"
 		}
 	},
 	"dependencies": {
 		"@dagrejs/dagre": "^1.0.4",
 		"@fleet-sdk/compiler": "^0.12.0",
 		"@fleet-sdk/core": "^0.12.0",
+		"@fleet-sdk/wallet": "^0.12.0",
 		"@scure/base": "^1.1.3",
 		"@types/three": "^0.161.2",
 		"@xyflow/svelte": "^0.1.3",

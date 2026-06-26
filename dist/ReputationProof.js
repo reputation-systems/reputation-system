@@ -1,7 +1,7 @@
 import {} from "@fleet-sdk/core";
 import { get } from 'svelte/store';
-import { proofs, compute_deep_level } from "./store";
-import { stringToRendered } from "./utils";
+import { proofs, compute_deep_level } from "./store.js";
+import { stringToRendered } from "./utils.js";
 // --- ENUMS & UTILITIES ---
 export function token_rendered(proof) {
     return stringToRendered(proof.token_id);

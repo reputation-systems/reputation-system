@@ -1,5 +1,6 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
-import { type RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof.js';
+import { type Signer, type SignerResult } from './signer.js';
 /**
  * Generates or modifies a reputation proof by building and submitting a transaction.
  * @param explorerUri The URI of the Ergo explorer to fetch box data.
@@ -12,7 +13,15 @@ import { type RPBox } from './ReputationProof';
  * @param main_box The main RPBox containing the reputation tokens to spend.
  * @returns The transaction ID if successful, otherwise null.
  */
-export declare function create_opinion(explorerUri: string, token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox): Promise<string | null>;
+export declare function create_opinion(explorerUri: string, token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox, signer?: Signer): Promise<string | null>;
+/**
+ * Signer-aware variant of {@link create_opinion} for non-browser callers
+ * (Node, MCP servers, agents). Takes an explicit {@link Signer} and returns the
+ * full {@link SignerResult} — either a submitted txId or, for an
+ * {@link UnsignedSigner}, the unsigned EIP-12 transaction for external signing.
+ * Throws on failure instead of swallowing the error with a browser `alert`.
+ */
+export declare function create_opinion_with_signer(signer: Signer, explorerUri: string, token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox): Promise<SignerResult>;
 /**
  * Creates a new opinion and returns the TransactionBuilder for chaining.
  * Use this when you need to chain multiple transactions together.
@@ -27,4 +36,4 @@ export declare function create_opinion(explorerUri: string, token_amount: number
  * @param main_box The main RPBox containing the reputation tokens to spend.
  * @returns The TransactionBuilder after .build() for chaining.
  */
-export declare function create_opinion_chained(explorerUri: string, token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox): Promise<TransactionBuilder>;
+export declare function create_opinion_chained(explorerUri: string, token_amount: number, type_nft_id: string, object_pointer: string | undefined, polarization: boolean, content: object | string | null, is_locked: boolean | undefined, main_box: RPBox, signer?: Signer): Promise<TransactionBuilder>;

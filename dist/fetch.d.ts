@@ -1,4 +1,4 @@
-import { type RPBox, type ReputationProof, type TypeNFT } from "./ReputationProof";
+import { type RPBox, type ReputationProof, type TypeNFT } from "./ReputationProof.js";
 type RegisterValue = {
     renderedValue: string;
     serializedValue: string;

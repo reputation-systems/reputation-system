@@ -1,5 +1,5 @@
 import { TransactionBuilder } from '@fleet-sdk/core';
-import { type RPBox } from './ReputationProof';
+import { type RPBox } from './ReputationProof.js';
 /**
  * Sacrifices ERG and tokens by adding them to an existing reputation box.
  * The target box is recreated with the additional assets permanently locked inside.

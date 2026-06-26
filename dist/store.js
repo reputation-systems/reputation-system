@@ -1,6 +1,10 @@
-import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-import { explorer_uri as defaultExplorerUri } from './envs';
+// Node-safe browser detection. Previously `import { browser } from '$app/environment'`,
+// but that SvelteKit virtual module does not resolve under plain Node, which
+// broke the `reputation-system/node` entry point (the store is in its graph via
+// utils/ReputationProof). `typeof window` is equivalent for the localStorage guard.
+const browser = typeof window !== 'undefined';
+import { explorer_uri as defaultExplorerUri } from './envs.js';
 function createPersistedStringStore(key, initialValue) {
     const store = writable(initialValue);
     if (browser) {

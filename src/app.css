@@ -1,63 +1,134 @@
-/*
-  =============================================================
-  == Arreglos de Estilo para Svelte Flow en Tema Oscuro ==
-  =============================================================
-  Este archivo soluciona los problemas de visibilidad de los
-  controles, textos y otros elementos de Svelte Flow cuando
-  se usa un fondo oscuro.
-*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/*
-  Arreglo #1: Controles de Navegación (Zoom, Bloqueo, FitView)
-  -------------------------------------------------------------
-  Los iconos SVG por defecto son negros. Los cambiamos a un color claro.
-*/
-.svelte-flow__controls-button svg {
-  fill: #f0f0f0 !important; /* Usamos !important para asegurar la anulación */
+/* App identity font: Inter (matches the rest of the app). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    /* App identity: black & yellow. Inter throughout. */
+    --font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* LIGHT tone — off-white surface, near-black text, amber (#fbbf24) accent. */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 43 96% 56%;          /* #fbbf24 */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 43 96% 56%;           /* #fbbf24 */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 43 96% 56%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* DARK tone — black surfaces (#1a1a1a / #2a2a2a) + amber accent, matching
+       the rest of the reputation app. */
+    --background: 0 0% 10%;         /* #1a1a1a */
+    --foreground: 0 0% 94%;         /* #f0f0f0 */
+
+    --card: 0 0% 16%;               /* #2a2a2a */
+    --card-foreground: 0 0% 94%;
+
+    --popover: 0 0% 13%;
+    --popover-foreground: 0 0% 94%;
+
+    --primary: 43 96% 56%;          /* #fbbf24 */
+    --primary-foreground: 0 0% 10%;
+
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 94%;
+
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 43 96% 56%;           /* #fbbf24 */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 22%;             /* #3a3a3a */
+    --input: 0 0% 22%;
+    --ring: 43 96% 56%;
+  }
 }
 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    @apply text-foreground;
+    letter-spacing: -0.02em;
+  }
+}
 
 /*
-  Arreglo #2: Texto de las Aristas (Edge Labels)
-  -----------------------------------------------
-  El texto que aparece sobre las líneas (aristas) también es negro.
+  =============================================================
+  == Reputation-system specific: Svelte Flow dark-theme fixes ==
+  =============================================================
+  Preserved from the original app — these keep the on-chain graph
+  (xyflow / Svelte Flow) controls, edge labels and minimap legible
+  on the dark graph canvas. Untouched by the template-shell adoption.
 */
+
+/* Navigation controls (Zoom, Lock, FitView): default SVG icons are black. */
+.svelte-flow__controls-button svg {
+  fill: #f0f0f0 !important;
+}
+
+/* Edge labels: default text is black. */
 .svelte-flow__edge-text {
   fill: #e0e0e0;
   font-weight: bold;
 }
 
-
-/*
-  Arreglo #3: Nodos del Minimapa
-  --------------------------------
-  Los nodos en el minimapa son oscuros y apenas se ven.
-  Los pintamos con el color de acento de la aplicación.
-*/
+/* Minimap nodes: paint with the app accent so they're visible. */
 .svelte-flow__minimap-node {
   fill: #FBBF24;
   stroke: none;
 }
 
-
-/*
-  Arreglo #4: Atribución de Svelte Flow
-  ---------------------------------------
-  El enlace de atribución "Svelte Flow" en la esquina inferior derecha es negro.
-*/
+/* Svelte Flow attribution link. */
 .svelte-flow__attribution a {
-  color: #888; /* Hacemos que sea un gris legible */
-  background: rgba(26, 25, 35, 0.5); /* Le damos un fondo sutil */
+  color: #888;
+  background: rgba(26, 25, 35, 0.5);
   padding: 2px 4px;
   border-radius: 3px;
 }
 
-/*
-  Arreglo #5: Color de texto por defecto dentro de los nodos
-  -----------------------------------------------------------
-  Aseguramos que cualquier texto dentro de un nodo personalizado,
-  si no tiene un color definido, sea claro por defecto.
-*/
+/* Default text color inside custom nodes. */
 .svelte-flow__node {
     color: #f0f0f0;
 }

@@ -1,63 +1,141 @@
-/*
-  =============================================================
-  == Arreglos de Estilo para Svelte Flow en Tema Oscuro ==
-  =============================================================
-  Este archivo soluciona los problemas de visibilidad de los
-  controles, textos y otros elementos de Svelte Flow cuando
-  se usa un fondo oscuro.
-*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/*
-  Arreglo #1: Controles de Navegación (Zoom, Bloqueo, FitView)
-  -------------------------------------------------------------
-  Los iconos SVG por defecto son negros. Los cambiamos a un color claro.
-*/
-.svelte-flow__controls-button svg {
-  fill: #f0f0f0 !important; /* Usamos !important para asegurar la anulación */
+/* Web fonts to match celaut-project.github.io (Playfair Display + Lato). */
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@500;700&display=swap');
+
+@layer base {
+  :root {
+    /* Typography — Playfair Display for headings, Lato for body, matching
+       the celaut-project.github.io public site. */
+    --font-heading: 'Playfair Display', 'Inter', system-ui, serif;
+    --font-body: 'Lato', 'Inter', system-ui, sans-serif;
+
+    /* Palette ported from celaut-project.github.io design tokens:
+         background  #f9eee7  (warm cream)
+         foreground  #1d4241  (deep teal)
+         accent      #ef9c82  (soft coral) — hover #e88a6f
+         muted text  #576c6b
+         border      #e0d5cb
+    */
+    --background: 24 60% 94%;
+    --foreground: 179 39% 19%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 179 39% 19%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 179 39% 19%;
+
+    --primary: 15 80% 73%;
+    --primary-foreground: 179 39% 19%;
+
+    --secondary: 28 22% 84%;
+    --secondary-foreground: 179 39% 19%;
+
+    --muted: 28 30% 90%;
+    --muted-foreground: 178 10% 38%;
+
+    --accent: 15 80% 73%;
+    --accent-foreground: 179 39% 19%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 28 22% 84%;
+    --input: 28 22% 84%;
+    --ring: 15 80% 73%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark theme uses the celaut deep-teal as the surface and keeps the
+       coral accent. Foreground is the warm cream so contrast stays high. */
+    --background: 179 39% 14%;
+    --foreground: 24 60% 94%;
+
+    --card: 179 39% 17%;
+    --card-foreground: 24 60% 94%;
+
+    --popover: 179 39% 17%;
+    --popover-foreground: 24 60% 94%;
+
+    --primary: 15 80% 73%;
+    --primary-foreground: 179 39% 19%;
+
+    --secondary: 179 30% 22%;
+    --secondary-foreground: 24 60% 94%;
+
+    --muted: 179 30% 22%;
+    --muted-foreground: 24 25% 78%;
+
+    --accent: 15 80% 73%;
+    --accent-foreground: 179 39% 19%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 179 25% 28%;
+    --input: 179 25% 28%;
+    --ring: 15 80% 73%;
+  }
 }
 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    @apply text-foreground;
+    letter-spacing: -0.02em;
+  }
+}
 
 /*
-  Arreglo #2: Texto de las Aristas (Edge Labels)
-  -----------------------------------------------
-  El texto que aparece sobre las líneas (aristas) también es negro.
+  =============================================================
+  == Reputation-system specific: Svelte Flow dark-theme fixes ==
+  =============================================================
+  Preserved from the original app — these keep the on-chain graph
+  (xyflow / Svelte Flow) controls, edge labels and minimap legible
+  on the dark graph canvas. Untouched by the template-shell adoption.
 */
+
+/* Navigation controls (Zoom, Lock, FitView): default SVG icons are black. */
+.svelte-flow__controls-button svg {
+  fill: #f0f0f0 !important;
+}
+
+/* Edge labels: default text is black. */
 .svelte-flow__edge-text {
   fill: #e0e0e0;
   font-weight: bold;
 }
 
-
-/*
-  Arreglo #3: Nodos del Minimapa
-  --------------------------------
-  Los nodos en el minimapa son oscuros y apenas se ven.
-  Los pintamos con el color de acento de la aplicación.
-*/
+/* Minimap nodes: paint with the app accent so they're visible. */
 .svelte-flow__minimap-node {
   fill: #FBBF24;
   stroke: none;
 }
 
-
-/*
-  Arreglo #4: Atribución de Svelte Flow
-  ---------------------------------------
-  El enlace de atribución "Svelte Flow" en la esquina inferior derecha es negro.
-*/
+/* Svelte Flow attribution link. */
 .svelte-flow__attribution a {
-  color: #888; /* Hacemos que sea un gris legible */
-  background: rgba(26, 25, 35, 0.5); /* Le damos un fondo sutil */
+  color: #888;
+  background: rgba(26, 25, 35, 0.5);
   padding: 2px 4px;
   border-radius: 3px;
 }
 
-/*
-  Arreglo #5: Color de texto por defecto dentro de los nodos
-  -----------------------------------------------------------
-  Aseguramos que cualquier texto dentro de un nodo personalizado,
-  si no tiene un color definido, sea claro por defecto.
-*/
+/* Default text color inside custom nodes. */
 .svelte-flow__node {
     color: #f0f0f0;
 }

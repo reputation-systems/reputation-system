@@ -129,15 +129,15 @@
 
     $: cssVars = [
         themeStyles,
-        `--rp-text-primary: var(--rp-text-primary, #f0f0f0)`,
-        `--rp-text-secondary: var(--rp-text-secondary, #e2e8f0)`,
-        `--rp-text-muted: var(--rp-text-muted, #94a3b8)`,
-        `--rp-bg-card: var(--rp-bg-card, #262626)`,
-        `--rp-bg-input: var(--rp-bg-input, #171717)`,
+        `--rp-text-primary: var(--rp-text-primary, hsl(var(--foreground)))`,
+        `--rp-text-secondary: var(--rp-text-secondary, hsl(var(--foreground)))`,
+        `--rp-text-muted: var(--rp-text-muted, hsl(var(--muted-foreground)))`,
+        `--rp-bg-card: var(--rp-bg-card, hsl(var(--card)))`,
+        `--rp-bg-input: var(--rp-bg-input, hsl(var(--muted)))`,
         `--rp-bg-page: var(--rp-bg-page, transparent)`,
-        `--rp-bg-hover: var(--rp-bg-hover, rgba(255,255,255,0.05))`,
-        `--rp-border-color: var(--rp-border-color, #404040)`,
-        `--rp-border-subtle: var(--rp-border-subtle, rgba(255,255,255,0.1))`,
+        `--rp-bg-hover: var(--rp-bg-hover, hsl(var(--accent) / 0.1))`,
+        `--rp-border-color: var(--rp-border-color, hsl(var(--border)))`,
+        `--rp-border-subtle: var(--rp-border-subtle, hsl(var(--border)))`,
         `--rp-accent-primary: ${accentPrimary}`,
         `--rp-accent-secondary: ${accentSecondary}`,
         `--rp-accent-primary-05: ${accentPrimary05}`,
@@ -1863,7 +1863,7 @@
     .profile-switcher-v2.expanded {
         background: var(--rp-bg-hover);
         border-color: var(--rp-accent-primary);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
     }
 
     .switcher-main-row {
@@ -1908,7 +1908,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #000;
+        color: hsl(var(--primary-foreground));
         font-size: 1.25rem;
         box-shadow: 0 4px 12px var(--rp-accent-primary-20);
     }
@@ -1933,7 +1933,7 @@
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #000;
+        color: hsl(var(--primary-foreground));
         background: var(--rp-accent-primary);
         padding: 0.1rem 0.4rem;
         border-radius: 4px;
@@ -2117,7 +2117,7 @@
         margin-bottom: 1rem;
         background: linear-gradient(
             to right,
-            #fff,
+            hsl(var(--foreground)),
             var(--rp-accent-primary)
         );
         -webkit-background-clip: text;
@@ -2486,7 +2486,7 @@
 
     .filter-badge.active {
         background: var(--rp-accent-primary);
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         border-color: var(--rp-accent-primary);
         font-weight: 600;
     }
@@ -2616,7 +2616,7 @@
     /* --- Forms & Buttons --- */
     .primary-button {
         background: var(--rp-accent-primary);
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 0.375rem;
@@ -2827,7 +2827,7 @@
         color: var(--rp-text-secondary);
         font-size: 0.85rem;
         line-height: 1.45;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
         z-index: 20;
         backdrop-filter: blur(10px);
     }
@@ -2882,7 +2882,7 @@
 
     .toggle-btn.active {
         background: var(--rp-accent-primary);
-        color: #000;
+        color: hsl(var(--primary-foreground));
         border-color: var(--rp-accent-primary);
     }
 
@@ -3093,7 +3093,7 @@
         background: var(--rp-bg-card);
         border: 1px solid var(--rp-border-color);
         border-radius: 0.5rem;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
         max-height: 200px;
         overflow-y: auto;
         padding: 0.5rem;

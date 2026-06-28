@@ -48,7 +48,7 @@
         display: flex;
         gap: 1rem;
         margin-bottom: 2rem;
-        border-bottom: 2px solid var(--border-color);
+        border-bottom: 2px solid hsl(var(--border));
     }
 
     .tab-button {
@@ -56,7 +56,7 @@
         border: none;
         padding: 1rem 1.5rem;
         font-size: 1.1rem;
-        color: var(--text-secondary);
+        color: hsl(var(--muted-foreground));
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -67,21 +67,21 @@
     }
 
     .tab-button:hover {
-        color: var(--primary-color);
+        color: hsl(var(--primary));
     }
 
     .tab-button.active {
-        color: var(--primary-color);
-        border-bottom-color: var(--primary-color);
+        color: hsl(var(--primary));
+        border-bottom-color: hsl(var(--primary));
         font-weight: 600;
     }
 
     .tab-content {
-        background: var(--bg-card);
-        border-radius: var(--radius-lg);
+        background: hsl(var(--card));
+        border-radius: 12px;
         padding: 2rem;
-        box-shadow: var(--shadow-md);
-        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+        border: 1px solid hsl(var(--border));
     }
 
     @media (max-width: 600px) {
@@ -97,11 +97,11 @@
         .tab-button {
             width: 100%;
             justify-content: center;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid hsl(var(--border));
         }
 
         .tab-button.active {
-            border-bottom-color: var(--primary-color);
+            border-bottom-color: hsl(var(--primary));
         }
     }
 </style>

@@ -158,14 +158,14 @@
         max-width: 700px;
         padding: 2rem;
         border-radius: 12px;
-        background-color: #2a2a2a;
-        border: 1px solid #444;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        background-color: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
     .header {
         text-align: center;
         margin-bottom: 2rem;
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid hsl(var(--border));
         padding-bottom: 1.5rem;
     }
     .settings-title {
@@ -176,7 +176,7 @@
     }
     .settings-description {
         margin: 0;
-        color: #b0b0b0;
+        color: hsl(var(--muted-foreground));
         font-size: 1rem;
     }
     .settings-section {
@@ -191,7 +191,7 @@
         align-items: center;
         gap: 1.5rem;
         padding: 1rem 0;
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid hsl(var(--border));
     }
     .setting-item-stacked {
         grid-template-columns: 1fr;
@@ -201,16 +201,16 @@
         border-bottom: none;
     }
     .setting-item label {
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
     }
     .setting-item input[type="text"],
     .setting-item select,
     .setting-item .number-input {
         padding: 0.75rem;
         font-size: 0.9rem;
-        border: 1px solid #666;
-        background-color: #333;
-        color: #f0f0f0;
+        border: 1px solid hsl(var(--input));
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
         width: 100%;
         border-radius: 6px;
         box-sizing: border-box;
@@ -220,7 +220,7 @@
         border: 1px solid #fbbf24;
         border-left: none;
         background-color: #fbbf24;
-        color: #2a2a2a;
+        color: hsl(var(--primary-foreground));
         border-top-right-radius: 6px;
         border-bottom-right-radius: 6px;
         cursor: pointer;
@@ -255,9 +255,9 @@
     }
     .secondary-button {
         padding: 0.75rem 1rem;
-        border: 1px solid #666;
-        background-color: #333;
-        color: #f0f0f0;
+        border: 1px solid hsl(var(--input));
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
         border-radius: 6px;
         cursor: pointer;
         white-space: nowrap;
@@ -266,14 +266,14 @@
             background-color 0.2s;
     }
     .secondary-button:hover {
-        background-color: #3b3b3b;
-        border-color: #888;
+        background-color: hsl(var(--accent) / 0.1);
+        border-color: hsl(var(--muted-foreground));
     }
     .primary-button {
         padding: 0.75rem 1rem;
         border: 1px solid #fbbf24;
         background-color: #fbbf24;
-        color: #2a2a2a;
+        color: hsl(var(--primary-foreground));
         border-radius: 6px;
         cursor: pointer;
         font-weight: 700;
@@ -304,7 +304,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background-color: #555;
+        background-color: hsl(var(--input));
         transition: 0.3s;
         border-radius: 26px;
     }

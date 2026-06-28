@@ -3,7 +3,11 @@
     import { browser } from "$app/environment";
     import { onMount } from "svelte";
     import { fetchAllUserProfiles } from "$lib/profileFetch";
-    import { connectNautilus } from "$lib/connect";
+    // Template wallet system: the center "Connect Wallet" button opens the
+    // extension-selection modal (Nautilus / SAFEW / …) from wallet-svelte-component.
+    // The App.svelte shell bridges its `walletConnected` into reputation's own
+    // `connected`/`address`/`network` stores, so every existing flow keeps working.
+    import { WalletModal, walletManager } from "wallet-svelte-component";
     import {
         connected,
         reputation_proof,
@@ -95,7 +99,13 @@
     ];
 
     let randomPhrase = "";
+    let showWalletModal = false;
     let loadingProfiles = false;
+
+    function openWalletModal() {
+        showWalletModal = true;
+        walletManager.openModal();
+    }
     let lastLoadedExplorerUri = "";
     let wasConnected = false;
 
@@ -271,10 +281,10 @@
                 >
             {:else}
                 <p>
-                    Connect your Nautilus wallet to explore and build the web of
+                    Connect your Ergo wallet to explore and build the web of
                     trust on Ergo.
                 </p>
-                <button on:click={connectNautilus}>Connect Wallet</button>
+                <button on:click={openWalletModal}>Connect Wallet</button>
             {/if}
 
             <div class="apps-carousel-container">
@@ -348,6 +358,10 @@
     {/if}
 </main>
 
+<!-- Wallet extension-selection modal (Nautilus / SAFEW / …), opened by the
+     center "Connect Wallet" button on the intro page. -->
+<WalletModal bind:open={showWalletModal} />
+
 <style>
     :global(html, body) {
         height: auto;
@@ -362,8 +376,8 @@
     }
 
     main {
-        background-color: #1a1a1a;
-        color: #f0f0f0;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
         min-height: 100vh;
         overflow: visible;
     }
@@ -434,13 +448,13 @@
     .phrase-text {
         font-size: 1.1rem;
         line-height: 1.4;
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         margin: 0;
     }
 
     .loading-status {
         font-size: 0.9rem;
-        color: #94a3b8;
+        color: hsl(var(--muted-foreground));
         margin-bottom: 1rem;
         display: flex;
         align-items: center;
@@ -456,11 +470,11 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: rgba(26, 25, 35, 0.7);
+        background: hsl(var(--background) / 0.7);
         backdrop-filter: blur(10px);
         padding: 0.5rem 1.5rem;
         z-index: 1000;
-        border-bottom: 1px solid #333;
+        border-bottom: 1px solid hsl(var(--border));
         box-sizing: border-box;
     }
 
@@ -474,7 +488,7 @@
     .nav-buttons button {
         padding: 0.5rem 1rem;
         background: transparent;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
         border: none;
         border-radius: 6px;
         font-weight: 500;
@@ -491,8 +505,8 @@
     }
 
     .nav-buttons button:hover {
-        background-color: #3a3a3a;
-        color: white;
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
     }
 
     .nav-buttons button.active {
@@ -527,12 +541,12 @@
         position: absolute;
         top: 100%;
         left: 0;
-        background-color: #2a2a2a;
+        background-color: hsl(var(--card));
         min-width: 160px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.5);
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
         z-index: 1001;
         border-radius: 6px;
-        border: 1px solid #444;
+        border: 1px solid hsl(var(--border));
         padding: 0.5rem 0;
     }
 
@@ -548,7 +562,7 @@
         text-align: left;
         padding: 0.6rem 0.8rem;
         background: transparent;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
         border: none;
         border-radius: 4px;
         font-size: 0.85rem;
@@ -558,8 +572,8 @@
     }
 
     .dropdown-content button:hover {
-        background-color: #3a3a3a;
-        color: white;
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
     }
 
     .dropdown-content button.active {
@@ -577,16 +591,16 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: rgba(51, 51, 51, 0.5);
-        color: #ccc;
+        background-color: hsl(var(--muted) / 0.7);
+        color: hsl(var(--muted-foreground));
         border-radius: 50%;
         font-size: 1.5rem;
         text-decoration: none;
         transition: all 0.2s ease-in-out;
     }
     .github-button:hover {
-        background-color: #333;
-        color: white;
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
         transform: scale(1.1);
     }
 
@@ -615,7 +629,7 @@
     }
 
     .carousel-title {
-        color: #94a3b8;
+        color: hsl(var(--muted-foreground));
         font-size: 0.9rem;
         text-transform: uppercase;
         letter-spacing: 0.1em;
@@ -636,8 +650,8 @@
     }
 
     .app-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
         border-radius: 16px;
         padding: 1.5rem;
         display: flex;
@@ -657,7 +671,7 @@
     .app-card:hover {
         transform: translateY(-5px);
         border-color: var(--app-color);
-        background: rgba(255, 255, 255, 0.05);
+        background: hsl(var(--accent) / 0.08);
     }
 
     .app-icon {
@@ -688,14 +702,14 @@
     .app-info h3 {
         margin: 0;
         font-size: 1.2rem;
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         margin-bottom: 0.4rem;
     }
 
     .app-info p {
         margin: 0;
         font-size: 0.9rem;
-        color: #94a3b8;
+        color: hsl(var(--muted-foreground));
         line-height: 1.4;
     }
 

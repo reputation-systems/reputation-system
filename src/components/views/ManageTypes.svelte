@@ -319,9 +319,9 @@
         /* Estilos visuales (sin cambios) */
         padding: 2rem;
         border-radius: 12px;
-        background-color: #2a2a2a;
-        border: 1px solid #444;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        background-color: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
     }
 
     .form-box.collapsed {
@@ -339,7 +339,7 @@
     }
     .form-description {
         margin: 0 0 1.5rem 0;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
         font-size: 0.95rem;
         text-align: center;
     }
@@ -355,12 +355,12 @@
         padding: 0.75rem;
         font-size: 1rem;
         border-radius: 6px;
-        border: 1px solid #666;
-        background-color: #333;
-        color: #f0f0f0;
+        border: 1px solid hsl(var(--input));
+        background-color: hsl(var(--muted));
+        color: hsl(var(--foreground));
     }
     .form-input:disabled {
-        background-color: #444;
+        background-color: hsl(var(--muted) / 0.5);
         cursor: not-allowed;
     }
     textarea.form-input {
@@ -371,7 +371,7 @@
         align-items: center;
         gap: 0.75rem;
         margin-bottom: 1.5rem;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
     }
     .form-checkbox {
         width: 1.15rem;
@@ -387,12 +387,12 @@
         font-weight: bold;
         cursor: pointer;
         background-color: #fbbf24;
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         font-size: 1.1rem;
     }
     .form-button:disabled {
-        background-color: #555;
-        color: #aaa;
+        background-color: hsl(var(--muted));
+        color: hsl(var(--muted-foreground));
         cursor: not-allowed;
     }
     .list-area {
@@ -402,14 +402,14 @@
     }
     .list-title {
         font-size: 1.5rem;
-        color: #f0f0f0;
-        border-bottom: 1px solid #444;
+        color: hsl(var(--foreground));
+        border-bottom: 1px solid hsl(var(--border));
         padding-bottom: 0.5rem;
         margin-bottom: 1.5rem;
     }
     .loader {
         margin: 1rem auto;
-        border: 4px solid #555;
+        border: 4px solid hsl(var(--muted));
         border-top: 4px solid #fbbf24;
         border-radius: 50%;
         width: 40px;
@@ -433,10 +433,10 @@
         gap: 1rem;
     }
     .type-item {
-        background-color: #333;
+        background-color: hsl(var(--muted));
         padding: 1.5rem;
         border-radius: 8px;
-        border: 1px solid #444;
+        border: 1px solid hsl(var(--border));
         text-align: left;
     }
     .type-header {
@@ -451,7 +451,7 @@
         color: #fbbf24;
     }
     .type-description {
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
         margin: 0.5rem 0 1rem 0;
         font-style: italic;
     }
@@ -470,17 +470,17 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background-color: #2a2a2a;
+        background-color: hsl(var(--card));
         padding: 0.5rem 1rem;
         margin: 1rem -1.5rem -1.5rem -1.5rem;
         border-bottom-left-radius: 8px;
         border-bottom-right-radius: 8px;
-        border-top: 1px solid #444;
+        border-top: 1px solid hsl(var(--border));
     }
     .type-id {
         font-family: monospace;
         font-size: 0.85rem;
-        color: #aaa;
+        color: hsl(var(--muted-foreground));
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -489,7 +489,7 @@
     .copy-button {
         background: none;
         border: none;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
         cursor: pointer;
         font-size: 1rem;
     }
@@ -506,7 +506,7 @@
     }
     .no-results-box {
         padding: 2rem;
-        background-color: #2a2a2a;
+        background-color: hsl(var(--card));
         border-radius: 8px;
     }
     .version-wrapper {

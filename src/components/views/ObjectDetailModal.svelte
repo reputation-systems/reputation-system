@@ -279,10 +279,10 @@
 
 <style>
   :root {
-    --card-bg: #2a2a2a;
-    --border-color: #444;
-    --text-color: #e0e0e0;
-    --text-muted: #aaa;
+    --card-bg: hsl(var(--card));
+    --border-color: hsl(var(--border));
+    --text-color: hsl(var(--foreground));
+    --text-muted: hsl(var(--muted-foreground));
     --accent-color: #fbbf24;
   }
 
@@ -329,7 +329,7 @@
     transition: color 0.2s;
   }
   .close-button:hover {
-    color: #fff;
+    color: hsl(var(--foreground));
   }
 
   .proof-header {
@@ -347,7 +347,7 @@
   .proof-title {
     font-family: monospace;
     font-size: 1.75rem;
-    color: #fff;
+    color: hsl(var(--foreground));
     margin: 0.25rem 0 0 0;
     line-height: 1.2;
     white-space: normal;
@@ -362,7 +362,7 @@
 
   .view-switcher {
     display: flex;
-    background-color: #222;
+    background-color: hsl(var(--background));
     border-radius: 8px;
     padding: 4px;
     gap: 4px;
@@ -386,8 +386,8 @@
     gap: 0.5rem;
   }
   .view-switcher button.active {
-    background-color: #444;
-    color: #fff;
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
     font-weight: 600;
   }
 
@@ -414,8 +414,8 @@
   }
   .carousel-nav {
     background: 0 0;
-    border: 1px solid #555;
-    color: #fff;
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
     border-radius: 50%;
     width: 45px;
     height: 45px;
@@ -428,7 +428,7 @@
     align-self: center;
   }
   .carousel-nav:hover:not(:disabled) {
-    background-color: #444;
+    background-color: hsl(var(--muted));
     border-color: var(--accent-color);
   }
   .carousel-nav:disabled {
@@ -446,7 +446,7 @@
     color: var(--text-muted);
     text-align: center;
     padding: 3rem;
-    background-color: #262626;
+    background-color: hsl(var(--muted));
     border-radius: 8px;
     height: 100%;
     display: flex;
@@ -454,8 +454,8 @@
     justify-content: center;
   }
   .box-card {
-    background-color: #333;
-    border: 1px solid #555;
+    background-color: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
     border-radius: 8px;
     padding: 1.5rem;
     display: flex;
@@ -473,7 +473,7 @@
     transform: translateY(-2px);
   }
   .carousel-item {
-    border-color: #555;
+    border-color: hsl(var(--border));
     width: 90%;
     height: 90%;
   }
@@ -548,7 +548,7 @@
   .content-section {
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #444;
+    border-top: 1px solid hsl(var(--border));
     flex-grow: 1;
     overflow-y: auto;
     min-height: 0;
@@ -559,7 +559,7 @@
   .code-font,
   pre {
     font-family: "Courier New", Courier, monospace;
-    background-color: #222;
+    background-color: hsl(var(--background));
     padding: 0.75rem;
     border-radius: 4px;
     font-size: 0.9em;
@@ -573,7 +573,7 @@
   .markdown-content :global(h2),
   .markdown-content :global(h3) {
     color: var(--accent-color);
-    border-bottom: 1px solid #555;
+    border-bottom: 1px solid hsl(var(--border));
     padding-bottom: 0.3em;
   }
   .markdown-content :global(p) {
@@ -596,7 +596,7 @@
     color: var(--text-muted);
   }
   .markdown-content :global(code) {
-    background-color: #3a3a3c;
+    background-color: hsl(var(--accent) / 0.1);
     padding: 0.2em 0.4em;
     border-radius: 4px;
     font-family: "Courier New", Courier, monospace;
@@ -609,16 +609,16 @@
   }
   .content-area::-webkit-scrollbar-track,
   .content-section::-webkit-scrollbar-track {
-    background: #222;
+    background: hsl(var(--background));
     border-radius: 10px;
   }
   .content-area::-webkit-scrollbar-thumb,
   .content-section::-webkit-scrollbar-thumb {
-    background: #555;
+    background: hsl(var(--border));
     border-radius: 10px;
   }
   .content-area::-webkit-scrollbar-thumb:hover,
   .content-section::-webkit-scrollbar-thumb:hover {
-    background: #777;
+    background: hsl(var(--muted-foreground));
   }
 </style>

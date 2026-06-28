@@ -77,7 +77,7 @@
         text-align: center;
         font-size: 1.2rem;
         margin-bottom: 3rem;
-        color: #b0b0b0;
+        color: hsl(var(--muted-foreground));
     }
     .main-cards-container {
         display: flex;
@@ -86,11 +86,11 @@
         flex-wrap: wrap;
     }
     .dashboard-card {
-        background: #2a2a2a;
-        border: 1px solid #444;
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     .dashboard-card h2 {
         margin-top: 0;
@@ -111,7 +111,7 @@
         font-weight: bold;
     }
     .detail-value {
-        background: #333;
+        background: hsl(var(--muted));
         padding: 0.25rem 0.5rem;
         border-radius: 6px;
         font-family: monospace;
@@ -131,19 +131,19 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        background: #333;
-        border: 1px solid #555;
+        background: hsl(var(--muted));
+        border: 1px solid hsl(var(--border));
         border-radius: 8px;
         padding: 1.5rem 1rem;
         text-align: center;
-        color: white;
+        color: hsl(var(--foreground));
         cursor: pointer;
         transition:
             background-color 0.2s,
             border-color 0.2s;
     }
     .action-button:hover {
-        background-color: #444;
+        background-color: hsl(var(--accent) / 0.1);
         border-color: #fbbf24;
     }
     .action-button .icon {

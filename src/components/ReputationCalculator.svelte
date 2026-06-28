@@ -168,10 +168,10 @@
     }
     .input {
         padding: 0.75rem;
-        background: #333;
-        border: 1px solid #666;
+        background: hsl(var(--muted));
+        border: 1px solid hsl(var(--input));
         border-radius: 6px;
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         flex-grow: 1;
         max-width: 400px;
     }

@@ -53,8 +53,8 @@
 
 <style>
 	.card {
-		background: #2f2f2f;
-		border: 1px solid #555;
+		background: hsl(var(--card));
+		border: 1px solid hsl(var(--border));
 		border-left: 5px solid #4caf50;
 		border-radius: 8px;
 		padding: 1rem;
@@ -74,7 +74,7 @@
 	}
 	.object-type {
 		font-size: 0.8rem;
-		background: #444;
+		background: hsl(var(--muted));
 		padding: 0.2rem 0.5rem;
 		border-radius: 12px;
 	}
@@ -101,7 +101,7 @@
 	}
 	.proportion-bar-container {
 		width: 100%;
-		background: #555;
+		background: hsl(var(--muted));
 		border-radius: 4px;
 		height: 8px;
 		margin-top: 0.5rem;
@@ -116,9 +116,9 @@
 	}
 	.details-button {
 		width: 100%;
-		background: #4a4a4a;
+		background: hsl(var(--muted));
 		border: none;
-		color: white;
+		color: hsl(var(--foreground));
 		padding: 0.5rem;
 		border-radius: 6px;
 		cursor: pointer;
@@ -126,7 +126,7 @@
 	.details-section {
 		margin-top: 1rem;
 		padding-top: 1rem;
-		border-top: 1px solid #444;
+		border-top: 1px solid hsl(var(--border));
 		font-size: 0.8rem;
 		word-break: break-all;
 	}
@@ -134,7 +134,7 @@
 		font-family: monospace;
 	}
 	.details-section pre {
-		background-color: #222;
+		background-color: hsl(var(--background));
 		padding: 0.5rem;
 		border-radius: 4px;
 		white-space: pre-wrap;

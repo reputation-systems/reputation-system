@@ -214,7 +214,7 @@
         text-align: center;
         padding-bottom: 1.5rem;
         margin-bottom: 2rem;
-        border-bottom: 1px solid #444;
+        border-bottom: 1px solid hsl(var(--border));
         flex-shrink: 0;
     }
 
@@ -224,14 +224,14 @@
     }
     h4 {
         text-align: center;
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         font-size: 1.2rem;
         font-weight: 500;
     }
 
     .progress-bar {
         width: 100%;
-        background-color: #3a3a3a;
+        background-color: hsl(var(--muted));
         border-radius: 5px;
         height: 10px;
     }
@@ -257,32 +257,32 @@
     label {
         margin-bottom: 0.25rem;
         font-weight: bold;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
     }
     .input,
     select {
         padding: 0.75rem;
-        background: #333;
-        border: 1px solid #666;
+        background: hsl(var(--muted));
+        border: 1px solid hsl(var(--input));
         border-radius: 6px;
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         font-family: inherit;
         font-size: 1rem;
     }
     select:disabled {
-        background-color: #444;
+        background-color: hsl(var(--muted) / 0.5);
         cursor: not-allowed;
     }
     .help-text {
         font-size: 0.9rem;
-        color: #aaa;
+        color: hsl(var(--muted-foreground));
         margin-top: 0.75rem;
         border-left: 3px solid #fbbf24;
         padding-left: 1rem;
     }
 
     .summary {
-        background: #333;
+        background: hsl(var(--muted));
         padding: 1rem;
         border-radius: 8px;
         margin-bottom: 1.5rem;
@@ -292,10 +292,10 @@
     }
     .summary p {
         margin: 0.5rem 0;
-        color: #ccc;
+        color: hsl(var(--muted-foreground));
     }
     .summary span {
-        color: #f0f0f0;
+        color: hsl(var(--foreground));
         font-family: monospace;
         white-space: pre-wrap;
     }
@@ -321,7 +321,7 @@
         display: flex;
         justify-content: space-between;
         margin-top: 2rem;
-        border-top: 1px solid #444;
+        border-top: 1px solid hsl(var(--border));
         padding-top: 1.5rem;
         flex-shrink: 0;
     }
@@ -329,7 +329,7 @@
     .submit-button {
         padding: 0.75rem 1.5rem;
         border: none;
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         background: #fbbf24;
         border-radius: 6px;
         cursor: pointer;
@@ -337,8 +337,8 @@
     }
     .wizard-nav button:disabled,
     .submit-button:disabled {
-        background-color: #555;
-        color: #888;
+        background-color: hsl(var(--muted));
+        color: hsl(var(--muted-foreground));
         cursor: not-allowed;
     }
 

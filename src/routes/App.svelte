@@ -120,7 +120,14 @@
         <div class="flex-1"></div>
 
         <div class="user-section">
-            <WalletButton explorerUrl={$web_explorer_uri_addr} />
+            <!-- Header connect-wallet is hidden: the single connect entry point
+                 is the center button on the intro page (it opens the wallet
+                 extension-selection modal). Once connected, we still surface the
+                 WalletButton here so the account/address/disconnect dropdown
+                 stays reachable from the navbar. -->
+            {#if $walletConnected}
+                <WalletButton explorerUrl={$web_explorer_uri_addr} />
+            {/if}
             <button
                 class="settings-button"
                 on:click={() => (showSettingsModal = true)}

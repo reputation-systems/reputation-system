@@ -47,7 +47,7 @@
 		margin-bottom: 3rem;
 	}
 	.proof-group h3 {
-		border-bottom: 2px solid #444;
+		border-bottom: 2px solid hsl(var(--border));
 		padding-bottom: 0.5rem;
 		word-break: break-all;
 	}
@@ -60,7 +60,7 @@
 	.no-proofs {
 		text-align: center;
 		padding: 2rem;
-		background: #2a2a2a;
+		background: hsl(var(--card));
 		border-radius: 8px;
 	}
 </style>

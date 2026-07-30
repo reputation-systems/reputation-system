@@ -256,14 +256,6 @@
 
     {#if currentPage === "intro"}
         <div class="welcome-container">
-            <a
-                class="github-button"
-                href="https://github.com/reputation-systems/sigma-reputation-panel"
-                target="_blank"
-                title="View on GitHub"
-            >
-                <i class="fab fa-github"></i>
-            </a>
             <h1>Welcome to Sigma Reputation</h1>
 
             {#if $connected}
@@ -579,29 +571,6 @@
     .dropdown-content button.active {
         background-color: #fbbf24;
         color: #000;
-    }
-
-    .github-button {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1001;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: hsl(var(--muted) / 0.7);
-        color: hsl(var(--muted-foreground));
-        border-radius: 50%;
-        font-size: 1.5rem;
-        text-decoration: none;
-        transition: all 0.2s ease-in-out;
-    }
-    .github-button:hover {
-        background-color: hsl(var(--muted));
-        color: hsl(var(--foreground));
-        transform: scale(1.1);
     }
 
     .view-content {

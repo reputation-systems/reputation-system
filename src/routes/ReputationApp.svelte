@@ -143,10 +143,14 @@
     async function loadProfile() {
         loadingProfiles = true;
         try {
+            // A profile is any SELF opinion: a proof box whose R5 (object pointer)
+            // equals its own token id (assets[0].tokenId), of ANY type. The profile's
+            // type is read from R4 of that self opinion (see _buildReputationProofs),
+            // not restricted to a single hardcoded PROFILE_TYPE_NFT_ID.
             const allProfiles = await fetchAllUserProfiles(
                 $explorer_uri,
-                null,
-                [],
+                true, // is_self_defined: only self-pointing proofs (R5 === tokenId)
+                [], // types: no type restriction — any type qualifies
                 $types,
             );
             user_profiles.set(allProfiles);

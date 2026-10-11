@@ -364,6 +364,17 @@
     }
     .search-input-area {
         flex-grow: 1;
+        min-width: 0;
+    }
+    @media (max-width: 639px) {
+        /* Stack the controls so the text field keeps a usable width. */
+        .search-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-input.mode-select {
+            width: 100%;
+        }
     }
     .search-input {
         width: 100%;

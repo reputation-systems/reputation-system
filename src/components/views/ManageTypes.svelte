@@ -458,6 +458,8 @@
     .type-schema {
         font-size: 0.9rem;
         margin: 0.5rem 0 1rem 0;
+        /* schema URIs can be long unbroken strings (even inline JSON) */
+        overflow-wrap: anywhere;
     }
     .type-schema a {
         color: #fbbf24;

@@ -22,6 +22,7 @@
     // reads connection state from HERE, so the wallet bridge below keeps them
     // in sync with the template WalletButton.
     import { connected, address, network } from "$lib/store";
+    import { currentPage, navItems } from "./navigation";
 
     // --- Footer state ---
     let current_height: number | null = null;
@@ -35,6 +36,9 @@
     function handleAnimationIteration() {
         activeMessageIndex = (activeMessageIndex + 1) % footerMessages.length;
     }
+
+    // The view navigation lives in the header once the user leaves the intro.
+    $: showNav = $connected && $currentPage !== "intro";
 
     // --- Settings modal ---
     let showSettingsModal = false;
@@ -115,7 +119,33 @@
 
 <header class="navbar-container">
     <div class="navbar-content">
-        <a href="#" class="logo-container">Reputation System</a>
+        <button
+            class="logo-container"
+            on:click={() => currentPage.set("intro")}
+            aria-label="Sigma Reputation home"
+        >
+            <span class="logo-mark" aria-hidden="true">Σ</span>
+            <span class="logo-text">Sigma Reputation</span>
+        </button>
+
+        {#if showNav}
+            <nav class="main-nav" aria-label="Main">
+                {#each navItems as item}
+                    <button
+                        class="nav-tab"
+                        class:active={$currentPage === item.page}
+                        aria-current={$currentPage === item.page ? "page" : undefined}
+                        on:click={() => currentPage.set(item.page)}
+                    >
+                        <i class="fas {item.icon}" aria-hidden="true"></i>
+                        <span>{item.label}</span>
+                        {#if item.beta}
+                            <span class="beta-badge" title="In development">beta</span>
+                        {/if}
+                    </button>
+                {/each}
+            </nav>
+        {/if}
 
         <div class="flex-1"></div>
 
@@ -130,7 +160,7 @@
             {/if}
             <a
                 class="github-link"
-                href="https://github.com/reputation-systems/sigma-reputation-panel"
+                href="https://github.com/reputation-systems/reputation-system"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="View on GitHub"
@@ -152,8 +182,8 @@
             <button
                 class="settings-button"
                 on:click={() => (showSettingsModal = true)}
-                aria-label="Settings"
-                title="Settings"
+                aria-label="Explorer settings"
+                title="Explorer settings"
             >
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -318,20 +348,69 @@
     }
 
     .navbar-content {
-        @apply container flex h-16 items-center;
+        @apply container flex min-h-16 flex-wrap items-center gap-x-4 px-4 sm:px-8;
     }
 
     .logo-container {
-        @apply mr-4 flex items-center;
+        @apply flex h-16 items-center gap-2.5 rounded-md;
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: 1.15rem;
-        text-decoration: none;
+        font-size: 1.1rem;
+        letter-spacing: -0.01em;
         color: hsl(var(--foreground));
     }
 
+    .logo-container:focus-visible,
+    .nav-tab:focus-visible {
+        @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    }
+
+    .logo-mark {
+        @apply flex h-8 w-8 items-center justify-center rounded-lg text-lg font-extrabold;
+        background-color: hsl(var(--primary));
+        color: hsl(var(--primary-foreground));
+    }
+
+    .logo-text {
+        @apply hidden sm:inline;
+    }
+
+    /* Below xl the tabs wrap onto their own scrollable row under the brand. */
+    .main-nav {
+        @apply order-last -mx-4 flex w-[calc(100%+2rem)] gap-1 overflow-x-auto px-4 pb-2;
+        @apply sm:-mx-8 sm:w-[calc(100%+4rem)] sm:px-8;
+        @apply xl:order-none xl:mx-0 xl:w-auto xl:overflow-visible xl:px-0 xl:pb-0;
+        scrollbar-width: none;
+    }
+
+    .main-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-tab {
+        @apply flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-3 py-1.5;
+        @apply text-sm font-medium text-muted-foreground transition-colors;
+    }
+
+    .nav-tab:hover {
+        @apply bg-muted text-foreground;
+    }
+
+    .nav-tab.active {
+        @apply bg-primary text-primary-foreground;
+    }
+
+    .nav-tab i {
+        @apply text-xs;
+    }
+
+    .beta-badge {
+        @apply rounded px-1 py-px text-[0.6rem] font-semibold uppercase leading-tight tracking-wide;
+        @apply border border-current opacity-70;
+    }
+
     .user-section {
-        @apply flex items-center gap-4;
+        @apply flex items-center gap-2 sm:gap-3;
     }
 
     .settings-button,
@@ -391,12 +470,29 @@
         animation: scroll-left 30s linear infinite;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        .scrolling-text-wrapper {
+            @apply block truncate text-center;
+            animation: none;
+        }
+    }
+
     @keyframes scroll-left {
         from {
             transform: translateX(100vw);
         }
         to {
             transform: translateX(-100%);
+        }
+    }
+
+    /* Phones: keep brand + controls on one row by dropping the GitHub link and
+       the wallet's ERG balance badge (the balance stays in the wallet dropdown).
+       Last in the block so it beats the display rules above. */
+    @media (max-width: 639px) {
+        .github-link,
+        .user-section :global(.wallet-connected-button > div > :last-child) {
+            display: none;
         }
     }
 </style>

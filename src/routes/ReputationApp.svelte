@@ -30,15 +30,9 @@
     import Settings from "$components/views/Settings.svelte";
     import ManageTypes from "$components/views/ManageTypes.svelte";
     import { Profile } from "$lib";
-
-    let currentPage:
-        | "intro"
-        | "graph"
-        | "create"
-        | "search"
-        | "types"
-        | "settings"
-        | "profile" = "intro";
+    import { Button } from "$lib/components/ui/button/index.js";
+    import { base } from "$app/paths";
+    import { currentPage } from "./navigation";
 
     const educationalPhrases = [
         "Reputation is the foundation of trust in a decentralized world; build yours through verifiable commitment.",
@@ -190,104 +184,52 @@
         crossorigin="anonymous"
         referrerpolicy="no-referrer"
     />
-    <link rel="preload" href="/frame_52.svg" as="image" />
 </svelte:head>
 
 <main>
-    {#if $connected && currentPage !== "intro"}
-        <div class="view-switcher">
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <span class="app-title" on:click={() => (currentPage = "intro")}
-                >Sigma Reputation</span
-            >
-            <div class="nav-buttons">
-                <button
-                    on:click={() => (currentPage = "profile")}
-                    class:active={currentPage === "profile"}
-                >
-                    <i class="fas fa-user-circle"></i> Profile
-                </button>
-
-                <button
-                    on:click={() => (currentPage = "types")}
-                    class:active={currentPage === "types"}
-                >
-                    <i class="fas fa-tags"></i> Types
-                </button>
-
-                <div class="dropdown">
-                    <button
-                        class="dropdown-trigger"
-                        class:active={["graph", "search", "create"].includes(
-                            currentPage,
-                        )}
-                    >
-                        <i class="fas fa-flask"></i> In Development
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <div class="dropdown-content">
-                        <button
-                            on:click={() => (currentPage = "graph")}
-                            class:active={currentPage === "graph"}
-                        >
-                            <i class="fas fa-project-diagram"></i> Graph
-                        </button>
-                        <button
-                            on:click={() => (currentPage = "search")}
-                            class:active={currentPage === "search"}
-                        >
-                            <i class="fas fa-search"></i> Search
-                        </button>
-                        <button
-                            on:click={() => (currentPage = "create")}
-                            class:active={currentPage === "create"}
-                        >
-                            <i class="fas fa-plus-circle"></i> Submit
-                        </button>
-                    </div>
-                </div>
-
-                <button
-                    on:click={() => (currentPage = "settings")}
-                    class:active={currentPage === "settings"}
-                >
-                    <i class="fas fa-cog"></i> Settings
-                </button>
-            </div>
-        </div>
-    {/if}
-
-    {#if currentPage === "intro"}
-        <div class="welcome-container">
-            <h1>Welcome to Sigma Reputation</h1>
+    {#if $currentPage === "intro"}
+        <div class="welcome-container" style="--hero-art: url('{base}/frame_52.png')">
+            <p class="eyebrow">On-chain reputation · Ergo</p>
+            <h1>Welcome to <span class="accent">Sigma Reputation</span></h1>
 
             {#if $connected}
                 <div class="educational-phrase">
-                    <p class="phrase-label">Did you know?</p>
+                    <p class="phrase-label">
+                        <i class="fas fa-lightbulb" aria-hidden="true"></i> Did you know?
+                    </p>
                     <p class="phrase-text">{randomPhrase}</p>
                 </div>
-                {#if loadingProfiles}
-                    <div class="loading-status">
-                        <i class="fas fa-spinner fa-spin"></i> Preloading your reputation...
-                    </div>
-                {/if}
-                <button on:click={() => (currentPage = "profile")}
-                    >Explore</button
-                >
+                <Button size="lg" class="mt-8 h-12 gap-2 px-8 text-base font-semibold shadow-lg shadow-primary/20" on:click={() => currentPage.set("profile")}>
+                    {#if loadingProfiles}
+                        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
+                        Loading your reputation…
+                    {:else}
+                        Explore your reputation
+                        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                    {/if}
+                </Button>
             {:else}
-                <p>
-                    Connect your Ergo wallet to explore and build the web of
-                    trust on Ergo.
+                <p class="lead">
+                    Build verifiable, atomic reputation proofs and explore the
+                    web of trust on Ergo — directly from your wallet.
                 </p>
-                <button on:click={openWalletModal}>Connect Wallet</button>
+                <Button size="lg" class="mt-8 h-12 gap-2 px-8 text-base font-semibold shadow-lg shadow-primary/20" on:click={openWalletModal}>
+                    <i class="fas fa-wallet" aria-hidden="true"></i>
+                    Connect Wallet
+                </Button>
+                <p class="hint">Nautilus or SAFEW · runs locally in your browser</p>
             {/if}
 
             <div class="apps-carousel-container">
                 <p class="carousel-title">Powered by Sigma Reputation</p>
                 <div class="apps-carousel-track">
-                    {#each [...implementingApps, ...implementingApps] as app}
+                    <!-- The list is doubled for a seamless loop; the copy is hidden
+                         from assistive tech and the tab order. -->
+                    {#each [...implementingApps, ...implementingApps] as app, i}
+                        {@const isCopy = i >= implementingApps.length}
                         <a
+                            aria-hidden={isCopy ? "true" : undefined}
+                            tabindex={isCopy ? -1 : undefined}
                             href={app.url}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -296,9 +238,9 @@
                         >
                             <div class="app-icon">
                                 {#if app.image}
-                                    <img src={app.image} alt={app.name} />
+                                    <img src={app.image} alt="" loading="lazy" />
                                 {:else}
-                                    <i class="fas {app.icon}"></i>
+                                    <i class="fas {app.icon}" aria-hidden="true"></i>
                                 {/if}
                             </div>
                             <div class="app-info">
@@ -312,15 +254,15 @@
         </div>
     {:else}
         <div class="view-content">
-            {#if currentPage === "graph"}
+            {#if $currentPage === "graph"}
                 <MasterGraphView />
-            {:else if currentPage === "search"}
+            {:else if $currentPage === "search"}
                 <Search
                     types={$types}
                     connected={$connected}
-                    on:searchGraph={() => (currentPage = "graph")}
+                    on:searchGraph={() => currentPage.set("graph")}
                 />
-            {:else if currentPage === "create"}
+            {:else if $currentPage === "create"}
                 <div class="wizard-wrapper">
                     <Submit
                         proofs={$proofs}
@@ -328,11 +270,11 @@
                         types={$types}
                     />
                 </div>
-            {:else if currentPage === "types"}
+            {:else if $currentPage === "types"}
                 <div class="wizard-wrapper">
                     <ManageTypes types={$types} on:refresh={loadTypes} />
                 </div>
-            {:else if currentPage === "settings"}
+            {:else if $currentPage === "settings"}
                 <Settings
                     address={$address}
                     network={$network}
@@ -340,7 +282,7 @@
                     bind:fetchAll={$fetch_all}
                     bind:computeDeepLevel={$compute_deep_level}
                 />
-            {:else if currentPage === "profile"}
+            {:else if $currentPage === "profile"}
                 <Profile
                     reputationProof={$reputation_proof}
                     userProfiles={$user_profiles}
@@ -367,15 +309,15 @@
 
     :global(body) {
         margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            "Helvetica Neue", Arial, sans-serif;
     }
 
     main {
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
-        min-height: 100vh;
-        overflow: visible;
+        /* viewport minus the sticky header; the bottom padding keeps content
+           clear of the fixed footer (3rem). */
+        min-height: calc(100vh - 4rem);
+        padding-bottom: 3rem;
     }
 
     .welcome-container {
@@ -384,211 +326,116 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        min-height: calc(100vh - 7rem);
         text-align: center;
-        padding: 2rem;
+        padding: 3rem 1rem 1rem;
         box-sizing: border-box;
         overflow: hidden;
+        isolation: isolate;
     }
 
+    /* Amber glow + the sigma line art, kept faint so the copy stays legible. */
     .welcome-container::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url("/frame_52.svg");
-        background-repeat: no-repeat;
-        background-position: right center;
-        background-size: contain;
-        z-index: 0;
-        filter: saturate(200%) brightness(1.25);
-        opacity: 0.8;
+        inset: 0;
+        z-index: -1;
+        background:
+            radial-gradient(ellipse 60% 45% at 50% 30%, hsl(var(--primary) / 0.14), transparent 70%),
+            var(--hero-art) no-repeat right -8rem center / min(46rem, 80vw);
+        opacity: 0.9;
     }
 
-    .welcome-container > * {
-        position: relative;
-        z-index: 1;
+    :global(html:not(.dark)) .welcome-container::before {
+        background:
+            radial-gradient(ellipse 60% 45% at 50% 30%, hsl(var(--primary) / 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: hsl(var(--muted-foreground));
+        margin: 0 0 1rem;
     }
 
     .welcome-container h1 {
-        font-size: 3rem;
-        color: #fbbf24;
-    }
-    .welcome-container button {
-        padding: 1rem 2rem;
-        font-size: 1.2rem;
-        margin-top: 2rem;
-    }
-
-    .educational-phrase {
-        background: rgba(251, 191, 36, 0.1);
-        border: 1px solid rgba(251, 191, 36, 0.3);
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 2rem 0;
-        max-width: 500px;
-        backdrop-filter: blur(5px);
-    }
-
-    .phrase-label {
-        color: #fbbf24;
-        font-weight: bold;
-        text-transform: uppercase;
-        font-size: 0.8rem;
-        margin-bottom: 0.5rem;
-        letter-spacing: 0.05em;
-    }
-
-    .phrase-text {
-        font-size: 1.1rem;
-        line-height: 1.4;
-        color: hsl(var(--foreground));
+        font-size: clamp(2.25rem, 6vw, 3.75rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.035em;
+        max-width: 18ch;
         margin: 0;
     }
 
-    .loading-status {
-        font-size: 0.9rem;
+    .welcome-container h1 .accent {
+        color: hsl(var(--primary));
+    }
+
+    :global(html:not(.dark)) .welcome-container h1 .accent {
+        /* #fbbf24 on near-white fails contrast; use a deeper amber in light mode */
+        color: #b45309;
+    }
+
+    .lead {
+        margin: 1.25rem 0 0;
+        max-width: 36rem;
+        font-size: clamp(1rem, 2.2vw, 1.15rem);
+        line-height: 1.6;
         color: hsl(var(--muted-foreground));
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
     }
 
-    .view-switcher {
-        position: fixed;
-        /* sit below the template shell navbar (64px) instead of at the very top */
-        top: 64px;
-        left: 0;
-        width: 100%;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background: hsl(var(--background) / 0.7);
-        backdrop-filter: blur(10px);
-        padding: 0.5rem 1.5rem;
-        z-index: 1000;
-        border-bottom: 1px solid hsl(var(--border));
-        box-sizing: border-box;
-    }
-
-    .app-title {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #fbbf24;
-        cursor: pointer;
-    }
-
-    .nav-buttons button {
-        padding: 0.5rem 1rem;
-        background: transparent;
+    .hint {
+        margin: 0.9rem 0 0;
+        font-size: 0.8rem;
         color: hsl(var(--muted-foreground));
-        border: none;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        cursor: pointer;
-        margin-left: 0.5rem;
-        transition:
-            background-color 0.2s,
-            color 0.2s;
     }
 
-    .nav-buttons button i {
-        margin-right: 0.5rem;
-    }
-
-    .nav-buttons button:hover {
-        background-color: hsl(var(--muted));
-        color: hsl(var(--foreground));
-    }
-
-    .nav-buttons button.active {
-        background-color: #fbbf24;
-        color: #000;
-    }
-
-    /* Dropdown Styles */
-    .dropdown {
-        position: relative;
-        display: inline-block;
-        margin-left: 0.5rem;
-    }
-
-    .dropdown-trigger {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .dropdown-trigger i.fa-chevron-down {
-        font-size: 0.7rem;
-        transition: transform 0.2s;
-    }
-
-    .dropdown:hover .dropdown-trigger i.fa-chevron-down {
-        transform: rotate(180deg);
-    }
-
-    .dropdown-content {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        background-color: hsl(var(--card));
-        min-width: 160px;
-        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-        z-index: 1001;
-        border-radius: 6px;
-        border: 1px solid hsl(var(--border));
-        padding: 0.5rem 0;
-    }
-
-    .dropdown:hover .dropdown-content {
-        display: block;
-    }
-
-    .dropdown-content button {
-        display: flex;
-        align-items: center;
-        width: calc(100% - 1rem);
-        margin: 0.25rem 0.5rem;
+    .educational-phrase {
+        background: hsl(var(--primary) / 0.08);
+        border: 1px solid hsl(var(--primary) / 0.3);
+        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        margin: 2rem 0 0;
+        max-width: 32rem;
         text-align: left;
-        padding: 0.6rem 0.8rem;
-        background: transparent;
-        color: hsl(var(--muted-foreground));
-        border: none;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        transition:
-            background 0.2s,
-            color 0.2s;
     }
 
-    .dropdown-content button:hover {
-        background-color: hsl(var(--muted));
+    .phrase-label {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        color: hsl(var(--primary));
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        margin: 0 0 0.5rem;
+        letter-spacing: 0.08em;
+    }
+
+    :global(html:not(.dark)) .phrase-label {
+        color: #b45309;
+    }
+
+    .phrase-text {
+        font-size: 1.05rem;
+        line-height: 1.5;
         color: hsl(var(--foreground));
-    }
-
-    .dropdown-content button.active {
-        background-color: #fbbf24;
-        color: #000;
-    }
-
-    .view-content {
-        /* clear the template navbar (64px) + the in-page view-switcher (~53px) */
-        padding-top: 120px;
+        margin: 0;
     }
 
     .wizard-wrapper {
         display: flex;
         justify-content: center;
-        padding: 2rem;
+        padding: 2rem 1rem;
         width: 100%;
         box-sizing: border-box;
-        padding: 2rem;
+    }
+
+    /* Let the view shrink below its content width instead of overflowing. */
+    .wizard-wrapper > :global(*) {
+        min-width: 0;
     }
 
     /* Carousel Styles */
@@ -598,66 +445,77 @@
         max-width: 100vw;
         overflow: hidden;
         position: relative;
-        padding: 2rem 0;
+        padding: 1rem 0 2rem;
+        -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+        mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
     }
 
     .carousel-title {
         color: hsl(var(--muted-foreground));
-        font-size: 0.9rem;
+        font-size: 0.75rem;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-bottom: 2rem;
+        letter-spacing: 0.14em;
+        margin: 0 0 1.5rem;
         font-weight: 600;
     }
 
     .apps-carousel-track {
         display: flex;
-        gap: 2rem;
+        gap: 1.25rem;
         width: max-content;
-        animation: scroll 30s linear infinite;
-        padding: 0 2rem;
+        animation: scroll 40s linear infinite;
+        padding: 0.5rem 2rem;
     }
 
-    .apps-carousel-track:hover {
+    .apps-carousel-track:hover,
+    .apps-carousel-track:focus-within {
         animation-play-state: paused;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .apps-carousel-track {
+            animation: none;
+        }
+        .apps-carousel-container {
+            overflow-x: auto;
+        }
     }
 
     .app-card {
         background: hsl(var(--card));
         border: 1px solid hsl(var(--border));
-        border-radius: 16px;
-        padding: 1.5rem;
+        border-radius: 14px;
+        padding: 1.25rem;
         display: flex;
         align-items: center;
-        gap: 1.5rem;
-        min-width: 380px;
-        max-width: 450px;
-        backdrop-filter: blur(10px);
+        gap: 1.25rem;
+        width: 380px;
         transition:
-            transform 0.3s ease,
-            border-color 0.3s ease,
-            background-color 0.3s ease;
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
         text-decoration: none;
         cursor: pointer;
     }
 
-    .app-card:hover {
-        transform: translateY(-5px);
+    .app-card:hover,
+    .app-card:focus-visible {
+        transform: translateY(-3px);
         border-color: var(--app-color);
-        background: hsl(var(--accent) / 0.08);
+        box-shadow: 0 10px 24px -12px var(--app-color);
+        outline: none;
     }
 
     .app-icon {
-        width: 60px;
-        height: 60px;
+        width: 56px;
+        height: 56px;
         background: var(--app-color);
         border-radius: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
+        font-size: 1.6rem;
         color: white;
-        box-shadow: 0 8px 16px -4px var(--app-color);
         flex-shrink: 0;
         overflow: hidden;
     }
@@ -670,20 +528,24 @@
 
     .app-info {
         text-align: left;
+        min-width: 0;
     }
 
     .app-info h3 {
-        margin: 0;
-        font-size: 1.2rem;
+        margin: 0 0 0.3rem;
+        font-size: 1.05rem;
         color: hsl(var(--foreground));
-        margin-bottom: 0.4rem;
     }
 
     .app-info p {
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: hsl(var(--muted-foreground));
-        line-height: 1.4;
+        line-height: 1.45;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     @keyframes scroll {
@@ -691,23 +553,20 @@
             transform: translateX(0);
         }
         100% {
-            transform: translateX(calc(-50% - 1rem));
+            transform: translateX(calc(-50% - 0.625rem));
         }
     }
 
     @media (max-width: 768px) {
         .app-card {
-            min-width: 280px;
+            width: 290px;
             padding: 1rem;
             gap: 1rem;
         }
         .app-icon {
-            width: 48px;
-            height: 48px;
-            font-size: 1.4rem;
-        }
-        .app-info h3 {
-            font-size: 1.1rem;
+            width: 44px;
+            height: 44px;
+            font-size: 1.3rem;
         }
     }
 </style>

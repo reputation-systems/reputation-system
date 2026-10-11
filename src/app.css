@@ -43,6 +43,11 @@
     --ring: 43 96% 56%;
 
     --radius: 0.5rem;
+
+    /* Amber used as TEXT. #fbbf24 on white is ~1.6:1, so light mode uses a
+       deeper amber (#b45309, ~5:1). Backgrounds keep --primary. */
+    --amber-text: #b45309;
+    --rp-accent-text: #b45309;
   }
 
   .dark {
@@ -75,6 +80,9 @@
     --border: 0 0% 22%;             /* #3a3a3a */
     --input: 0 0% 22%;
     --ring: 43 96% 56%;
+
+    --amber-text: #fbbf24;
+    --rp-accent-text: #fbbf24;
   }
 }
 

@@ -1988,7 +1988,7 @@
     .create-profile-btn-v2:hover {
         background: var(--rp-accent-primary-10);
         border-color: var(--rp-accent-primary);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     /* --- Dropdown --- */
@@ -2050,7 +2050,7 @@
 
     .active .item-icon {
         background: var(--rp-accent-primary-10);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .item-content {
@@ -2079,7 +2079,7 @@
     .item-type {
         font-size: 0.75rem;
         font-weight: 600;
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         background: var(--rp-accent-primary-10);
         padding: 0.05rem 0.3rem;
         border-radius: 3px;
@@ -2103,7 +2103,7 @@
     }
 
     .check-icon {
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         font-size: 0.875rem;
         flex-shrink: 0;
         margin-left: auto;
@@ -2127,7 +2127,7 @@
         background: linear-gradient(
             to right,
             hsl(var(--foreground)),
-            var(--rp-accent-primary)
+            var(--rp-accent-text, var(--rp-accent-primary))
         );
         -webkit-background-clip: text;
         background-clip: text;
@@ -2161,7 +2161,7 @@
     .score-value {
         font-size: 3rem;
         font-weight: 800;
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         text-shadow: 0 0 20px var(--rp-score-glow);
         line-height: 1;
     }
@@ -2227,7 +2227,7 @@
 
     .main-tab-btn.active {
         background: var(--rp-accent-primary-10);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .tab-count {
@@ -2240,11 +2240,11 @@
 
     .main-tab-btn.active .tab-count {
         background: var(--rp-accent-primary-20);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .issuer-rep {
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         font-weight: 600;
         margin-left: 0.25rem;
     }
@@ -2265,7 +2265,7 @@
         align-items: center;
         justify-content: center;
         background-color: var(--rp-accent-primary-10);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .sacrificed-assets h3,
@@ -2351,7 +2351,7 @@
 
     .badge.color {
         background-color: var(--rp-accent-primary-10);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         border: 1px solid var(--rp-accent-primary-30);
     }
 
@@ -2817,7 +2817,7 @@
 
     .info-tooltip:hover,
     .info-tooltip[aria-expanded="true"] {
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .info-tooltip-bubble {
@@ -2946,7 +2946,7 @@
     .add-kv-btn:hover {
         background: var(--rp-bg-hover);
         border-color: var(--rp-accent-primary);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     textarea.mono {
@@ -2957,7 +2957,7 @@
     /* --- Sacrifice Form --- */
     .sacrifice-toggle-btn {
         background: var(--rp-accent-primary-10);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
         border: 1px solid var(--rp-accent-primary-30);
         padding: 0.4rem 0.8rem;
         border-radius: 0.5rem;
@@ -2991,7 +2991,7 @@
     .sacrifice-form h4 {
         margin-top: 0;
         margin-bottom: 0.5rem;
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .small-text {
@@ -3092,7 +3092,7 @@
     .add-token-trigger:hover {
         background: var(--rp-accent-primary-05);
         border-color: var(--rp-accent-primary);
-        color: var(--rp-accent-primary);
+        color: var(--rp-accent-text, var(--rp-accent-primary));
     }
 
     .token-dropdown {

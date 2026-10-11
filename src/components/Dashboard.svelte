@@ -71,7 +71,7 @@
     .dashboard-title {
         font-size: 2.5rem;
         text-align: center;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .dashboard-subtitle {
         text-align: center;

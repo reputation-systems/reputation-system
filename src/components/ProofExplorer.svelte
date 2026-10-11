@@ -38,7 +38,7 @@
 		margin: auto;
 	}
 	.explorer-container h2 {
-		color: #fbbf24;
+		color: var(--amber-text);
 		text-align: center;
 		font-size: 2rem;
 		margin-bottom: 2rem;

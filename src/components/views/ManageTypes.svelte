@@ -284,7 +284,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        color: #fbbf24;
+        color: var(--amber-text);
         font-size: 0.9rem;
         cursor: help;
         margin-left: 0.5rem;
@@ -335,7 +335,7 @@
         font-size: 1.75rem;
         margin: 0 0 0.5rem 0;
         text-align: center;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .form-description {
         margin: 0 0 1.5rem 0;
@@ -448,7 +448,7 @@
     .type-name {
         font-size: 1.25rem;
         font-weight: bold;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .type-description {
         color: hsl(var(--muted-foreground));
@@ -462,7 +462,7 @@
         overflow-wrap: anywhere;
     }
     .type-schema a {
-        color: #fbbf24;
+        color: var(--amber-text);
         text-decoration: none;
     }
     .type-schema a:hover {
@@ -496,7 +496,7 @@
         font-size: 1rem;
     }
     .copy-button:hover {
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .error-message {
         color: #ff6b6b;

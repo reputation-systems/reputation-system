@@ -90,7 +90,7 @@
     h2.modal-title {
         font-size: 1.5rem;
         margin: 0;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
 
     .modal-subtitle {

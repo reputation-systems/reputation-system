@@ -343,7 +343,7 @@
         font-size: 1.75rem;
         margin: 0 0 0.5rem 0;
         text-align: center;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .search-description {
         margin: 0 0 1.5rem 0;
@@ -509,7 +509,7 @@
     .result-type {
         font-size: 0.75rem;
         font-weight: bold;
-        color: #fbbf24;
+        color: var(--amber-text);
         background-color: rgba(251, 191, 36, 0.1);
         padding: 2px 8px;
         border-radius: 4px;
@@ -551,7 +551,7 @@
     }
     .view-graph-button {
         border: 1px solid #fbbf24;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
     .view-graph-button:hover {
         background-color: rgba(251, 191, 36, 0.1);
@@ -566,7 +566,7 @@
         word-wrap: break-word;
     }
     .result-details h3 {
-        color: #fbbf24;
+        color: var(--amber-text);
         margin-top: 0;
         margin-bottom: 1rem;
         font-size: 1.1rem;

@@ -337,7 +337,7 @@
     }
 
     h2 {
-        color: #fbbf24;
+        color: var(--amber-text);
         margin: 0 0 1.5rem 0;
     }
     h4 {

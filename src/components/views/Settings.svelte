@@ -171,7 +171,7 @@
     .settings-title {
         font-size: 2rem;
         margin: 0 0 0.5rem 0;
-        color: #fbbf24;
+        color: var(--amber-text);
         font-weight: 600;
     }
     .settings-description {

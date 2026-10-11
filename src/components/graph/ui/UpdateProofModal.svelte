@@ -225,7 +225,7 @@
         font-size: 1.5rem;
         margin-top: 0;
         margin-bottom: 0.25rem;
-        color: #fbbf24;
+        color: var(--amber-text);
     }
 
     .modal-subtitle {

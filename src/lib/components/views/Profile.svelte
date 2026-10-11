@@ -127,17 +127,35 @@
         )
         .join(" ");
 
+    // Defaults come first so `theme` overrides them (the later declaration
+    // wins). A self-referencing `--rp-x: var(--rp-x, ...)` would be a cycle,
+    // which makes the variable invalid and drops cards, borders and colors.
+    const defaultVars: Record<string, string> = {
+        "text-primary": "hsl(var(--foreground))",
+        "text-secondary": "hsl(var(--foreground))",
+        "text-muted": "hsl(var(--muted-foreground))",
+        "bg-card": "hsl(var(--card))",
+        "bg-input": "hsl(var(--muted))",
+        "bg-page": "transparent",
+        "bg-hover": "hsl(var(--accent) / 0.1)",
+        "border-color": "hsl(var(--border))",
+        "border-subtle": "hsl(var(--border))",
+        "positive-color": "#22c55e",
+        "main-accent": "#3b82f6",
+        "main-accent-soft": "rgba(59, 130, 246, 0.1)",
+        "danger-color": "#ef4444",
+        "danger-soft": "rgba(239, 68, 68, 0.1)",
+        "danger-border": "rgba(239, 68, 68, 0.2)",
+        "success-color": "#22c55e",
+        "success-soft": "rgba(34, 197, 94, 0.1)",
+        "success-border": "rgba(34, 197, 94, 0.2)",
+        "self-filter-color": "#10b981",
+        "self-filter-soft": "rgba(16, 185, 129, 0.1)",
+    };
+
     $: cssVars = [
+        ...Object.entries(defaultVars).map(([k, v]) => `--rp-${k}: ${v}`),
         themeStyles,
-        `--rp-text-primary: var(--rp-text-primary, hsl(var(--foreground)))`,
-        `--rp-text-secondary: var(--rp-text-secondary, hsl(var(--foreground)))`,
-        `--rp-text-muted: var(--rp-text-muted, hsl(var(--muted-foreground)))`,
-        `--rp-bg-card: var(--rp-bg-card, hsl(var(--card)))`,
-        `--rp-bg-input: var(--rp-bg-input, hsl(var(--muted)))`,
-        `--rp-bg-page: var(--rp-bg-page, transparent)`,
-        `--rp-bg-hover: var(--rp-bg-hover, hsl(var(--accent) / 0.1))`,
-        `--rp-border-color: var(--rp-border-color, hsl(var(--border)))`,
-        `--rp-border-subtle: var(--rp-border-subtle, hsl(var(--border)))`,
         `--rp-accent-primary: ${accentPrimary}`,
         `--rp-accent-secondary: ${accentSecondary}`,
         `--rp-accent-primary-05: ${accentPrimary05}`,
@@ -145,17 +163,6 @@
         `--rp-accent-primary-20: ${accentPrimary20}`,
         `--rp-accent-primary-30: ${accentPrimary30}`,
         `--rp-score-glow: ${scoreGlow}`,
-        `--rp-positive-color: var(--rp-positive-color, #22c55e)`,
-        `--rp-main-accent: var(--rp-main-accent, #3b82f6)`,
-        `--rp-main-accent-soft: var(--rp-main-accent-soft, rgba(59, 130, 246, 0.1))`,
-        `--rp-danger-color: var(--rp-danger-color, #ef4444)`,
-        `--rp-danger-soft: var(--rp-danger-soft, rgba(239, 68, 68, 0.1))`,
-        `--rp-danger-border: var(--rp-danger-border, rgba(239, 68, 68, 0.2))`,
-        `--rp-success-color: var(--rp-success-color, #22c55e)`,
-        `--rp-success-soft: var(--rp-success-soft, rgba(34, 197, 94, 0.1))`,
-        `--rp-success-border: var(--rp-success-border, rgba(34, 197, 94, 0.2))`,
-        `--rp-self-filter-color: var(--rp-self-filter-color, #10b981)`,
-        `--rp-self-filter-soft: var(--rp-self-filter-soft, rgba(16, 185, 129, 0.1))`,
     ].join(";");
 
     // --- Behavior Props ---
@@ -812,7 +819,9 @@
         {:else}
             <p class="subtitle">
                 {subtitle ||
-                    "Connect and create your profile to start building reputation."}
+                    (connected
+                        ? "Create your profile to start building reputation."
+                        : "Connect and create your profile to start building reputation.")}
             </p>
         {/if}
     </div>
@@ -822,7 +831,7 @@
             <p>Please connect your wallet to view or create your profile.</p>
         </div>
     {:else}
-        {#if showProfileSwitcher}
+        {#if showProfileSwitcher && reputationProof}
             <!-- Compactable Profile Switcher -->
             <div
                 class="profile-switcher-v2"

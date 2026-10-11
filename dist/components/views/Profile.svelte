@@ -97,36 +97,39 @@ $:
   themeStyles = Object.entries(theme).map(
     ([key, value]) => `--rp-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}: ${value};`
   ).join(" ");
+const defaultVars = {
+  "text-primary": "hsl(var(--foreground))",
+  "text-secondary": "hsl(var(--foreground))",
+  "text-muted": "hsl(var(--muted-foreground))",
+  "bg-card": "hsl(var(--card))",
+  "bg-input": "hsl(var(--muted))",
+  "bg-page": "transparent",
+  "bg-hover": "hsl(var(--accent) / 0.1)",
+  "border-color": "hsl(var(--border))",
+  "border-subtle": "hsl(var(--border))",
+  "positive-color": "#22c55e",
+  "main-accent": "#3b82f6",
+  "main-accent-soft": "rgba(59, 130, 246, 0.1)",
+  "danger-color": "#ef4444",
+  "danger-soft": "rgba(239, 68, 68, 0.1)",
+  "danger-border": "rgba(239, 68, 68, 0.2)",
+  "success-color": "#22c55e",
+  "success-soft": "rgba(34, 197, 94, 0.1)",
+  "success-border": "rgba(34, 197, 94, 0.2)",
+  "self-filter-color": "#10b981",
+  "self-filter-soft": "rgba(16, 185, 129, 0.1)"
+};
 $:
   cssVars = [
+    ...Object.entries(defaultVars).map(([k, v]) => `--rp-${k}: ${v}`),
     themeStyles,
-    `--rp-text-primary: var(--rp-text-primary, #f0f0f0)`,
-    `--rp-text-secondary: var(--rp-text-secondary, #e2e8f0)`,
-    `--rp-text-muted: var(--rp-text-muted, #94a3b8)`,
-    `--rp-bg-card: var(--rp-bg-card, #262626)`,
-    `--rp-bg-input: var(--rp-bg-input, #171717)`,
-    `--rp-bg-page: var(--rp-bg-page, transparent)`,
-    `--rp-bg-hover: var(--rp-bg-hover, rgba(255,255,255,0.05))`,
-    `--rp-border-color: var(--rp-border-color, #404040)`,
-    `--rp-border-subtle: var(--rp-border-subtle, rgba(255,255,255,0.1))`,
     `--rp-accent-primary: ${accentPrimary}`,
     `--rp-accent-secondary: ${accentSecondary}`,
     `--rp-accent-primary-05: ${accentPrimary05}`,
     `--rp-accent-primary-10: ${accentPrimary10}`,
     `--rp-accent-primary-20: ${accentPrimary20}`,
     `--rp-accent-primary-30: ${accentPrimary30}`,
-    `--rp-score-glow: ${scoreGlow}`,
-    `--rp-positive-color: var(--rp-positive-color, #22c55e)`,
-    `--rp-main-accent: var(--rp-main-accent, #3b82f6)`,
-    `--rp-main-accent-soft: var(--rp-main-accent-soft, rgba(59, 130, 246, 0.1))`,
-    `--rp-danger-color: var(--rp-danger-color, #ef4444)`,
-    `--rp-danger-soft: var(--rp-danger-soft, rgba(239, 68, 68, 0.1))`,
-    `--rp-danger-border: var(--rp-danger-border, rgba(239, 68, 68, 0.2))`,
-    `--rp-success-color: var(--rp-success-color, #22c55e)`,
-    `--rp-success-soft: var(--rp-success-soft, rgba(34, 197, 94, 0.1))`,
-    `--rp-success-border: var(--rp-success-border, rgba(34, 197, 94, 0.2))`,
-    `--rp-self-filter-color: var(--rp-self-filter-color, #10b981)`,
-    `--rp-self-filter-soft: var(--rp-self-filter-soft, rgba(16, 185, 129, 0.1))`
+    `--rp-score-glow: ${scoreGlow}`
   ].join(";");
 export let readOnly = false;
 export let autoRefresh = false;
@@ -660,7 +663,9 @@ onDestroy(() => {
         {:else}
             <p class="subtitle">
                 {subtitle ||
-                    "Connect and create your profile to start building reputation."}
+                    (connected
+                        ? "Create your profile to start building reputation."
+                        : "Connect and create your profile to start building reputation.")}
             </p>
         {/if}
     </div>
@@ -670,7 +675,7 @@ onDestroy(() => {
             <p>Please connect your wallet to view or create your profile.</p>
         </div>
     {:else}
-        {#if showProfileSwitcher}
+        {#if showProfileSwitcher && reputationProof}
             <!-- Compactable Profile Switcher -->
             <div
                 class="profile-switcher-v2"
@@ -1711,7 +1716,7 @@ onDestroy(() => {
     .profile-switcher-v2.expanded {
         background: var(--rp-bg-hover);
         border-color: var(--rp-accent-primary);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
     }
 
     .switcher-main-row {
@@ -1756,7 +1761,7 @@ onDestroy(() => {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #000;
+        color: hsl(var(--primary-foreground));
         font-size: 1.25rem;
         box-shadow: 0 4px 12px var(--rp-accent-primary-20);
     }
@@ -1781,7 +1786,7 @@ onDestroy(() => {
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: #000;
+        color: hsl(var(--primary-foreground));
         background: var(--rp-accent-primary);
         padding: 0.1rem 0.4rem;
         border-radius: 4px;
@@ -1965,7 +1970,7 @@ onDestroy(() => {
         margin-bottom: 1rem;
         background: linear-gradient(
             to right,
-            #fff,
+            hsl(var(--foreground)),
             var(--rp-accent-primary)
         );
         -webkit-background-clip: text;
@@ -2334,7 +2339,7 @@ onDestroy(() => {
 
     .filter-badge.active {
         background: var(--rp-accent-primary);
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         border-color: var(--rp-accent-primary);
         font-weight: 600;
     }
@@ -2464,7 +2469,7 @@ onDestroy(() => {
     /* --- Forms & Buttons --- */
     .primary-button {
         background: var(--rp-accent-primary);
-        color: #1a1a1a;
+        color: hsl(var(--primary-foreground));
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 0.375rem;
@@ -2675,7 +2680,7 @@ onDestroy(() => {
         color: var(--rp-text-secondary);
         font-size: 0.85rem;
         line-height: 1.45;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
         z-index: 20;
         backdrop-filter: blur(10px);
     }
@@ -2730,7 +2735,7 @@ onDestroy(() => {
 
     .toggle-btn.active {
         background: var(--rp-accent-primary);
-        color: #000;
+        color: hsl(var(--primary-foreground));
         border-color: var(--rp-accent-primary);
     }
 
@@ -2941,7 +2946,7 @@ onDestroy(() => {
         background: var(--rp-bg-card);
         border: 1px solid var(--rp-border-color);
         border-radius: 0.5rem;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
         max-height: 200px;
         overflow-y: auto;
         padding: 0.5rem;

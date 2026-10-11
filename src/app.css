@@ -1,9 +1,11 @@
+/* App identity font: Inter. @import must precede every other rule, or the
+   browser drops it silently. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* App identity font: Inter (matches the rest of the app). */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {

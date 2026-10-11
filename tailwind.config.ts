@@ -3,7 +3,11 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
 	darkMode: ["class"],
-	content: ["./src/**/*.{html,js,svelte,ts}"],
+	content: [
+		"./src/**/*.{html,js,svelte,ts}",
+		// The wallet component ships Tailwind utility classes in its markup.
+		"./node_modules/wallet-svelte-component/dist/**/*.{js,svelte}"
+	],
 	safelist: ["dark"],
 	theme: {
 		container: {
@@ -55,7 +59,7 @@ const config: Config = {
 				sm: "calc(var(--radius) - 4px)"
 			},
 			fontFamily: {
-				sans: [...fontFamily.sans]
+				sans: ["Inter", ...fontFamily.sans]
 			}
 		}
 	},
